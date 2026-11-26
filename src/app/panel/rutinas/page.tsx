@@ -28,6 +28,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
       .select("id, name, goal, est_duration_min, focus, workout_items(id)")
       .eq("org_id", org.id)
       .is("program_id", null)
+      .is("athlete_id", null)
       .order("updated_at", { ascending: false }),
   ]);
 

@@ -95,6 +95,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"calendar_events": {
+                  Row: {
+                    "athlete_id": string,"created_at": string,"created_by": string | null,"end_date": string,"id": string,"kind": string,"location": string | null,"notes": string | null,"org_id": string,"start_date": string,"title": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "athlete_id": string,"created_at"?: string,"created_by"?: string | null,"end_date": string,"id"?: string,"kind": string,"location"?: string | null,"notes"?: string | null,"org_id": string,"start_date": string,"title": string
+                  }
+                  Update: {
+                    "athlete_id"?: string,"created_at"?: string,"created_by"?: string | null,"end_date"?: string,"id"?: string,"kind"?: string,"location"?: string | null,"notes"?: string | null,"org_id"?: string,"start_date"?: string,"title"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "calendar_events_athlete_id_fkey"
+      columns: ["athlete_id"]
+isOneToOne: false
+      referencedRelation: "athletes"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "calendar_events_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"exercise_media": {
                   Row: {
                     "created_at": string,"exercise_id": string,"id": string,"org_id": string,"sort_order": number,"storage_path": string
@@ -331,6 +357,44 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"scheduled_workouts": {
+                  Row: {
+                    "athlete_id": string,"created_at": string,"date": string,"id": string,"org_id": string,"program_id": string | null,"status": string,"updated_at": string,"workout_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "athlete_id": string,"created_at"?: string,"date": string,"id"?: string,"org_id": string,"program_id"?: string | null,"status"?: string,"updated_at"?: string,"workout_id": string
+                  }
+                  Update: {
+                    "athlete_id"?: string,"created_at"?: string,"date"?: string,"id"?: string,"org_id"?: string,"program_id"?: string | null,"status"?: string,"updated_at"?: string,"workout_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "scheduled_workouts_athlete_id_fkey"
+      columns: ["athlete_id"]
+isOneToOne: false
+      referencedRelation: "athletes"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scheduled_workouts_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scheduled_workouts_program_id_fkey"
+      columns: ["program_id"]
+isOneToOne: false
+      referencedRelation: "programs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "scheduled_workouts_workout_id_fkey"
+      columns: ["workout_id"]
+isOneToOne: true
+      referencedRelation: "workouts"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"sport_fields": {
                   Row: {
                     "field_type": string,"id": string,"key": string,"label": string,"options": NonNullable<Json>,"sort_order": number,"sport_id": string,"unit": string | null
@@ -405,17 +469,23 @@ isOneToOne: false
                   ]
                 },"workouts": {
                   Row: {
-                    "block_id": string | null,"created_at": string,"day_index": number | null,"est_duration_min": number | null,"focus": (string)[],"goal": string | null,"id": string,"name": string,"notes": string | null,"org_id": string,"program_id": string | null,"sort_order": number,"updated_at": string,"week_index": number | null
+                    "athlete_id": string | null,"block_id": string | null,"created_at": string,"day_index": number | null,"est_duration_min": number | null,"focus": (string)[],"goal": string | null,"id": string,"name": string,"notes": string | null,"org_id": string,"program_id": string | null,"sort_order": number,"updated_at": string,"week_index": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "block_id"?: string | null,"created_at"?: string,"day_index"?: number | null,"est_duration_min"?: number | null,"focus"?: (string)[],"goal"?: string | null,"id"?: string,"name": string,"notes"?: string | null,"org_id": string,"program_id"?: string | null,"sort_order"?: number,"updated_at"?: string,"week_index"?: number | null
+                    "athlete_id"?: string | null,"block_id"?: string | null,"created_at"?: string,"day_index"?: number | null,"est_duration_min"?: number | null,"focus"?: (string)[],"goal"?: string | null,"id"?: string,"name": string,"notes"?: string | null,"org_id": string,"program_id"?: string | null,"sort_order"?: number,"updated_at"?: string,"week_index"?: number | null
                   }
                   Update: {
-                    "block_id"?: string | null,"created_at"?: string,"day_index"?: number | null,"est_duration_min"?: number | null,"focus"?: (string)[],"goal"?: string | null,"id"?: string,"name"?: string,"notes"?: string | null,"org_id"?: string,"program_id"?: string | null,"sort_order"?: number,"updated_at"?: string,"week_index"?: number | null
+                    "athlete_id"?: string | null,"block_id"?: string | null,"created_at"?: string,"day_index"?: number | null,"est_duration_min"?: number | null,"focus"?: (string)[],"goal"?: string | null,"id"?: string,"name"?: string,"notes"?: string | null,"org_id"?: string,"program_id"?: string | null,"sort_order"?: number,"updated_at"?: string,"week_index"?: number | null
                   }
                   Relationships: [
                     {
+      foreignKeyName: "workouts_athlete_id_fkey"
+      columns: ["athlete_id"]
+isOneToOne: false
+      referencedRelation: "athletes"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "workouts_block_id_fkey"
       columns: ["block_id"]
 isOneToOne: false
@@ -443,6 +513,12 @@ isOneToOne: false
           Functions: {
             "accept_invitation":
 { Args: { "p_token": string }; Returns: string
+                           },
+"assign_program":
+{ Args: { "p_athletes": (string)[],"p_program": string,"p_start": string }; Returns: number
+                           },
+"assign_workout":
+{ Args: { "p_athletes": (string)[],"p_start": string,"p_weekdays": (number)[],"p_weeks": number,"p_workout": string }; Returns: number
                            },
 "athlete_org":
 { Args: { "p_athlete": string }; Returns: string
@@ -473,6 +549,9 @@ isOneToOne: false
 "group_org":
 { Args: { "p_group": string }; Returns: string
                            },
+"is_my_scheduled_workout":
+{ Args: { "p_workout": string }; Returns: boolean
+                           },
 "is_org_member":
 { Args: { "p_org": string }; Returns: boolean
                            },
@@ -485,17 +564,29 @@ isOneToOne: false
 "is_self_athlete":
 { Args: { "p_athlete": string }; Returns: boolean
                            },
+"is_visible_schedule":
+{ Args: { "p_athlete": string,"p_program": string }; Returns: boolean
+                           },
 "program_org":
 { Args: { "p": string }; Returns: string
                            },
 "save_workout":
 { Args: { "p_data": Json,"p_workout": string }; Returns: undefined
                            },
+"schedule_date":
+{ Args: { "p_day": number,"p_start": string,"p_week": number }; Returns: string
+                           },
+"schedule_program":
+{ Args: { "p_program": string }; Returns: number
+                           },
 "storage_org":
 { Args: { "p_name": string }; Returns: string
                            },
 "unlink_athlete":
 { Args: { "p_athlete": string }; Returns: undefined
+                           },
+"workout_abs_week":
+{ Args: { "p_block": string,"p_week": number }; Returns: number
                            },
 "workout_org":
 { Args: { "p": string }; Returns: string

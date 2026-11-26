@@ -5,6 +5,7 @@ import { ThemeToggle } from "@/components/theme";
 
 const items: NavItem[] = [
   { href: "/app", label: "Hoy", icon: "home", exact: true },
+  { href: "/app/calendario", label: "Calendario", icon: "calendar" },
   { href: "/app/perfil", label: "Perfil", icon: "user" },
 ];
 

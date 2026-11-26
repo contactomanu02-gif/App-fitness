@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Pencil } from "lucide-react";
+import { CalendarDays, ChevronLeft, Pencil } from "lucide-react";
+import { shortDate, todayISO } from "@/lib/dates";
+import { PROGRAM_STATUS } from "@/lib/programs";
 import { requireStaff } from "@/lib/session";
 import { Avatar, Badge, Card, CardHeader } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
@@ -48,6 +50,17 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     .eq("id", id)
     .maybeSingle();
   if (!a) notFound();
+  const today = todayISO();
+  const [{ data: upcoming }, { data: programs }] = await Promise.all([
+    supabase
+      .from("scheduled_workouts")
+      .select("id, workout_id, date, status, workouts(name)")
+      .eq("athlete_id", id)
+      .gte("date", today)
+      .order("date")
+      .limit(5),
+    supabase.from("programs").select("id, name, status, start_date").eq("athlete_id", id).order("start_date", { ascending: false }),
+  ]);
 
   const age = ageFrom(a.birth_date);
   const sportValues = (a.athlete_sport_profiles.find((p) => p.sport_id === a.sport_id)?.values ?? {}) as Record<string, unknown>;
@@ -77,6 +90,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <div className="flex flex-wrap gap-2">
           {archived ? <Badge>Archivado</Badge> : null}
           {a.user_id ? <Badge tone="accent">Con cuenta</Badge> : pendingInvite ? <Badge tone="warn">Invitado</Badge> : <Badge>Sin invitar</Badge>}
+          <Link href={`/panel/alumnos/${id}/calendario`} className={buttonVariants({ size: "sm" })}>
+            <CalendarDays size={15} /> Calendario
+          </Link>
           <Link href={`/panel/alumnos/${id}/editar`} className={buttonVariants({ variant: "outline", size: "sm" })}>
             <Pencil size={15} /> Editar ficha
           </Link>
@@ -85,6 +101,49 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_340px]">
         <div className="space-y-4">
+          <Card>
+            <CardHeader
+              title="Entrenamiento"
+              action={
+                <Link href="/panel/rutinas" className="text-sm text-accent hover:underline">
+                  Asignar desde Rutinas
+                </Link>
+              }
+            />
+            <div className="px-5 pb-5">
+              {upcoming?.length ? (
+                <ul className="divide-y divide-border">
+                  {upcoming.map((u) => (
+                    <li key={u.id}>
+                      <Link href={`/panel/rutinas/sesion/${u.workout_id}`} className="flex items-center justify-between gap-3 py-2.5 text-sm hover:text-accent">
+                        <span className="font-medium">{u.workouts?.name}</span>
+                        <span className="shrink-0 text-muted-fg">{u.date === today ? "Hoy" : shortDate(u.date)}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-fg">No tiene sesiones próximas. Asignale una planificación o una sesión desde Rutinas, o agendala desde su calendario.</p>
+              )}
+              {programs?.length ? (
+                <div className="mt-4 border-t border-border pt-3">
+                  <p className="mb-2 text-xs font-medium text-muted-fg">Planificaciones asignadas</p>
+                  <div className="flex flex-wrap gap-2">
+                    {programs.map((p) => (
+                      <Link key={p.id} href={`/panel/rutinas/${p.id}`}>
+                        <Badge tone={p.status === "active" ? "accent" : "neutral"}>
+                          {p.name}
+                          {p.start_date ? ` · desde ${shortDate(p.start_date)}` : ""}
+                          {p.status !== "active" ? ` · ${labelOf(PROGRAM_STATUS, p.status).toLowerCase()}` : ""}
+                        </Badge>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </Card>
+
           <Card>
             <CardHeader title="Ficha deportiva" />
             <dl className="divide-y divide-border px-5 pb-3">

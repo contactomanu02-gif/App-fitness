@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/session";
 import { blockSchema, programSchema, workoutSchema, type WorkoutInput } from "@/lib/programs";
+import { isValidISO } from "@/lib/dates";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -204,7 +205,68 @@ export async function placeWorkout(id: string, _: FormState, form: FormData): Pr
 
 export async function deleteWorkout(id: string) {
   const { supabase } = await requireStaff();
-  const { data: w } = await supabase.from("workouts").select("program_id").eq("id", id).single();
+  const { data: w } = await supabase.from("workouts").select("program_id, athlete_id, scheduled_workouts(date)").eq("id", id).single();
   await supabase.from("workouts").delete().eq("id", id);
+  if (w?.athlete_id && !w.program_id) done(`/panel/alumnos/${w.athlete_id}/calendario?mes=${w.scheduled_workouts?.date.slice(0, 7) ?? ""}`);
   done(w?.program_id ? programPath(w.program_id) : "/panel/rutinas?tab=sesiones");
+}
+
+// ---------------------------------------------------------------- asignación
+
+async function resolveAthletes(supabase: Awaited<ReturnType<typeof requireStaff>>["supabase"], orgId: string, form: FormData) {
+  const ids = new Set(form.getAll("athlete").map(String));
+  const groups = form.getAll("group").map(String);
+  if (groups.length) {
+    const { data } = await supabase.from("group_members").select("athlete_id, athletes!inner(status, org_id)").in("group_id", groups);
+    for (const m of data ?? []) if (m.athletes.status === "active" && m.athletes.org_id === orgId) ids.add(m.athlete_id);
+  }
+  return [...ids];
+}
+
+export async function assignProgram(programId: string, _: FormState, form: FormData): Promise<FormState> {
+  const { supabase, org } = await requireStaff();
+  const start = String(form.get("start") ?? "");
+  if (!isValidISO(start)) return { error: "Elegí la fecha de inicio." };
+  const athletes = await resolveAthletes(supabase, org.id, form);
+  if (!athletes.length) return { error: "Elegí al menos un alumno o un grupo." };
+  const { data, error } = await supabase.rpc("assign_program", { p_program: programId, p_athletes: athletes, p_start: start });
+  if (error) return { error: "No pudimos asignar la planificación. Probá de nuevo." };
+  revalidatePath("/panel", "layout");
+  if (athletes.length === 1) redirect(`/panel/alumnos/${athletes[0]}/calendario?mes=${start.slice(0, 7)}&asignado=1`);
+  return { ok: data === 1 ? "Asignada a 1 alumno." : `Asignada a ${data} alumnos.` };
+}
+
+export async function assignWorkout(workoutId: string, _: FormState, form: FormData): Promise<FormState> {
+  const { supabase, org } = await requireStaff();
+  const start = String(form.get("start") ?? "");
+  if (!isValidISO(start)) return { error: "Elegí la fecha de inicio." };
+  const weekdays = form.getAll("weekday").map(Number).filter((d) => d >= 1 && d <= 7);
+  if (!weekdays.length) return { error: "Elegí al menos un día de la semana." };
+  const weeks = Number(form.get("weeks"));
+  if (!(weeks >= 1 && weeks <= 52)) return { error: "Las semanas van de 1 a 52." };
+  const athletes = await resolveAthletes(supabase, org.id, form);
+  if (!athletes.length) return { error: "Elegí al menos un alumno o un grupo." };
+  const { data, error } = await supabase.rpc("assign_workout", { p_workout: workoutId, p_athletes: athletes, p_start: start, p_weekdays: weekdays, p_weeks: weeks });
+  if (error) return { error: "No pudimos asignar la sesión. Probá de nuevo." };
+  revalidatePath("/panel", "layout");
+  if (athletes.length === 1) redirect(`/panel/alumnos/${athletes[0]}/calendario?mes=${start.slice(0, 7)}&asignado=1`);
+  return { ok: `Listo: ${data} ${data === 1 ? "sesión agendada" : "sesiones agendadas"} en ${athletes.length} alumnos.` };
+}
+
+export async function setProgramStatus(id: string, status: "active" | "archived") {
+  const { supabase } = await requireStaff();
+  await supabase.from("programs").update({ status }).eq("id", id).not("athlete_id", "is", null);
+  revalidatePath("/panel", "layout");
+}
+
+export async function rescheduleProgram(id: string, _: FormState, form: FormData): Promise<FormState> {
+  const { supabase } = await requireStaff();
+  const start = String(form.get("start") ?? "");
+  if (!isValidISO(start)) return { error: "Elegí una fecha válida." };
+  const { error } = await supabase.from("programs").update({ start_date: start }).eq("id", id).not("athlete_id", "is", null);
+  if (error) return { error: "No pudimos cambiar la fecha." };
+  const { data, error: e2 } = await supabase.rpc("schedule_program", { p_program: id });
+  if (e2) return { error: "No pudimos reagendar." };
+  revalidatePath("/panel", "layout");
+  return { ok: `Se reagendaron ${data} sesiones.` };
 }

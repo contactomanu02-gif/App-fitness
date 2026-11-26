@@ -3,7 +3,9 @@ import { Dumbbell } from "lucide-react";
 import { requireAthlete } from "@/lib/session";
 import { Badge, Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
-import { DAYS } from "@/lib/athletes";
+import { DAYS, labelOf } from "@/lib/athletes";
+import { addDays, longDate, mondayOf, todayISO } from "@/lib/dates";
+import { EVENT_KINDS, SCHEDULE_STATUS } from "@/lib/calendar";
 
 export const metadata = { title: "Hoy" };
 
@@ -18,14 +20,31 @@ export default async function Page() {
   const greeting = hour < 13 ? "Buen día" : hour < 20 ? "Buenas tardes" : "Buenas noches";
   const coach = athlete.organizations?.name ?? "tu entrenador";
 
-  // Semana actual (lunes a domingo) en hora de Argentina.
-  const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" }));
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  const today = todayISO();
+  const monday = mondayOf(today);
+  const sunday = addDays(monday, 6);
+  const [{ data: upcoming }, { data: weekEvents }] = await Promise.all([
+    supabase
+      .from("scheduled_workouts")
+      .select("id, date, status, workouts(name, est_duration_min, workout_items(id))")
+      .eq("athlete_id", athlete.id)
+      .gte("date", monday)
+      .order("date")
+      .limit(30),
+    supabase
+      .from("calendar_events")
+      .select("id, kind, title, start_date, end_date")
+      .eq("athlete_id", athlete.id)
+      .lte("start_date", sunday)
+      .gte("end_date", today)
+      .order("start_date"),
+  ]);
+  const todays = (upcoming ?? []).filter((u) => u.date === today);
+  const next = (upcoming ?? []).find((u) => u.date > today && u.status === "planned");
   const week = DAYS.map((d, i) => {
-    const date = new Date(monday);
-    date.setDate(monday.getDate() + i);
-    return { ...d, day: date.getDate(), today: date.toDateString() === now.toDateString(), planned: athlete.training_days.includes(d.v) };
+    const date = addDays(monday, i);
+    const sessions = (upcoming ?? []).filter((u) => u.date === date);
+    return { ...d, date, day: Number(date.slice(8)), today: date === today, sessions, done: sessions.length > 0 && sessions.every((x) => x.status === "done") };
   });
 
   return (
@@ -35,19 +54,42 @@ export default async function Page() {
         <h1 className="text-3xl font-semibold tracking-tight">{athlete.first_name}</h1>
       </div>
 
-      <Card className="p-5">
-        <div className="flex items-start gap-4">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent">
-            <Dumbbell size={22} />
+      {todays.length ? (
+        todays.map((t) => (
+          <Link key={t.id} href={`/app/sesion/${t.id}`} className="block">
+            <Card className="p-5 transition-colors hover:bg-muted/40">
+              <p className="text-sm font-medium text-accent">Entrenamiento de hoy</p>
+              <p className="mt-1 text-xl font-semibold">{t.workouts?.name}</p>
+              <p className="mt-1 text-sm text-muted-fg">
+                {t.workouts?.workout_items.length} ejercicios
+                {t.workouts?.est_duration_min ? ` · ${t.workouts.est_duration_min} min` : ""}
+                {t.status !== "planned" ? ` · ${labelOf(SCHEDULE_STATUS, t.status)}` : ""}
+              </p>
+              <span className={buttonVariants({ className: "mt-4 w-full" })}>Ver la sesión</span>
+            </Card>
+          </Link>
+        ))
+      ) : (
+        <Card className="p-5">
+          <div className="flex items-start gap-4">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent">
+              <Dumbbell size={22} />
+            </div>
+            <div>
+              <p className="font-semibold">{next ? "Hoy no tenés entrenamiento" : "Próximo entrenamiento"}</p>
+              {next ? (
+                <p className="mt-1 text-sm text-muted-fg">
+                  El próximo es <Link href={`/app/sesion/${next.id}`} className="font-medium text-accent">{next.workouts?.name}</Link>, el {longDate(next.date)}.
+                </p>
+              ) : (
+                <p className="mt-1 text-sm text-muted-fg">
+                  Todavía no tenés entrenamientos asignados. Cuando {coach} te asigne uno, lo vas a ver acá.
+                </p>
+              )}
+            </div>
           </div>
-          <div>
-            <p className="font-semibold">Próximo entrenamiento</p>
-            <p className="mt-1 text-sm text-muted-fg">
-              Todavía no tenés entrenamientos asignados. Cuando {coach} te asigne uno, lo vas a ver acá con el botón para empezar.
-            </p>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       <Card className="p-5">
         <p className="font-semibold">Tu semana</p>
@@ -56,15 +98,25 @@ export default async function Page() {
             <div
               key={d.v}
               className={`rounded-xl py-2 ${d.today ? "bg-fg text-bg" : "bg-muted"}`}
-              aria-label={`${d.label} ${d.day}${d.planned ? ", día de entrenamiento" : ""}`}
+              aria-label={`${d.label} ${d.day}${d.sessions.length ? `, ${d.sessions.map((x) => x.workouts?.name).join(", ")}` : ""}`}
             >
               <p className={`text-[11px] ${d.today ? "opacity-80" : "text-muted-fg"}`}>{d.label}</p>
               <p className="text-sm font-semibold">{d.day}</p>
-              <span className={`mx-auto mt-1 block h-1.5 w-1.5 rounded-full ${d.planned ? "bg-accent" : "bg-transparent"}`} />
+              <span className={`mx-auto mt-1 block h-1.5 w-1.5 rounded-full ${d.done ? "bg-accent" : d.sessions.length ? "border border-accent" : "bg-transparent"}`} />
             </div>
           ))}
         </div>
-        <p className="mt-3 text-xs text-muted-fg">El punto marca tus días disponibles para entrenar.</p>
+        <p className="mt-3 text-xs text-muted-fg">El punto marca los días con entrenamiento.</p>
+        {weekEvents?.length ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {weekEvents.map((e) => (
+              <Badge key={e.id} tone={e.kind === "torneo" ? "warn" : "neutral"}>
+                {labelOf(EVENT_KINDS, e.kind)}: {e.title}
+              </Badge>
+            ))}
+          </div>
+        ) : null}
+        <Link href="/app/calendario" className="mt-3 inline-block text-sm text-accent">Ver calendario completo</Link>
       </Card>
 
       {injuries?.length ? (

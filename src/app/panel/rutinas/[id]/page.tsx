@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Clock } from "lucide-react";
+import { CalendarDays, ChevronLeft, Clock, Send } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { requireStaff } from "@/lib/session";
 import { Badge, Card } from "@/components/ui/card";
 import { WEEKDAYS, PROGRAM_STATUS } from "@/lib/programs";
 import { labelOf } from "@/lib/athletes";
 import { fullName } from "@/lib/utils";
 import { ProgramForm } from "../program-form";
-import { AddBlockButton, AddSessionMenu, BlockHeader, CopyWeekForm, ProgramActions } from "./parts";
+import { AddBlockButton, AddSessionMenu, AssignedControls, BlockHeader, CopyWeekForm, ProgramActions } from "./parts";
 
 export const metadata = { title: "Planificación" };
 
@@ -18,11 +19,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     supabase
       .from("programs")
       .select(
-        "id, name, goal, description, status, athlete_id, athletes(first_name, last_name), program_blocks(id, name, goal, weeks, sort_order, created_at), workouts(id, name, block_id, week_index, day_index, sort_order, est_duration_min, workout_items(id))",
+        "id, name, goal, description, status, athlete_id, start_date, athletes(first_name, last_name), program_blocks(id, name, goal, weeks, sort_order, created_at), workouts(id, name, block_id, week_index, day_index, sort_order, est_duration_min, workout_items(id))",
       )
       .eq("id", id)
       .maybeSingle(),
-    supabase.from("workouts").select("id, name").eq("org_id", org.id).is("program_id", null).order("name"),
+    supabase.from("workouts").select("id, name").eq("org_id", org.id).is("program_id", null).is("athlete_id", null).order("name"),
   ]);
   if (!program) notFound();
 
@@ -52,8 +53,21 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </div>
           {program.goal ? <p className="mt-2 text-sm text-muted-fg">{program.goal}</p> : null}
         </div>
-        <ProgramActions programId={program.id} />
+        <div className="flex flex-wrap items-center gap-2">
+          {!program.athlete_id ? (
+            <Link href={`/panel/rutinas/${program.id}/asignar`} className={buttonVariants({ size: "sm" })}>
+              <Send size={15} /> Asignar
+            </Link>
+          ) : (
+            <Link href={`/panel/alumnos/${program.athlete_id}/calendario${program.start_date ? `?mes=${program.start_date.slice(0, 7)}` : ""}`} className={buttonVariants({ size: "sm" })}>
+              <CalendarDays size={15} /> Ver calendario
+            </Link>
+          )}
+          <ProgramActions programId={program.id} />
+        </div>
       </div>
+
+      {program.athlete_id ? <AssignedControls programId={program.id} status={program.status} startDate={program.start_date} /> : null}
 
       <details className="group mt-4">
         <summary className="cursor-pointer text-sm font-medium text-accent">Editar nombre, objetivo y notas</summary>

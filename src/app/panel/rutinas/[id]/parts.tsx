@@ -14,6 +14,8 @@ import {
   deleteProgram,
   duplicateProgram,
   moveBlock,
+  rescheduleProgram,
+  setProgramStatus,
   updateBlock,
   type FormState,
 } from "../actions";
@@ -200,6 +202,33 @@ export function AddSessionMenu({
           ) : null}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** Para una planificación ya asignada: pausar/activar y cambiar la fecha de inicio (reagenda todo). */
+export function AssignedControls({ programId, status, startDate }: { programId: string; status: string; startDate: string | null }) {
+  const [pending, start] = useTransition();
+  const { state, onSubmit, pending: saving } = useFormAction((s: FormState, f: FormData) => rescheduleProgram(programId, s, f));
+  return (
+    <div className="mt-4 flex flex-wrap items-end gap-3 rounded-2xl bg-muted/60 p-4">
+      <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-2">
+        <Field label="Fecha de inicio" htmlFor="start">
+          <Input id="start" name="start" type="date" defaultValue={startDate ?? ""} required className="h-9 w-44" />
+        </Field>
+        <SubmitButton size="sm" variant="secondary" forcePending={saving} pendingText="Reagendando…">Reagendar</SubmitButton>
+      </form>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={pending}
+        onClick={() => start(() => setProgramStatus(programId, status === "active" ? "archived" : "active"))}
+      >
+        {status === "active" ? "Pausar (el alumno deja de verla)" : "Reactivar"}
+      </Button>
+      <p className="w-full text-xs text-muted-fg">Reagendar vuelve a calcular las fechas de todas las sesiones desde el inicio (pisa los cambios de día hechos en el calendario).</p>
+      {state?.error ? <FormError message={state.error} /> : null}
+      {state?.ok ? <FormNotice message={state.ok} /> : null}
     </div>
   );
 }
