@@ -27,9 +27,9 @@ jobs:
       - run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
       - name: Exportar
         run: |
-          supabase db dump --linked -f roles.sql --role-only
-          supabase db dump --linked -f schema.sql
-          supabase db dump --linked -f data.sql --data-only --use-copy
+          supabase db dump --remote -f roles.sql --role-only
+          supabase db dump --remote -f schema.sql
+          supabase db dump --remote -f data.sql --data-only --use-copy
           tar czf respaldo.tgz roles.sql schema.sql data.sql
           gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" --symmetric --cipher-algo AES256 -o "respaldo-$(date +%F).tgz.gpg" respaldo.tgz
           rm -f roles.sql schema.sql data.sql respaldo.tgz
