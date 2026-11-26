@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/session";
-import { exerciseFormToObject, exerciseSchema } from "@/lib/exercises";
+import { exerciseFormToObject, exerciseSchema, parseVideoUrl } from "@/lib/exercises";
 
 export type ExerciseFormState = { error?: string } | undefined;
 
@@ -109,4 +109,25 @@ export async function removeExerciseMedia(mediaId: string) {
   await supabase.storage.from("exercise-media").remove([data.storage_path]);
   await supabase.from("exercise_media").delete().eq("id", mediaId);
   revalidatePath(`/panel/ejercicios/${data.exercise_id}`, "layout");
+}
+
+export type VideoState = { error?: string; ok?: boolean } | undefined;
+
+/** Video propio para un ejercicio del catálogo: lo ven tus alumnos en lugar del video del catálogo. */
+export async function setOwnVideo(exerciseId: string, _: VideoState, form: FormData): Promise<VideoState> {
+  const { supabase, org } = await requireStaff();
+  const video = parseVideoUrl(String(form.get("video_url") ?? ""));
+  if (!video) return { error: "Pegá un enlace de YouTube o Vimeo válido." };
+  const { error } = await supabase
+    .from("exercise_video_overrides")
+    .upsert({ org_id: org.id, exercise_id: exerciseId, video_url: video.watchUrl, updated_at: new Date().toISOString() });
+  if (error) return { error: "No pudimos guardar el video. Probá de nuevo." };
+  revalidatePath(`/panel/ejercicios/${exerciseId}`);
+  return { ok: true };
+}
+
+export async function clearOwnVideo(exerciseId: string) {
+  const { supabase, org } = await requireStaff();
+  await supabase.from("exercise_video_overrides").delete().eq("org_id", org.id).eq("exercise_id", exerciseId);
+  revalidatePath(`/panel/ejercicios/${exerciseId}`);
 }

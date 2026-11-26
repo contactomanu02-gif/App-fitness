@@ -7,13 +7,20 @@ export async function loadAthleteSession(supabase: SupabaseClient<Database>, sch
   const { data: s } = await supabase
     .from("scheduled_workouts")
     .select(
-      "id, date, status, started_at, completed_at, duration_min, session_rpe, comment, pain, pain_area, pain_level, programs(name), workouts(name, goal, est_duration_min, focus, notes, workout_items(id, sort_order, group_label, sets, reps, load, rest_sec, tempo, rpe, notes, exercises(id, name, category, coaching_cues, instructions, video_url, exercise_media(storage_path, sort_order)))), set_logs(workout_item_id, set_number, reps, load_kg)",
+      "id, org_id, date, status, started_at, completed_at, duration_min, session_rpe, comment, pain, pain_area, pain_level, programs(name), workouts(name, goal, est_duration_min, focus, notes, workout_items(id, sort_order, group_label, sets, reps, load, rest_sec, tempo, rpe, notes, exercises(id, name, category, coaching_cues, instructions, video_url, exercise_media(storage_path, sort_order)))), set_logs(workout_item_id, set_number, reps, load_kg)",
     )
     .eq("id", scheduledId)
     .eq("athlete_id", athleteId)
     .maybeSingle();
   if (!s || !s.workouts) return null;
   const items = [...s.workouts.workout_items].sort((a, b) => a.sort_order - b.sort_order);
+  // Si el entrenador puso su propio video para un ejercicio del catálogo, el alumno ve ese.
+  const exIds = items.map((i) => i.exercises?.id).filter(Boolean) as string[];
+  if (exIds.length) {
+    const { data: own } = await supabase.from("exercise_video_overrides").select("exercise_id, video_url").eq("org_id", s.org_id).in("exercise_id", exIds);
+    const byEx = new Map((own ?? []).map((o) => [o.exercise_id, o.video_url]));
+    for (const i of items) if (i.exercises && byEx.has(i.exercises.id)) i.exercises.video_url = byEx.get(i.exercises.id)!;
+  }
   const photos = items
     .map((i) => [...(i.exercises?.exercise_media ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0]?.storage_path)
     .filter(Boolean) as string[];

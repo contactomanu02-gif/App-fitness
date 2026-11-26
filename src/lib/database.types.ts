@@ -271,6 +271,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"exercise_video_overrides": {
+                  Row: {
+                    "exercise_id": string,"org_id": string,"updated_at": string,"video_url": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "exercise_id": string,"org_id": string,"updated_at"?: string,"video_url": string
+                  }
+                  Update: {
+                    "exercise_id"?: string,"org_id"?: string,"updated_at"?: string,"video_url"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "exercise_video_overrides_exercise_id_fkey"
+      columns: ["exercise_id"]
+isOneToOne: false
+      referencedRelation: "exercises"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exercise_video_overrides_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"exercises": {
                   Row: {
                     "archived": boolean,"category": string,"coaching_cues": string | null,"created_at": string,"created_by": string | null,"description": string | null,"equipment": (string)[],"id": string,"instructions": string | null,"muscle_groups": (string)[],"name": string,"org_id": string | null,"source_exercise_id": string | null,"unilateral": boolean,"updated_at": string,"video_url": string | null

@@ -9,7 +9,8 @@ import { VideoEmbed } from "@/components/exercises/video-embed";
 import { SubmitButton } from "@/components/submit-button";
 import { CATEGORIES } from "@/lib/exercises";
 import { labelOf } from "@/lib/athletes";
-import { deleteExercise, duplicateExercise, setExerciseArchived } from "../actions";
+import { OwnVideoForm } from "@/components/exercises/own-video-form";
+import { clearOwnVideo, deleteExercise, duplicateExercise, setExerciseArchived, setOwnVideo } from "../actions";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -38,6 +39,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     .maybeSingle();
   if (!ex) notFound();
   const own = ex.org_id === org.id;
+  const { data: override } = own
+    ? { data: null }
+    : await supabase.from("exercise_video_overrides").select("video_url").eq("org_id", org.id).eq("exercise_id", id).maybeSingle();
+  const videoUrl = override?.video_url ?? ex.video_url;
   const media = [...ex.exercise_media].sort((a, b) => a.sort_order - b.sort_order);
   const signed = media.length ? (await supabase.storage.from("exercise-media").createSignedUrls(media.map((m) => m.storage_path), 3600)).data ?? [] : [];
 
@@ -71,14 +76,15 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       </div>
       {!own ? (
         <p className="mt-3 text-sm text-muted-fg">
-          Es un ejercicio del catálogo. Copialo a tus ejercicios para cambiarle el texto o agregarle tus fotos y tu video.
+          Es un ejercicio del catálogo. Podés poner tu propio video acá abajo, o copiarlo a tus ejercicios para cambiarle el texto o agregarle fotos.
         </p>
       ) : null}
 
       <div className="mt-5 space-y-4">
-        {ex.video_url || signed.length ? (
+        {videoUrl || signed.length ? (
           <Card className="space-y-3 p-3">
-            <VideoEmbed url={ex.video_url} title={ex.name} />
+            {!own ? <p className="px-2 pt-1 text-xs text-muted-fg">{override ? "Tu video" : "Video del catálogo (tutorial público de YouTube)"}</p> : null}
+            <VideoEmbed url={videoUrl} title={ex.name} />
             {signed.length ? (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {signed.map((s) =>
@@ -93,6 +99,15 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         ) : own ? (
           <Card className="p-5 text-sm text-muted-fg">
             Sin fotos ni video. <Link href={`/panel/ejercicios/${id}/editar`} className="text-accent hover:underline">Agregalos</Link>.
+          </Card>
+        ) : null}
+
+        {!own ? (
+          <Card className="space-y-3 p-5">
+            <OwnVideoForm action={setOwnVideo.bind(null, id)} current={override?.video_url ?? null} />
+            {override ? (
+              <ConfirmAction label="Volver al video del catálogo" variant="ghost" question="¿Quitar tu video y usar el del catálogo?" confirmLabel="Quitar" onConfirm={clearOwnVideo.bind(null, id)} />
+            ) : null}
           </Card>
         ) : null}
 
