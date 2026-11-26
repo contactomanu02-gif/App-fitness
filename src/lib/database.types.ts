@@ -720,6 +720,9 @@ isOneToOne: false
 "group_org":
 { Args: { "p_group": string }; Returns: string
                            },
+"import_routine":
+{ Args: { "p_data": Json,"p_org": string }; Returns: Json
+                           },
 "init_assessment_tests":
 { Args: { "p_org": string }; Returns: undefined
                            },

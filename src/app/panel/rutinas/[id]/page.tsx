@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { CalendarDays, ChevronLeft, Clock, Send } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { requireStaff } from "@/lib/session";
+import { ImportedNotice } from "@/components/claude/imported-notice";
 import { Badge, Card } from "@/components/ui/card";
 import { WEEKDAYS, PROGRAM_STATUS } from "@/lib/programs";
 import { labelOf } from "@/lib/athletes";
@@ -12,8 +13,9 @@ import { AddBlockButton, AddSessionMenu, AssignedControls, BlockHeader, CopyWeek
 
 export const metadata = { title: "Planificación" };
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ importada?: string }> }) {
   const { id } = await params;
+  const imported = (await searchParams).importada === "1";
   const { supabase, org } = await requireStaff();
   const [{ data: program }, { data: templates }] = await Promise.all([
     supabase
@@ -39,6 +41,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <Link href={program.athlete_id ? `/panel/alumnos/${program.athlete_id}` : "/panel/rutinas"} className="inline-flex items-center gap-1 text-sm text-muted-fg hover:text-fg">
         <ChevronLeft size={16} /> {program.athlete_id ? "Alumno" : "Rutinas"}
       </Link>
+      {imported ? <ImportedNotice /> : null}
       <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-3xl">{program.name}</h1>

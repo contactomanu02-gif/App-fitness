@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, CalendarRange, ListChecks } from "lucide-react";
+import { Plus, CalendarRange, ListChecks, Sparkles, ClipboardPaste } from "lucide-react";
 import { requireStaff } from "@/lib/session";
 import { Badge, Card, EmptyState } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
@@ -42,11 +42,19 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
           <h1 className="text-3xl">Rutinas</h1>
           <p className="text-sm text-muted-fg">Plantillas para armar una vez y asignar muchas veces.</p>
         </div>
-        {!sessions ? (
-          <Link href="/panel/rutinas/nueva" className={buttonVariants()}>
-            <Plus size={18} /> <span>Nueva planificación</span>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Link href="/panel/claude" className={buttonVariants({ variant: "outline" })}>
+            <Sparkles size={16} /> <span>Armar con Claude</span>
           </Link>
-        ) : null}
+          <Link href="/panel/rutinas/pegar" className={buttonVariants({ variant: "outline" })}>
+            <ClipboardPaste size={16} /> <span>Pegar rutina</span>
+          </Link>
+          {!sessions ? (
+            <Link href="/panel/rutinas/nueva" className={buttonVariants()}>
+              <Plus size={18} /> <span>Nueva planificación</span>
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-5 inline-flex rounded-2xl bg-muted p-1" role="tablist">

@@ -5,6 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { fullName } from "@/lib/utils";
 import { longDate } from "@/lib/dates";
 import { requireStaff } from "@/lib/session";
+import { ImportedNotice } from "@/components/claude/imported-notice";
 import { Badge, Card } from "@/components/ui/card";
 import { SCHEDULE_STATUS } from "@/lib/calendar";
 import { labelOf } from "@/lib/athletes";
@@ -14,8 +15,9 @@ import { SessionActions } from "./session-actions";
 
 export const metadata = { title: "Sesión" };
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ importada?: string }> }) {
   const { id } = await params;
+  const imported = (await searchParams).importada === "1";
   const { supabase, org } = await requireStaff();
   const { data: w } = await supabase
     .from("workouts")
@@ -65,6 +67,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <Link href={back.href} className="inline-flex items-center gap-1 text-sm text-muted-fg hover:text-fg">
         <ChevronLeft size={16} /> {back.label}
       </Link>
+      {imported ? <ImportedNotice /> : null}
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {w.athletes ? <Badge tone="accent">{fullName(w.athletes)}</Badge> : null}
         {sched ? <Badge tone="accent">{longDate(sched.date)}</Badge> : null}
