@@ -4,6 +4,9 @@ import { Badge, Card, CardHeader, EmptyState } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { SEVERITIES, labelOf } from "@/lib/athletes";
 import { formatDate, fullName } from "@/lib/utils";
+import { addDays, mondayOf, shortDate, todayISO } from "@/lib/dates";
+import { adherence, lowAdherence } from "@/lib/adherence";
+import { AlertsList } from "@/components/alerts-list";
 
 export const metadata = { title: "Inicio" };
 
@@ -21,7 +24,9 @@ function Stat({ label, value, href, tone }: { label: string; value: number; href
 
 export default async function Page() {
   const { supabase, org, profile } = await requireStaff();
-  const [{ data: athletes }, { data: injuries }] = await Promise.all([
+  const today = todayISO();
+  const from14 = addDays(today, -13);
+  const [{ data: athletes }, { data: injuries }, { data: alerts }, { data: recent }] = await Promise.all([
     supabase.from("athletes").select("id, user_id, email, invitations(accepted_at, revoked_at, expires_at)").eq("org_id", org.id).eq("status", "active"),
     supabase
       .from("injuries")
@@ -31,7 +36,21 @@ export default async function Page() {
       .eq("athletes.status", "active")
       .order("created_at", { ascending: false })
       .limit(20),
+    supabase.from("alerts").select("id, kind, message, athlete_id, created_at, scheduled_workouts(date)").eq("org_id", org.id).is("read_at", null).order("created_at", { ascending: false }).limit(100),
+    supabase
+      .from("scheduled_workouts")
+      .select("id, athlete_id, workout_id, date, status, workouts(name), athletes!inner(first_name, last_name, status)")
+      .eq("org_id", org.id)
+      .eq("athletes.status", "active")
+      .gte("date", from14)
+      .lte("date", today)
+      .order("date", { ascending: false }),
   ]);
+  const rows = recent ?? [];
+  const week = adherence(rows, mondayOf(today), addDays(mondayOf(today), 6), today);
+  const pending = rows.filter((r) => r.status === "planned" && r.date < today && r.date >= addDays(today, -7));
+  const low = lowAdherence(rows, from14, today);
+  const nameOf = new Map(rows.map((r) => [r.athlete_id, fullName(r.athletes)]));
 
   const list = athletes ?? [];
   const withAccount = list.filter((a) => a.user_id).length;
@@ -60,15 +79,67 @@ export default async function Page() {
         <>
           <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
             <Stat label="Alumnos activos" value={list.length} href="/panel/alumnos" />
-            <Stat label="Con cuenta" value={withAccount} />
-            <Stat label="Invitación pendiente" value={invited} tone="warn" />
+            <Card className="h-full p-4">
+              <p className="text-sm text-muted-fg">Cumplimiento semanal</p>
+              <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight">{week.pct === null ? "—" : `${week.pct}%`}</p>
+              <p className="text-xs text-muted-fg">{week.due ? `${week.done} de ${week.due} sesiones hasta hoy` : "Sin sesiones vencidas esta semana"}</p>
+            </Card>
+            <Stat label="Sin registrar (7 días)" value={pending.length} tone="warn" />
             <Stat label="Lesiones activas" value={injuries?.length ?? 0} tone="danger" />
           </div>
 
-          {notInvited > 0 ? (
+          {alerts?.length ? (
+            <Card className="mt-4">
+              <CardHeader title="Avisos" subtitle="Dolor, sesiones no realizadas y esfuerzos muy altos" />
+              <AlertsList alerts={alerts.map((a) => ({ ...a, when: a.scheduled_workouts ? `sesión del ${shortDate(a.scheduled_workouts.date)}` : formatDate(a.created_at) }))} />
+            </Card>
+          ) : null}
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <Card>
+              <CardHeader title="Baja adherencia" subtitle="Menos del 60% en los últimos 14 días" />
+              {low.length ? (
+                <ul className="divide-y divide-border border-t border-border">
+                  {low.map((l) => (
+                    <li key={l.athleteId}>
+                      <Link href={`/panel/alumnos/${l.athleteId}/seguimiento`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-muted/60">
+                        <span className="truncate font-medium">{nameOf.get(l.athleteId)}</span>
+                        <span className="shrink-0 text-sm text-muted-fg tabular-nums">{l.pct}% · {l.done} de {l.due}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="px-5 pb-5 text-sm text-muted-fg">Todos vienen cumpliendo.</p>
+              )}
+            </Card>
+            <Card>
+              <CardHeader title="Sesiones sin registrar" subtitle="Agendadas en los últimos 7 días" />
+              {pending.length ? (
+                <ul className="divide-y divide-border border-t border-border">
+                  {pending.slice(0, 8).map((r) => (
+                    <li key={r.id}>
+                      <Link href={`/panel/rutinas/sesion/${r.workout_id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-muted/60">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{fullName(r.athletes)}</p>
+                          <p className="truncate text-sm text-muted-fg">{r.workouts?.name}</p>
+                        </div>
+                        <span className="shrink-0 text-sm text-muted-fg">{shortDate(r.date)}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="px-5 pb-5 text-sm text-muted-fg">Nada pendiente.</p>
+              )}
+            </Card>
+          </div>
+
+          {notInvited + invited > 0 ? (
             <Card className="mt-4 flex flex-wrap items-center justify-between gap-3 p-4">
               <p className="text-sm">
-                {notInvited === 1 ? "1 alumno todavía no recibió" : `${notInvited} alumnos todavía no recibieron`} la invitación a su cuenta.
+                {notInvited > 0 ? `${notInvited === 1 ? "1 alumno todavía no recibió" : `${notInvited} alumnos todavía no recibieron`} la invitación. ` : ""}
+                {invited > 0 ? `${invited === 1 ? "1 invitación pendiente" : `${invited} invitaciones pendientes`} de aceptar.` : ""}
               </p>
               <Link href="/panel/alumnos" className={buttonVariants({ variant: "outline", size: "sm" })}>Ver alumnos</Link>
             </Card>

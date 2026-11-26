@@ -1,0 +1,27 @@
+import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/database.types";
+
+/** Sesión agendada de un alumno con ejercicios, fotos firmadas y series registradas. */
+export async function loadAthleteSession(supabase: SupabaseClient<Database>, scheduledId: string, athleteId: string) {
+  const { data: s } = await supabase
+    .from("scheduled_workouts")
+    .select(
+      "id, date, status, started_at, completed_at, duration_min, session_rpe, comment, pain, pain_area, pain_level, programs(name), workouts(name, goal, est_duration_min, focus, notes, workout_items(id, sort_order, group_label, sets, reps, load, rest_sec, tempo, rpe, notes, exercises(id, name, category, coaching_cues, instructions, video_url, exercise_media(storage_path, sort_order)))), set_logs(workout_item_id, set_number, reps, load_kg)",
+    )
+    .eq("id", scheduledId)
+    .eq("athlete_id", athleteId)
+    .maybeSingle();
+  if (!s || !s.workouts) return null;
+  const items = [...s.workouts.workout_items].sort((a, b) => a.sort_order - b.sort_order);
+  const photos = items
+    .map((i) => [...(i.exercises?.exercise_media ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0]?.storage_path)
+    .filter(Boolean) as string[];
+  const signed = photos.length ? (await supabase.storage.from("exercise-media").createSignedUrls(photos, 3600)).data ?? [] : [];
+  const urlFor = new Map(signed.map((x) => [x.path, x.signedUrl]));
+  const photoOf = (i: (typeof items)[number]) => {
+    const p = [...(i.exercises?.exercise_media ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0]?.storage_path;
+    return p ? urlFor.get(p) ?? null : null;
+  };
+  return { s, w: s.workouts, items, photoOf };
+}

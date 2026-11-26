@@ -5,7 +5,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { fullName } from "@/lib/utils";
 import { longDate } from "@/lib/dates";
 import { requireStaff } from "@/lib/session";
-import { Badge } from "@/components/ui/card";
+import { Badge, Card } from "@/components/ui/card";
+import { SCHEDULE_STATUS } from "@/lib/calendar";
+import { labelOf } from "@/lib/athletes";
 import { WEEKDAYS } from "@/lib/programs";
 import { WorkoutEditor, type EditorExercise, type EditorWorkout } from "./editor";
 import { SessionActions } from "./session-actions";
@@ -18,7 +20,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const { data: w } = await supabase
     .from("workouts")
     .select(
-      "id, name, goal, est_duration_min, focus, notes, program_id, athlete_id, athletes(first_name, last_name), scheduled_workouts(id, date, status), block_id, week_index, day_index, programs(id, name, program_blocks(id, name, weeks, sort_order)), program_blocks(name), workout_items(id, exercise_id, sort_order, group_label, sets, reps, load, rest_sec, tempo, rpe, notes)",
+      "id, name, goal, est_duration_min, focus, notes, program_id, athlete_id, athletes(first_name, last_name), scheduled_workouts(id, date, status, started_at, completed_at, duration_min, session_rpe, comment, pain, pain_area, pain_level, set_logs(workout_item_id, set_number, reps, load_kg)), block_id, week_index, day_index, programs(id, name, program_blocks(id, name, weeks, sort_order)), program_blocks(name), workout_items(id, exercise_id, sort_order, group_label, sets, reps, load, rest_sec, tempo, rpe, notes)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -80,6 +82,35 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         ) : null}
       </div>
       {w.athlete_id ? <p className="mt-2 text-sm text-muted-fg">Es la copia de este alumno: los cambios no tocan la plantilla ni a otros alumnos.</p> : null}
+      {sched && (sched.status !== "planned" || sched.set_logs.length) ? (
+        <Card className="mt-4 p-4" data-testid="registro-alumno">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-semibold">Registro del alumno</p>
+            <Badge tone={sched.status === "skipped" ? "warn" : sched.status === "planned" ? "neutral" : "accent"}>
+              {sched.status === "planned" ? "En curso" : labelOf(SCHEDULE_STATUS, sched.status)}
+            </Badge>
+          </div>
+          <p className="mt-1 text-sm text-muted-fg">
+            {[sched.duration_min ? `${sched.duration_min} min` : null, sched.session_rpe ? `Esfuerzo ${sched.session_rpe}/10` : null].filter(Boolean).join(" · ")}
+          </p>
+          {sched.pain ? <p className="mt-1 text-sm font-medium text-danger">Dolor en {sched.pain_area} ({sched.pain_level}/10)</p> : null}
+          {sched.comment ? <p className="mt-1 text-sm">“{sched.comment}”</p> : null}
+          {sched.set_logs.length ? (
+            <ul className="mt-3 space-y-1 text-sm">
+              {workout.items.map((it) => {
+                const logs = sched.set_logs.filter((l) => l.workout_item_id === it.id).sort((a, b) => a.set_number - b.set_number);
+                if (!logs.length) return null;
+                return (
+                  <li key={it.id}>
+                    <span className="font-medium">{byId.get(it.exercise_id)?.name}</span>
+                    <span className="text-muted-fg">: {logs.map((l) => `${l.reps ?? "–"}${l.load_kg !== null ? ` × ${Number(l.load_kg)} kg` : ""}`).join(" · ")}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </Card>
+      ) : null}
       <WorkoutEditor workout={workout} library={[...byId.values()].sort((a, b) => a.name.localeCompare(b.name, "es"))} />
       <SessionActions
         workoutId={w.id}

@@ -97,6 +97,6 @@ export function prescription(i: { sets?: number | null; reps?: string | null; lo
   else if (i.reps) parts.push(i.reps);
   if (i.load) parts.push(i.load);
   if (i.rpe) parts.push(`RPE ${i.rpe}`);
-  if (i.rest_sec != null) parts.push(i.rest_sec >= 60 && i.rest_sec % 60 === 0 ? `${i.rest_sec / 60} min` : `${i.rest_sec} s`);
+  if (i.rest_sec) parts.push(i.rest_sec >= 60 && i.rest_sec % 60 === 0 ? `${i.rest_sec / 60} min` : `${i.rest_sec} s`);
   return parts.join(" · ");
 }

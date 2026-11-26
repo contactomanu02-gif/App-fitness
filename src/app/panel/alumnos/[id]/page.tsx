@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarDays, ChevronLeft, Pencil } from "lucide-react";
+import { CalendarDays, ChevronLeft, LineChart as LineChartIcon, Pencil } from "lucide-react";
 import { shortDate, todayISO } from "@/lib/dates";
 import { PROGRAM_STATUS } from "@/lib/programs";
 import { requireStaff } from "@/lib/session";
@@ -92,6 +92,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           {a.user_id ? <Badge tone="accent">Con cuenta</Badge> : pendingInvite ? <Badge tone="warn">Invitado</Badge> : <Badge>Sin invitar</Badge>}
           <Link href={`/panel/alumnos/${id}/calendario`} className={buttonVariants({ size: "sm" })}>
             <CalendarDays size={15} /> Calendario
+          </Link>
+          <Link href={`/panel/alumnos/${id}/seguimiento`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <LineChartIcon size={15} /> Seguimiento
           </Link>
           <Link href={`/panel/alumnos/${id}/editar`} className={buttonVariants({ variant: "outline", size: "sm" })}>
             <Pencil size={15} /> Editar ficha

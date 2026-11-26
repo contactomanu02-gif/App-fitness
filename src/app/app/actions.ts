@@ -37,3 +37,72 @@ export async function deleteMyEvent(id: string) {
   await supabase.from("calendar_events").delete().eq("id", id);
   revalidatePath("/app", "layout");
 }
+
+// ---------------------------------------------------------------- entrenar
+
+import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { emailConfigured, painEmail, sendEmail } from "@/lib/email";
+import { finishSchema } from "@/lib/tracking";
+import { siteUrl } from "@/lib/utils";
+
+export async function startSession(scheduledId: string) {
+  const { supabase } = await requireAthlete();
+  await supabase.rpc("start_session", { p_scheduled: scheduledId });
+}
+
+export async function logSet(scheduledId: string, itemId: string, set: number, reps: number | null, load: number | null, done: boolean) {
+  const { supabase } = await requireAthlete();
+  const { error } = await supabase.rpc("log_set", {
+    p_scheduled: scheduledId,
+    p_item: itemId,
+    p_set: set,
+    p_reps: reps as number,
+    p_load: load as number,
+    p_done: done,
+  });
+  return error ? { error: "No se pudo guardar la serie. Revisá tu conexión." } : {};
+}
+
+export type FinishState = { error?: string } | undefined;
+
+export async function finishSession(scheduledId: string, _: FinishState, form: FormData): Promise<FinishState> {
+  const { supabase, athlete } = await requireAthlete();
+  const parsed = finishSchema.safeParse(Object.fromEntries(form));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const f = parsed.data;
+  const { error } = await supabase.rpc("finish_session", {
+    p_scheduled: scheduledId,
+    p_status: f.status,
+    p_duration: f.duration as number,
+    p_rpe: f.rpe as number,
+    p_comment: f.comment ?? "",
+    p_pain: f.pain,
+    p_pain_area: f.pain_area as string,
+    p_pain_level: f.pain_level as number,
+  });
+  if (error) return { error: "No pudimos guardar. Probá de nuevo." };
+  if (f.pain) await notifyPain(scheduledId, athlete.org_id);
+  revalidatePath("/app", "layout");
+  redirect(`/app/sesion/${scheduledId}?cerrada=1`);
+}
+
+export async function reopenSession(scheduledId: string) {
+  const { supabase } = await requireAthlete();
+  await supabase.rpc("reopen_session", { p_scheduled: scheduledId });
+  revalidatePath("/app", "layout");
+}
+
+/** Avisa por email a los entrenadores del espacio cuando un alumno reporta dolor (si el email está configurado). */
+async function notifyPain(scheduledId: string, orgId: string) {
+  if (!emailConfigured()) return;
+  const admin = createAdminClient();
+  const [{ data: alert }, { data: staff }] = await Promise.all([
+    admin.from("alerts").select("message, athlete_id").eq("scheduled_id", scheduledId).eq("kind", "pain").maybeSingle(),
+    admin.from("memberships").select("user_id").eq("org_id", orgId).in("role", ["owner", "coach"]),
+  ]);
+  if (!alert || !staff?.length) return;
+  const { data: profiles } = await admin.from("profiles").select("email").in("id", staff.map((m) => m.user_id));
+  const mail = painEmail({ message: alert.message, link: `${siteUrl()}/panel/alumnos/${alert.athlete_id}` });
+  await Promise.all((profiles ?? []).map((p) => (p.email ? sendEmail({ to: p.email, ...mail }) : null)));
+}

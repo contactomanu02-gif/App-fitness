@@ -63,3 +63,15 @@ export async function deleteEvent(id: string) {
   await supabase.from("calendar_events").delete().eq("id", id);
   refresh();
 }
+
+export async function markAlertRead(id: string) {
+  const { supabase } = await requireStaff();
+  await supabase.from("alerts").update({ read_at: new Date().toISOString() }).eq("id", id);
+  refresh();
+}
+
+export async function markAllAlertsRead() {
+  const { supabase, org } = await requireStaff();
+  await supabase.from("alerts").update({ read_at: new Date().toISOString() }).eq("org_id", org.id).is("read_at", null);
+  refresh();
+}
