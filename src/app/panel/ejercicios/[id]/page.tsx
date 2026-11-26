@@ -2,13 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft, Copy, Pencil } from "lucide-react";
 import { requireStaff } from "@/lib/session";
+import { CategoryBadge } from "@/components/category-badge";
 import { Badge, Card, CardHeader } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { ConfirmAction } from "@/components/confirm-action";
 import { VideoEmbed } from "@/components/exercises/video-embed";
 import { SubmitButton } from "@/components/submit-button";
-import { CATEGORIES } from "@/lib/exercises";
-import { labelOf } from "@/lib/athletes";
 import { OwnVideoForm } from "@/components/exercises/own-video-form";
 import { clearOwnVideo, deleteExercise, duplicateExercise, setExerciseArchived, setOwnVideo } from "../actions";
 
@@ -55,7 +54,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <div>
           <h1 className="text-3xl">{ex.name}</h1>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            <Badge tone="accent">{labelOf(CATEGORIES, ex.category)}</Badge>
+            <CategoryBadge category={ex.category} />
             <Badge>{own ? "Propio" : "Catálogo"}</Badge>
             {ex.unilateral ? <Badge>Unilateral</Badge> : null}
             {ex.archived ? <Badge tone="warn">Archivado</Badge> : null}

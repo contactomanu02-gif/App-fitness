@@ -3,9 +3,9 @@ import { Fragment } from "react";
 import { notFound } from "next/navigation";
 import { ChevronLeft, Clock, Play } from "lucide-react";
 import { requireAthlete } from "@/lib/session";
+import { CategoryBadge } from "@/components/category-badge";
 import { Badge, Card } from "@/components/ui/card";
 import { VideoEmbed } from "@/components/exercises/video-embed";
-import { CATEGORIES } from "@/lib/exercises";
 import { labelOf } from "@/lib/athletes";
 import { SCHEDULE_STATUS } from "@/lib/calendar";
 import { displayLabels, prescription } from "@/lib/programs";
@@ -67,7 +67,7 @@ export default async function Page({
           ) : null}
           <Badge>{items.length} ejercicios</Badge>
           {w.focus.map((f) => (
-            <Badge key={f}>{labelOf(CATEGORIES, f)}</Badge>
+            <CategoryBadge key={f} category={f} />
           ))}
           {s.status !== "planned" ? (
             <Badge tone="accent">{labelOf(SCHEDULE_STATUS, s.status)}</Badge>

@@ -25,7 +25,7 @@ export function SideNav({ items }: { items: NavItem[] }) {
             aria-current={active ? "page" : undefined}
             className={cn(
               "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
-              active ? "bg-accent-soft text-accent" : "text-muted-fg hover:bg-muted hover:text-fg",
+              active ? "bg-accent text-white shadow-md shadow-accent/30" : "text-white/70 hover:bg-white/10 hover:text-white",
             )}
           >
             <Icon size={18} />
@@ -41,7 +41,7 @@ export function BottomNav({ items }: { items: NavItem[] }) {
   const path = usePathname();
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-[#0b0b0b]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       aria-label="Navegación principal"
     >
       <div className="mx-auto grid max-w-md" style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}>
@@ -53,9 +53,11 @@ export function BottomNav({ items }: { items: NavItem[] }) {
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={cn("flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium", active ? "text-accent" : "text-muted-fg")}
+              className={cn("flex flex-col items-center gap-1 py-2 text-[11px] font-medium", active ? "text-white" : "text-white/60")}
             >
-              <Icon size={22} strokeWidth={active ? 2.2 : 1.8} />
+              <span className={cn("grid h-8 w-14 place-items-center rounded-full transition-colors", active && "bg-accent shadow-md shadow-accent/40")}>
+                <Icon size={21} strokeWidth={active ? 2.3 : 1.8} />
+              </span>
               {item.label}
             </Link>
           );

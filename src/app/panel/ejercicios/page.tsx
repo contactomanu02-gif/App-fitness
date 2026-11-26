@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Plus, Search, PlayCircle } from "lucide-react";
 import { requireStaff } from "@/lib/session";
+import { CategoryBadge } from "@/components/category-badge";
 import { Badge, Card, EmptyState } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form";
 import { CATEGORIES, EQUIPMENT } from "@/lib/exercises";
-import { labelOf } from "@/lib/athletes";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Ejercicios" };
@@ -109,7 +109,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
                     <div className="min-w-0 flex-1">
                       <p className="font-medium leading-snug">{e.name}</p>
                       <div className="mt-1.5 flex flex-wrap gap-1">
-                        <Badge>{labelOf(CATEGORIES, e.category)}</Badge>
+                        <CategoryBadge category={e.category} />
                         {e.org_id ? <Badge tone="accent">Propio</Badge> : null}
                         {e.video_url ? <Badge tone="neutral">Video</Badge> : null}
                       </div>

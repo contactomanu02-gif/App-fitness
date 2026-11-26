@@ -115,16 +115,16 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
           {week.map((d) => (
             <div
               key={d.v}
-              className={`rounded-xl py-2 ${d.today ? "bg-fg text-bg" : "bg-muted"}`}
+              className={`rounded-xl py-2 ${d.today ? "bg-[#0b0b0b] text-white ring-2 ring-accent dark:bg-white dark:text-black" : d.done ? "bg-success-soft text-success" : d.sessions.length ? "bg-accent-soft text-accent" : "bg-muted"}`}
               aria-label={`${d.label} ${d.day}${d.sessions.length ? `, ${d.sessions.map((x) => x.workouts?.name).join(", ")}` : ""}`}
             >
-              <p className={`text-[11px] ${d.today ? "opacity-80" : "text-muted-fg"}`}>{d.label}</p>
+              <p className={`text-[11px] ${d.today || d.sessions.length ? "opacity-80" : "text-muted-fg"}`}>{d.label}</p>
               <p className="text-sm font-semibold">{d.day}</p>
-              <span className={`mx-auto mt-1 block h-1.5 w-1.5 rounded-full ${d.done ? "bg-accent" : d.sessions.length ? "border border-accent" : "bg-transparent"}`} />
+              <span className={`mx-auto mt-1 block h-1.5 w-1.5 rounded-full ${d.done ? "bg-success" : d.sessions.length ? "bg-accent" : "bg-transparent"}`} />
             </div>
           ))}
         </div>
-        <p className="mt-3 text-xs text-muted-fg">El punto marca los días con entrenamiento.</p>
+        <p className="mt-3 text-xs text-muted-fg">Rojo: días con entrenamiento. Verde: ya lo hiciste.</p>
         {weekEvents?.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {weekEvents.map((e) => (

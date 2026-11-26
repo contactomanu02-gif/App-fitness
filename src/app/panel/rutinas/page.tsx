@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { Plus, CalendarRange, ListChecks, Sparkles, ClipboardPaste } from "lucide-react";
 import { requireStaff } from "@/lib/session";
+import { CategoryBadge } from "@/components/category-badge";
 import { Badge, Card, EmptyState } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
-import { CATEGORIES } from "@/lib/exercises";
-import { labelOf } from "@/lib/athletes";
 import { cn } from "@/lib/utils";
 import { NewSessionForm } from "./new-session-form";
 
@@ -118,7 +117,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
                         <Badge tone="accent">{w.workout_items.length === 1 ? "1 ejercicio" : `${w.workout_items.length} ejercicios`}</Badge>
                         {w.est_duration_min ? <Badge>{w.est_duration_min} min</Badge> : null}
                         {w.focus.map((f) => (
-                          <Badge key={f}>{labelOf(CATEGORIES, f)}</Badge>
+                          <CategoryBadge key={f} category={f} />
                         ))}
                       </div>
                     </Card>

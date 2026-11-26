@@ -8,7 +8,10 @@ export function CardHeader({ title, action, subtitle }: { title: string; subtitl
   return (
     <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
       <div>
-        <h2 className="text-[15px] font-semibold">{title}</h2>
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+          <span aria-hidden className="h-4 w-1 rounded-full bg-accent" />
+          {title}
+        </h2>
         {subtitle ? <p className="mt-0.5 text-sm text-muted-fg">{subtitle}</p> : null}
       </div>
       {action}
@@ -20,12 +23,15 @@ export function Badge({
   tone = "neutral",
   className,
   ...props
-}: React.HTMLAttributes<HTMLSpanElement> & { tone?: "neutral" | "accent" | "warn" | "danger" }) {
+}: React.HTMLAttributes<HTMLSpanElement> & { tone?: "neutral" | "accent" | "warn" | "danger" | "info" | "success" | "violet" }) {
   const tones = {
     neutral: "bg-muted text-muted-fg",
     accent: "bg-accent-soft text-accent",
     warn: "bg-warn-soft text-warn",
     danger: "bg-danger-soft text-danger",
+    info: "bg-info-soft text-info",
+    success: "bg-success-soft text-success",
+    violet: "bg-violet-soft text-violet",
   } as const;
   return (
     <span

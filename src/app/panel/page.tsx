@@ -10,14 +10,20 @@ import { AlertsList } from "@/components/alerts-list";
 
 export const metadata = { title: "Inicio" };
 
-function Stat({ label, value, href, tone }: { label: string; value: number; href?: string; tone?: "warn" | "danger" }) {
+const STAT_TONES = {
+  info: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300",
+  success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  warn: "border-amber-500/40 bg-amber-500/12 text-amber-700 dark:text-amber-300",
+  danger: "border-red-600/30 bg-red-600/10 text-red-700 dark:text-red-300",
+} as const;
+
+function Stat({ label, value, sub, href, tone }: { label: string; value: number | string; sub?: string; href?: string; tone: keyof typeof STAT_TONES }) {
   const body = (
-    <Card className="h-full p-4 transition-colors hover:bg-muted/40">
-      <p className="text-sm text-muted-fg">{label}</p>
-      <p className={`mt-1 font-display text-4xl font-bold tabular-nums ${tone === "danger" && value ? "text-danger" : tone === "warn" && value ? "text-warn" : ""}`}>
-        {value}
-      </p>
-    </Card>
+    <div className={`h-full rounded-2xl border p-4 transition hover:brightness-95 ${STAT_TONES[tone]}`}>
+      <p className="text-sm font-medium">{label}</p>
+      <p className="mt-1 font-display text-4xl font-bold text-fg tabular-nums">{value}</p>
+      {sub ? <p className="text-xs opacity-80">{sub}</p> : null}
+    </div>
   );
   return href ? <Link href={href}>{body}</Link> : body;
 }
@@ -88,12 +94,13 @@ export default async function Page() {
       ) : (
         <>
           <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-            <Stat label="Alumnos activos" value={list.length} href="/panel/alumnos" />
-            <Card className="h-full p-4">
-              <p className="text-sm text-muted-fg">Cumplimiento semanal</p>
-              <p className="mt-1 font-display text-4xl font-bold tabular-nums">{week.pct === null ? "—" : `${week.pct}%`}</p>
-              <p className="text-xs text-muted-fg">{week.due ? `${week.done} de ${week.due} sesiones hasta hoy` : "Sin sesiones vencidas esta semana"}</p>
-            </Card>
+            <Stat label="Alumnos activos" value={list.length} href="/panel/alumnos" tone="info" />
+            <Stat
+              label="Cumplimiento semanal"
+              value={week.pct === null ? "—" : `${week.pct}%`}
+              sub={week.due ? `${week.done} de ${week.due} sesiones hasta hoy` : "Sin sesiones vencidas esta semana"}
+              tone="success"
+            />
             <Stat label="Sin registrar (7 días)" value={pending.length} tone="warn" />
             <Stat label="Lesiones activas" value={injuries?.length ?? 0} tone="danger" />
           </div>

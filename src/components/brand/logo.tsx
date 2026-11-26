@@ -25,7 +25,7 @@ export function BrandMark({ subtitle, className }: { subtitle?: string; classNam
       <Logo size={36} />
       <div className="min-w-0 leading-tight">
         <p className="truncate font-display text-[17px] font-bold tracking-wide uppercase">{BRAND_NAME}</p>
-        {subtitle ? <p className="truncate text-xs text-muted-fg">{subtitle}</p> : null}
+        {subtitle ? <p className="truncate text-xs text-white/60">{subtitle}</p> : null}
       </div>
     </div>
   );
