@@ -732,6 +732,9 @@ isOneToOne: false
 "create_organization":
 { Args: { "p_name": string }; Returns: string
                            },
+"email_has_account":
+{ Args: { "p_email": string }; Returns: boolean
+                           },
 "exercise_org":
 { Args: { "p_exercise": string }; Returns: string
                            },

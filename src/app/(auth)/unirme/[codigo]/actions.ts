@@ -19,6 +19,24 @@ function joinError(msg?: string) {
   return "No pudimos completar el registro. Probá de nuevo.";
 }
 
+export type AccountState = { error?: string; existing?: boolean } | undefined;
+
+/**
+ * Paso 1 del registro: si el email ya tiene cuenta no le pedimos todos los datos de nuevo.
+ * Con la contraseña correcta lo hacemos entrar: si ya es alumno de este entrenador va directo a su app.
+ */
+export async function checkAccount(code: string, email: string, password: string): Promise<AccountState> {
+  const acc = accountSchema.safeParse({ email, password });
+  if (!acc.success) return { error: acc.error.issues[0].message };
+  const admin = createAdminClient();
+  const { data: exists } = await admin.rpc("email_has_account", { p_email: acc.data.email });
+  if (!exists) return undefined;
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email: acc.data.email, password: acc.data.password });
+  if (error) return { existing: true, error: "Ya tenés una cuenta con este email. Iniciá sesión con tu contraseña (o recuperala si no te acordás)." };
+  redirect(`/unirme/${encodeURIComponent(code)}`);
+}
+
 /** Registro del alumno con el código del entrenador: crea la cuenta (si hace falta) y su ficha. */
 export async function registerAthlete(code: string, _: JoinState, form: FormData): Promise<JoinState> {
   const supabase = await createClient();
@@ -95,6 +113,7 @@ export async function registerAthlete(code: string, _: JoinState, form: FormData
     p_injuries: injuries,
     p_competitions: competitions,
   });
+  if (error?.message.includes("already_member")) redirect("/app");
   if (error) return { error: joinError(error.message), step: 4 };
   redirect("/app?bienvenida=1");
 }

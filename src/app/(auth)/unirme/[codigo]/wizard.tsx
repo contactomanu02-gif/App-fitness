@@ -7,7 +7,8 @@ import { Field, FormError, Input, Select, Textarea } from "@/components/ui/form"
 import { Button } from "@/components/ui/button";
 import { DAYS, LEVELS, type SportField } from "@/lib/athletes";
 import { cn } from "@/lib/utils";
-import { registerAthlete } from "./actions";
+import Link from "next/link";
+import { checkAccount, registerAthlete } from "./actions";
 
 type Sport = { id: string; name: string; slug: string; fields: SportField[] };
 
@@ -23,6 +24,8 @@ export function JoinWizard({ code, orgName, sports, loggedInEmail }: { code: str
   const [injuryRows, setInjuryRows] = useState(1);
   const [compRows, setCompRows] = useState(1);
   const [hasComps, setHasComps] = useState<"si" | "no" | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [accountError, setAccountError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
   const sport = sports.find((s) => s.id === sportId);
@@ -36,7 +39,7 @@ export function JoinWizard({ code, orgName, sports, loggedInEmail }: { code: str
   }, [step]);
 
   // Valida solo los campos del paso visible antes de avanzar.
-  const next = () => {
+  const next = async () => {
     const box = formRef.current?.querySelector<HTMLElement>(`[data-step="${step}"]`);
     const invalid = box ? [...box.querySelectorAll<HTMLInputElement>("input, select, textarea")].find((el) => !el.checkValidity()) : null;
     if (invalid) {
@@ -51,6 +54,18 @@ export function JoinWizard({ code, orgName, sports, loggedInEmail }: { code: str
         c.reportValidity();
         c.addEventListener("input", () => c.setCustomValidity(""), { once: true });
         return;
+      }
+      // Si ese email ya tiene cuenta, no le hacemos llenar todo de nuevo.
+      setChecking(true);
+      setAccountError(null);
+      try {
+        const res = await checkAccount(code, String(f.get("email") ?? ""), String(f.get("password") ?? ""));
+        if (res?.error) {
+          setAccountError(res.error);
+          return;
+        }
+      } finally {
+        setChecking(false);
       }
     }
     setStep((s) => Math.min(4, s + 1));
@@ -84,6 +99,28 @@ export function JoinWizard({ code, orgName, sports, loggedInEmail }: { code: str
 
       <form ref={formRef} onSubmit={onSubmit} className="mt-6 space-y-4" noValidate={false}>
         <FormError message={state?.error} />
+        {accountError && step === 1 ? (
+          <div role="alert" className="rounded-xl border border-accent/40 bg-accent-soft px-3.5 py-3 text-sm">
+            <p>{accountError}</p>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-semibold">
+              <Link href={`/ingresar?rol=alumno&next=/unirme/${code}`} className="text-accent underline-offset-4 hover:underline">
+                Iniciar sesión
+              </Link>
+              <Link href="/recuperar" className="text-accent underline-offset-4 hover:underline">
+                Olvidé mi contraseña
+              </Link>
+            </div>
+          </div>
+        ) : null}
+        {!loggedInEmail && step === 1 ? (
+          <p className="rounded-xl bg-muted px-3.5 py-2.5 text-sm">
+            ¿Ya te registraste antes?{" "}
+            <Link href={`/ingresar?rol=alumno&next=/unirme/${code}`} className="font-semibold text-accent underline-offset-4 hover:underline">
+              Iniciá sesión acá
+            </Link>{" "}
+            y vas directo a tu entrenamiento.
+          </p>
+        ) : null}
 
         {/* 1. Cuenta */}
         {!loggedInEmail ? (
@@ -313,8 +350,8 @@ export function JoinWizard({ code, orgName, sports, loggedInEmail }: { code: str
             </Button>
           ) : null}
           {step < 4 ? (
-            <Button type="button" size="lg" className="flex-1" onClick={next}>
-              Seguir <ArrowRight size={18} />
+            <Button type="button" size="lg" className="flex-1" onClick={next} disabled={checking}>
+              {checking ? "Revisando…" : "Seguir"} <ArrowRight size={18} />
             </Button>
           ) : (
             <Button type="submit" variant="brand" size="lg" className="flex-1" disabled={pending}>

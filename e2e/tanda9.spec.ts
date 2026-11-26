@@ -84,6 +84,28 @@ test("inicio con dos zonas y registro del alumno con el enlace del entrenador", 
   await expect(cp.getByText("Pegarle más largo")).toBeVisible();
   await ctx.close();
 
+  // Si vuelve a abrir el enlace desde otro dispositivo, no le pide los datos de nuevo
+  const ctx2 = await browser.newContext();
+  const p2 = await ctx2.newPage();
+  await p2.goto(`/unirme/${code}`);
+  await expect(p2.getByText("¿Ya te registraste antes?")).toBeVisible();
+  await p2.getByLabel("Nombre", { exact: true }).fill("Sofía");
+  await p2.getByLabel("Apellido").fill("Ruiz");
+  await p2.getByLabel("Email").fill(email);
+  await p2.getByLabel("Contraseña", { exact: true }).fill("mal-clave-000");
+  await p2.getByLabel("Repetí la contraseña").fill("mal-clave-000");
+  await p2.getByRole("button", { name: "Seguir" }).click();
+  await expect(p2.getByText("Ya tenés una cuenta con este email")).toBeVisible();
+  await expect(p2.getByLabel("Fecha de nacimiento")).toBeHidden();
+  await p2.getByLabel("Contraseña", { exact: true }).fill("clave-segura-123");
+  await p2.getByLabel("Repetí la contraseña").fill("clave-segura-123");
+  await p2.getByRole("button", { name: "Seguir" }).click();
+  await p2.waitForURL(/\/app$/);
+  // Y si entra por "Iniciar sesión" y abre el enlace, también va directo a su app
+  await p2.goto(`/unirme/${code}`);
+  await p2.waitForURL(/\/app$/);
+  await ctx2.close();
+
   // Con el mismo código y la cuenta ya creada, no se duplica
   const { data: count } = await admin.from("athletes").select("id").eq("org_id", coach.orgId);
   expect(count!.length).toBe(1);
