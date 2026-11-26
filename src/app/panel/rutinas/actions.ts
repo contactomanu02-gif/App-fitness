@@ -110,6 +110,17 @@ export async function copyWeek(blockId: string, _: FormState, form: FormData): P
   return { ok: data === 1 ? "Se copió 1 sesión." : `Se copiaron ${data} sesiones.` };
 }
 
+/** Pone la intensidad (% de la fuerza) a todas las sesiones de una semana. Vacío = sin intensidad. */
+export async function setWeekIntensity(blockId: string, week: number, raw: string): Promise<{ error?: string }> {
+  const { supabase } = await requireStaff();
+  const v = raw.trim() === "" ? null : Math.round(Number(raw.replace(",", ".")));
+  if (v !== null && (!Number.isFinite(v) || v < 1 || v > 150)) return { error: "Entre 1 y 150 %" };
+  const { error } = await supabase.rpc("set_week_intensity", { p_block: blockId, p_week: week, p_pct: v as number });
+  if (error) return { error: "No se pudo guardar" };
+  done();
+  return {};
+}
+
 // ---------------------------------------------------------------- sesiones
 
 /** Agrega una sesión en un día de la planificación: vacía (abre el editor) o copiada de una plantilla. */

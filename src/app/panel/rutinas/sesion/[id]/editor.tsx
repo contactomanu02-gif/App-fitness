@@ -41,6 +41,7 @@ export type EditorWorkout = {
   name: string;
   goal: string | null;
   est_duration_min: number | null;
+  intensity_pct: number | null;
   focus: string[];
   notes: string | null;
   items: DbItem[];
@@ -81,7 +82,8 @@ function fromDb(items: DbItem[]): Item[] {
 export function WorkoutEditor({ workout, library }: { workout: EditorWorkout; library: EditorExercise[] }) {
   const [name, setName] = useState(workout.name);
   const [goal, setGoal] = useState(s(workout.goal));
-  const [duration, setDuration] = useState(s(workout.est_duration_min));
+  const [duration, setDuration] = useState(s(workout.est_duration_min ?? 60));
+  const [intensity, setIntensity] = useState(s(workout.intensity_pct));
   const [focus, setFocus] = useState<string[]>(workout.focus);
   const [notes, setNotes] = useState(s(workout.notes));
   const [items, setItems] = useState<Item[]>(() => fromDb(workout.items));
@@ -136,6 +138,7 @@ export function WorkoutEditor({ workout, library }: { workout: EditorWorkout; li
         name,
         goal,
         est_duration_min: duration,
+        intensity_pct: intensity,
         focus,
         notes,
         items: items.map((i, k) => ({
@@ -182,10 +185,15 @@ export function WorkoutEditor({ workout, library }: { workout: EditorWorkout; li
           />
           <Input aria-label="Objetivo de la sesión" placeholder="Objetivo de la sesión (opcional)" value={goal} onChange={(e) => (setGoal(e.target.value), touch())} maxLength={300} />
         </div>
-        <div className="grid grid-cols-[110px_1fr] gap-3 lg:grid-cols-1">
-          <Field label="Duración (min)" htmlFor="dur">
-            <Input id="dur" type="number" inputMode="numeric" min={1} max={600} value={duration} onChange={(e) => (setDuration(e.target.value), touch())} />
-          </Field>
+        <div className="grid gap-3 sm:grid-cols-[220px_1fr] lg:grid-cols-1">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Intensidad (%)" htmlFor="intensity" hint="De la fuerza. Ej.: 80">
+              <Input id="intensity" type="number" inputMode="numeric" min={1} max={150} placeholder="—" value={intensity} onChange={(e) => (setIntensity(e.target.value), touch())} />
+            </Field>
+            <Field label="Duración (min)" htmlFor="dur">
+              <Input id="dur" type="number" inputMode="numeric" min={1} max={600} value={duration} onChange={(e) => (setDuration(e.target.value), touch())} />
+            </Field>
+          </div>
           <div>
             <p className="mb-1.5 text-sm font-medium">Enfoque</p>
             <div className="flex flex-wrap gap-1.5">
@@ -369,13 +377,11 @@ function SortableItem({
           </div>
         </div>
 
-        <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {field("sets", "Series", { type: "number", inputMode: "numeric", min: 1, max: 50 })}
           {field("reps", "Reps / tiempo", { maxLength: 30 })}
           {field("load", "Carga", { maxLength: 40 })}
-          {field("rest_sec", "Pausa (seg)", { type: "number", inputMode: "numeric", min: 0, max: 1800 })}
           {field("tempo", "Tempo", { maxLength: 20 })}
-          {field("rpe", "RPE", { inputMode: "decimal" })}
         </div>
 
         {showNotes ? (

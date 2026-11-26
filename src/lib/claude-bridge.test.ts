@@ -59,7 +59,18 @@ describe("puente con Claude", () => {
     const items = (data as { bloques: { sesiones: { items: Record<string, string>[] }[] }[] }).bloques[0].sesiones[0].items;
     expect(items.map((i) => i.exercise_id)).toEqual(["g1", "g2", "o3"]);
     expect(items.map((i) => i.group_label)).toEqual(["A", "A", "B"]);
-    expect(items[0]).toMatchObject({ sets: "3", reps: "8", rpe: "7.5" });
+    expect(items[0]).toMatchObject({ sets: "3", reps: "8" });
+  });
+
+  it("pasa la intensidad por semana y por sesión, sin pausas ni RPE", () => {
+    const p = parseRoutine(JSON.stringify({ ...plan, bloques: [{ ...plan.bloques[0], intensidad_por_semana: [70, 75, 80] }] }));
+    if (!p.ok) throw new Error(p.error);
+    const { data } = resolveRoutine(p.routine, library);
+    const b = (data as { bloques: { intensidad_por_semana: number[]; sesiones: { items: Record<string, string>[] }[] }[] }).bloques[0];
+    expect(b.intensidad_por_semana).toEqual([70, 75, 80]);
+    expect(b.sesiones[0].items[0]).toMatchObject({ rpe: "", rest_sec: "" });
+    const s = parseRoutine(JSON.stringify({ tipo: "sesion", nombre: "X", intensidad: "80", ejercicios: [{ ejercicio: "Press Pallof" }] }));
+    expect(s.ok && s.routine.tipo === "sesion" && s.routine.intensidad).toBe(80);
   });
 
   it("avisa los ejercicios que no están", () => {

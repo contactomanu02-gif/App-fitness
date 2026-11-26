@@ -43,5 +43,5 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     };
   });
 
-  return <Trainer scheduledId={id} name={w.name} notes={w.notes} items={trainerItems} />;
+  return <Trainer scheduledId={id} name={w.name} intensity={w.intensity_pct} notes={w.notes} items={trainerItems} />;
 }

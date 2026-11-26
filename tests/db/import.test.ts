@@ -48,6 +48,21 @@ describe("importar rutina pegada", () => {
     expect(count).toBe(1);
   });
 
+  it("intensidad por semana, 60 min por defecto y cambio de toda una semana", async () => {
+    const { data } = await a.client.rpc("import_routine", {
+      p_org: a.orgId,
+      p_data: { tipo: "planificacion", nombre: "Con %", bloques: [{ nombre: "Base", semanas: 2, intensidad_por_semana: [70, 80], sesiones: [{ dia: 1, nombre: "F", items: [item(ex[0])] }, { dia: 3, nombre: "G", items: [item(ex[1])] }] }] },
+    });
+    const id = (data as { id: string }).id;
+    const { data: ws } = await a.client.from("workouts").select("week_index, intensity_pct, est_duration_min, block_id").eq("program_id", id).order("week_index");
+    expect(ws!.map((w) => [w.week_index, w.intensity_pct, w.est_duration_min])).toEqual([[1, 70, 60], [1, 70, 60], [2, 80, 60], [2, 80, 60]]);
+    const { data: n } = await a.client.rpc("set_week_intensity", { p_block: ws![0].block_id!, p_week: 2, p_pct: 85 });
+    expect(n).toBe(2);
+    expect((await b.client.rpc("set_week_intensity", { p_block: ws![0].block_id!, p_week: 1, p_pct: 50 })).error).not.toBeNull();
+    const { data: after } = await a.client.from("workouts").select("week_index, intensity_pct").eq("program_id", id).order("week_index");
+    expect(after!.map((w) => w.intensity_pct)).toEqual([70, 70, 85, 85]);
+  });
+
   it("otro entrenador no puede importar en un espacio ajeno", async () => {
     const { error } = await b.client.rpc("import_routine", { p_org: a.orgId, p_data: { tipo: "sesion", nombre: "X", items: [] } });
     expect(error?.message).toContain("forbidden");

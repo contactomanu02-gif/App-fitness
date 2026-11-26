@@ -7,6 +7,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { ConfirmAction } from "@/components/confirm-action";
 import { useFormAction } from "@/components/use-form-action";
 import {
+  setWeekIntensity,
   addBlock,
   addWorkoutToDay,
   copyWeek,
@@ -229,6 +230,45 @@ export function AssignedControls({ programId, status, startDate }: { programId: 
       <p className="w-full text-xs text-muted-fg">Reagendar vuelve a calcular las fechas de todas las sesiones desde el inicio (pisa los cambios de día hechos en el calendario).</p>
       {state?.error ? <FormError message={state.error} /> : null}
       {state?.ok ? <FormNotice message={state.ok} /> : null}
+    </div>
+  );
+}
+
+/** Intensidad de toda la semana (% de la fuerza). Se guarda al salir del campo. */
+export function WeekIntensity({ blockId, week, value }: { blockId: string; week: number; value: number | null }) {
+  const [v, setV] = useState(value === null ? "" : String(value));
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [pending, start] = useTransition();
+  const initial = useRef(value === null ? "" : String(value));
+  const commit = () => {
+    if (v.trim() === initial.current) return;
+    start(async () => {
+      const r = await setWeekIntensity(blockId, week, v);
+      setError(r.error ?? null);
+      if (!r.error) {
+        initial.current = v.trim();
+        setSaved(true);
+        setTimeout(() => setSaved(false), 1500);
+      }
+    });
+  };
+  return (
+    <div className="mt-1">
+      <div className="relative">
+        <Input
+          aria-label={`Intensidad semana ${week}`}
+          inputMode="numeric"
+          placeholder="%"
+          value={v}
+          onChange={(e) => setV(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), (e.target as HTMLInputElement).blur())}
+          className={"h-8 px-2 pr-6 text-center text-xs tabular-nums" + (pending ? " opacity-60" : "")}
+        />
+        <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[11px] text-muted-fg">%</span>
+      </div>
+      {error ? <p className="mt-0.5 text-[10px] text-danger">{error}</p> : saved ? <p className="mt-0.5 text-[10px] text-muted-fg">Guardado</p> : null}
     </div>
   );
 }

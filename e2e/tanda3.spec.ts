@@ -53,6 +53,8 @@ test("rutinas: sesión suelta, planificación con bloques, superseries, copiar s
   await page.waitForURL(/\/panel\/rutinas\/sesion\//);
   await expect(page.getByText("Bloque 1 · Semana 1 · Lunes")).toBeVisible();
   await page.getByLabel("Nombre de la sesión").fill("Fuerza A");
+  await expect(page.getByLabel("Duración (min)")).toHaveValue("60");
+  await expect(page.getByLabel("RPE del ejercicio 1")).toHaveCount(0);
   await page.getByLabel("Duración (min)").fill("50");
   await page.getByRole("button", { name: "Fuerza", exact: true }).click();
   await page.getByRole("button", { name: "Agregar ejercicio" }).click();
@@ -68,10 +70,10 @@ test("rutinas: sesión suelta, planificación con bloques, superseries, copiar s
   await page.getByLabel("Series del ejercicio 1").fill("4");
   await page.getByLabel("Reps / tiempo del ejercicio 1").fill("6");
   await page.getByLabel("Carga del ejercicio 1").fill("40 kg");
-  await page.getByLabel("RPE del ejercicio 1").fill("15");
+  await page.getByLabel("Intensidad (%)").fill("200");
   await page.getByRole("button", { name: "Guardar sesión" }).click();
-  await expect(page.getByText("Ejercicio 1: El RPE va de 1 a 10")).toBeVisible();
-  await page.getByLabel("RPE del ejercicio 1").fill("7,5");
+  await expect(page.getByText("La intensidad va de 1 a 150 %")).toBeVisible();
+  await page.getByLabel("Intensidad (%)").fill("80");
   await page.getByRole("button", { name: "Bajar ejercicio 1" }).click();
   await expect(page.getByTestId("item-sesion").nth(0)).toContainText("Press Pallof");
   await page.getByRole("button", { name: "Guardar sesión" }).click();
@@ -82,7 +84,8 @@ test("rutinas: sesión suelta, planificación con bloques, superseries, copiar s
   await expect(page.getByLabel("Nombre de la sesión")).toHaveValue("Fuerza A");
   await expect(page.getByTestId("item-sesion").nth(1)).toContainText("Peso muerto rumano");
   await expect(page.getByLabel("Carga del ejercicio 2")).toHaveValue("40 kg");
-  await expect(page.getByLabel("RPE del ejercicio 2")).toHaveValue("7.5");
+  await expect(page.getByLabel("Intensidad (%)")).toHaveValue("80");
+  await expect(page.getByLabel("Duración (min)")).toHaveValue("50");
   // El que se unió "al anterior" sigue unido al que ahora tiene arriba
   await expect(page.getByTestId("item-sesion").nth(0).getByText("A", { exact: true })).toBeVisible();
   await expect(page.getByTestId("item-sesion").nth(2).getByText("B2", { exact: true })).toBeVisible();
@@ -100,6 +103,15 @@ test("rutinas: sesión suelta, planificación con bloques, superseries, copiar s
   await page.getByRole("button", { name: "Copiar", exact: true }).click();
   await expect(page.getByText("Se copiaron 2 sesiones.")).toBeVisible();
   await expect(page.getByRole("cell", { name: "Semana 3, Lunes" }).getByRole("link", { name: /Fuerza A/ })).toBeVisible();
+  // La copia conserva la intensidad; después se cambia para toda la semana 3
+  await expect(page.getByRole("cell", { name: "Semana 3, Lunes" }).getByRole("link", { name: /Fuerza A/ })).toContainText("80%");
+  await page.getByTestId("bloque").first().getByLabel("Intensidad semana 3").fill("85");
+  await page.getByTestId("bloque").first().getByLabel("Intensidad semana 3").press("Enter");
+  await expect(page.getByText("Guardado")).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("cell", { name: "Semana 3, Lunes" }).getByRole("link", { name: /Fuerza A/ })).toContainText("85%");
+  await expect(page.getByRole("cell", { name: "Semana 3, Miércoles" }).getByRole("link")).toContainText("85%");
+  await expect(page.getByTestId("bloque").first().getByLabel("Intensidad semana 1")).toHaveValue("");
 
   // Segundo bloque, editarlo a 2 semanas
   await page.getByRole("button", { name: "Agregar bloque" }).click();

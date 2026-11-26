@@ -33,6 +33,7 @@ const sessionFields = {
   nombre: z.string().trim().min(1).max(120),
   objetivo: text(300),
   duracion_min: int(1, 600),
+  intensidad: int(1, 150),
   notas: text(2000),
   ejercicios: z.array(itemSchema).min(1, "Hay una sesión sin ejercicios.").max(80),
 };
@@ -49,6 +50,7 @@ const programSchema = z.object({
         nombre: z.string().trim().min(1).max(80),
         objetivo: text(300),
         semanas: int(1, 16).pipe(z.number()),
+        intensidad_por_semana: z.array(int(1, 150)).max(16).optional(),
         sesiones: z.array(z.object({ ...sessionFields, semana: int(1, 16), dia: int(1, 7).pipe(z.number()) })).min(1).max(60),
       }),
     )
@@ -119,9 +121,9 @@ function toItems(list: Item[], index: Map<string, string>, missing: Set<string>)
       sets: it.series?.toString() ?? "",
       reps: it.reps ?? "",
       load: it.carga ?? "",
-      rest_sec: it.descanso_seg?.toString() ?? "",
+      rest_sec: "",
       tempo: it.tempo ?? "",
-      rpe: it.rpe?.toString() ?? "",
+      rpe: "",
       notes: it.notas ?? "",
     };
   });
@@ -137,7 +139,7 @@ export function resolveRoutine(r: Routine, library: LibraryExercise[]) {
   let sessions = 0;
   if (r.tipo === "sesion") {
     sessions = 1;
-    data = { tipo: "sesion", nombre: r.nombre, objetivo: r.objetivo, duracion_min: r.duracion_min, notas: r.notas, items: toItems(r.ejercicios, index, missing) };
+    data = { tipo: "sesion", nombre: r.nombre, objetivo: r.objetivo, duracion_min: r.duracion_min, intensidad: r.intensidad, notas: r.notas, items: toItems(r.ejercicios, index, missing) };
   } else {
     data = {
       tipo: "planificacion",
@@ -148,9 +150,10 @@ export function resolveRoutine(r: Routine, library: LibraryExercise[]) {
         nombre: b.nombre,
         objetivo: b.objetivo,
         semanas: b.semanas,
+        intensidad_por_semana: b.intensidad_por_semana,
         sesiones: b.sesiones.map((s) => {
           sessions += s.semana ? 1 : b.semanas;
-          return { semana: s.semana, dia: s.dia, nombre: s.nombre, objetivo: s.objetivo, duracion_min: s.duracion_min, notas: s.notas, items: toItems(s.ejercicios, index, missing) };
+          return { semana: s.semana, dia: s.dia, nombre: s.nombre, objetivo: s.objetivo, duracion_min: s.duracion_min, intensidad: s.intensidad, notas: s.notas, items: toItems(s.ejercicios, index, missing) };
         }),
       })),
     };
@@ -191,14 +194,14 @@ const EXAMPLE = `{
     {
       "nombre": "Base",
       "semanas": 4,
+      "intensidad_por_semana": [70, 75, 80, 60],
       "sesiones": [
         {
           "dia": 1,
           "nombre": "Fuerza A",
-          "duracion_min": 60,
           "ejercicios": [
-            { "ejercicio": "Sentadilla goblet", "grupo": "A", "series": 3, "reps": "8-10", "carga": "16 kg", "descanso_seg": 90, "rpe": 7 },
-            { "ejercicio": "Press Pallof", "grupo": "A", "series": 3, "reps": "10 por lado", "descanso_seg": 60 }
+            { "ejercicio": "Sentadilla goblet", "grupo": "A", "series": 3, "reps": "8-10" },
+            { "ejercicio": "Press Pallof", "grupo": "A", "series": 3, "reps": "10 por lado" }
           ]
         },
         { "semana": 4, "dia": 3, "nombre": "Test de potencia", "ejercicios": [ { "ejercicio": "Salto al cajón", "series": 4, "reps": "3" } ] }
@@ -258,7 +261,9 @@ export function buildExport(input: ExportInput, request?: string) {
   L.push("   - \"tipo\": \"sesion\" (una sola sesión, con \"ejercicios\" directamente) o \"planificacion\" (con \"bloques\").");
   L.push("   - En una planificación, cada sesión lleva \"dia\" (1 = lunes … 7 = domingo). Sin \"semana\" se repite en todas las semanas del bloque; con \"semana\": n va solo esa semana (usalo para progresiones).");
   L.push("   - Ejercicios seguidos con la misma letra en \"grupo\" son una superserie.");
-  L.push("   - \"reps\", \"carga\" y \"tempo\" son texto libre; \"descanso_seg\" en segundos; \"rpe\" de 1 a 10.");
+  L.push("   - La intensidad de la fuerza va en % por semana (\"intensidad_por_semana\" en cada bloque, una por semana) o por sesión (\"intensidad\"). No pongas kilos, descansos ni RPE: los ejercicios son siempre los mismos y lo que cambia es el %.");
+  L.push("   - Las sesiones duran 60 minutos salvo que te pida otra cosa (\"duracion_min\").");
+  L.push("   - \"reps\" y \"tempo\" son texto libre.");
   L.push("   - Las \"notas\" de cada ejercicio las lee el alumno: escribilas como se las diría yo, cortas y en castellano rioplatense.");
   L.push("");
   L.push("Ejemplo del formato:");

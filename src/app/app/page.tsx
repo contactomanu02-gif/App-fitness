@@ -26,7 +26,7 @@ export default async function Page() {
   const [{ data: upcoming }, { data: weekEvents }] = await Promise.all([
     supabase
       .from("scheduled_workouts")
-      .select("id, date, status, workouts(name, est_duration_min, workout_items(id))")
+      .select("id, date, status, workouts(name, est_duration_min, intensity_pct, workout_items(id))")
       .eq("athlete_id", athlete.id)
       .gte("date", monday)
       .order("date")
@@ -63,6 +63,7 @@ export default async function Page() {
               <p className="relative mt-1 text-sm text-white/70">
                 {t.workouts?.workout_items.length} ejercicios
                 {t.workouts?.est_duration_min ? ` · ${t.workouts.est_duration_min} min` : ""}
+                {t.workouts?.intensity_pct ? ` · Intensidad ${t.workouts.intensity_pct}%` : ""}
                 {t.status !== "planned" ? ` · ${labelOf(SCHEDULE_STATUS, t.status)}` : ""}
               </p>
               <span className={buttonVariants({ variant: "brand", className: "relative mt-4 w-full" })}>Ver la sesión</span>

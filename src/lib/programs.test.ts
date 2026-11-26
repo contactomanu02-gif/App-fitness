@@ -34,7 +34,7 @@ describe("validación de sesión", () => {
 
 describe("prescripción", () => {
   it("arma el resumen legible", () => {
-    expect(prescription({ sets: 3, reps: "8-10", load: "20 kg", rest_sec: 90 })).toBe("3 × 8-10 · 20 kg · 90 s");
-    expect(prescription({ sets: 4, rest_sec: 120, rpe: 8 })).toBe("4 series · RPE 8 · 2 min");
+    expect(prescription({ sets: 3, reps: "8-10", load: "20 kg", rest_sec: 90 })).toBe("3 × 8-10 · 20 kg");
+    expect(prescription({ sets: 4, rest_sec: 120, rpe: 8 })).toBe("4 series");
   });
 });

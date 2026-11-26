@@ -56,6 +56,7 @@ export const workoutSchema = z.object({
   name: z.string().trim().min(1, "Poné un nombre a la sesión").max(120),
   goal: optText(300),
   est_duration_min: optInt(1, 600, "La duración va de 1 a 600 minutos"),
+  intensity_pct: optInt(1, 150, "La intensidad va de 1 a 150 %").optional(),
   focus: z.array(z.string()).max(10),
   notes: optText(2000),
   items: z.array(workoutItemSchema).max(80, "Máximo 80 ejercicios por sesión"),
@@ -89,14 +90,12 @@ export function displayLabels(labels: (string | null)[]): string[] {
   });
 }
 
-/** Resumen corto de la prescripción: «3 × 8-10 · 20 kg · 60 s». */
+/** Resumen corto de la prescripción: «3 × 8-10 · 20 kg». Pausas y RPE ya no se muestran (pedido de Manu). */
 export function prescription(i: { sets?: number | null; reps?: string | null; load?: string | null; rest_sec?: number | null; rpe?: number | null }) {
   const parts: string[] = [];
   if (i.sets && i.reps) parts.push(`${i.sets} × ${i.reps}`);
   else if (i.sets) parts.push(`${i.sets} series`);
   else if (i.reps) parts.push(i.reps);
   if (i.load) parts.push(i.load);
-  if (i.rpe) parts.push(`RPE ${i.rpe}`);
-  if (i.rest_sec) parts.push(i.rest_sec >= 60 && i.rest_sec % 60 === 0 ? `${i.rest_sec / 60} min` : `${i.rest_sec} s`);
   return parts.join(" · ");
 }

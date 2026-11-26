@@ -31,7 +31,7 @@ const num = (v: string) => {
 };
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-export function Trainer({ scheduledId, name, notes, items: initial }: { scheduledId: string; name: string; notes: string | null; items: TrainerItem[] }) {
+export function Trainer({ scheduledId, name, intensity, notes, items: initial }: { scheduledId: string; name: string; intensity?: number | null; notes: string | null; items: TrainerItem[] }) {
   const [items, setItems] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const [rest, setRest] = useState<{ left: number; total: number } | null>(null);
@@ -104,7 +104,10 @@ export function Trainer({ scheduledId, name, notes, items: initial }: { schedule
             <ChevronLeft size={20} />
           </Link>
           <div className="min-w-0 flex-1">
-            <p className="truncate font-semibold">{name}</p>
+            <p className="truncate font-semibold">
+              {name}
+              {intensity ? <span className="ml-1.5 text-sm font-medium text-accent">{intensity}%</span> : null}
+            </p>
             <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label="Series hechas">
               <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
             </div>

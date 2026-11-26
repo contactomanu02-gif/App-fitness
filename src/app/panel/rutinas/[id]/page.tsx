@@ -9,7 +9,7 @@ import { WEEKDAYS, PROGRAM_STATUS } from "@/lib/programs";
 import { labelOf } from "@/lib/athletes";
 import { fullName } from "@/lib/utils";
 import { ProgramForm } from "../program-form";
-import { AddBlockButton, AddSessionMenu, AssignedControls, BlockHeader, CopyWeekForm, ProgramActions } from "./parts";
+import { AddBlockButton, AddSessionMenu, AssignedControls, BlockHeader, CopyWeekForm, ProgramActions, WeekIntensity } from "./parts";
 
 export const metadata = { title: "Planificación" };
 
@@ -21,7 +21,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     supabase
       .from("programs")
       .select(
-        "id, name, goal, description, status, athlete_id, start_date, athletes(first_name, last_name), program_blocks(id, name, goal, weeks, sort_order, created_at), workouts(id, name, block_id, week_index, day_index, sort_order, est_duration_min, workout_items(id))",
+        "id, name, goal, description, status, athlete_id, start_date, athletes(first_name, last_name), program_blocks(id, name, goal, weeks, sort_order, created_at), workouts(id, name, block_id, week_index, day_index, sort_order, est_duration_min, intensity_pct, workout_items(id))",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -35,6 +35,11 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       .filter((x) => x.block_id === blockId && x.week_index === w && x.day_index === d)
       .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
   const total = program.workouts.length;
+  // Intensidad de la semana: la que comparten todas sus sesiones (si no coinciden, queda vacía).
+  const weekIntensity = (blockId: string, w: number) => {
+    const vals = [...new Set(program.workouts.filter((x) => x.block_id === blockId && x.week_index === w).map((x) => x.intensity_pct))];
+    return vals.length === 1 ? vals[0] : null;
+  };
 
   return (
     <div>
@@ -88,7 +93,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
               <table className="w-full min-w-[760px] table-fixed border-collapse text-sm">
                 <thead>
                   <tr className="text-xs text-muted-fg">
-                    <th className="w-20 px-3 py-2 text-left font-medium">Semana</th>
+                    <th className="w-24 px-3 py-2 text-left font-medium">Semana · Intensidad</th>
                     {WEEKDAYS.map((d) => (
                       <th key={d.v} className="px-1.5 py-2 text-left font-medium">{d.short}</th>
                     ))}
@@ -97,7 +102,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
                 <tbody>
                   {Array.from({ length: b.weeks }, (_, i) => i + 1).map((w) => (
                     <tr key={w} className="border-t border-border align-top">
-                      <th scope="row" className="px-3 py-2 text-left text-xs font-medium text-muted-fg">S{w}</th>
+                      <th scope="row" className="px-2 py-2 text-left text-xs font-medium text-muted-fg">
+                        S{w}
+                        <WeekIntensity blockId={b.id} week={w} value={weekIntensity(b.id, w)} />
+                      </th>
                       {WEEKDAYS.map((d) => (
                         <td key={d.v} className="px-1 py-1.5" aria-label={`Semana ${w}, ${d.label}`}>
                           <div className="flex min-h-14 flex-col gap-1">
@@ -110,6 +118,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
                                 <span className="line-clamp-2 font-medium">{x.name}</span>
                                 <span className="mt-0.5 flex items-center gap-1 opacity-80">
                                   {x.workout_items.length} ej.
+                                  {x.intensity_pct ? ` · ${x.intensity_pct}%` : ""}
                                   {x.est_duration_min ? (
                                     <>
                                       <Clock size={10} /> {x.est_duration_min}′

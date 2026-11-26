@@ -663,14 +663,14 @@ isOneToOne: false
                   ]
                 },"workouts": {
                   Row: {
-                    "athlete_id": string | null,"block_id": string | null,"created_at": string,"day_index": number | null,"est_duration_min": number | null,"focus": (string)[],"goal": string | null,"id": string,"name": string,"notes": string | null,"org_id": string,"program_id": string | null,"sort_order": number,"updated_at": string,"week_index": number | null
+                    "athlete_id": string | null,"block_id": string | null,"created_at": string,"day_index": number | null,"est_duration_min": number | null,"focus": (string)[],"goal": string | null,"id": string,"intensity_pct": number | null,"name": string,"notes": string | null,"org_id": string,"program_id": string | null,"sort_order": number,"updated_at": string,"week_index": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "athlete_id"?: string | null,"block_id"?: string | null,"created_at"?: string,"day_index"?: number | null,"est_duration_min"?: number | null,"focus"?: (string)[],"goal"?: string | null,"id"?: string,"name": string,"notes"?: string | null,"org_id": string,"program_id"?: string | null,"sort_order"?: number,"updated_at"?: string,"week_index"?: number | null
+                    "athlete_id"?: string | null,"block_id"?: string | null,"created_at"?: string,"day_index"?: number | null,"est_duration_min"?: number | null,"focus"?: (string)[],"goal"?: string | null,"id"?: string,"intensity_pct"?: number | null,"name": string,"notes"?: string | null,"org_id": string,"program_id"?: string | null,"sort_order"?: number,"updated_at"?: string,"week_index"?: number | null
                   }
                   Update: {
-                    "athlete_id"?: string | null,"block_id"?: string | null,"created_at"?: string,"day_index"?: number | null,"est_duration_min"?: number | null,"focus"?: (string)[],"goal"?: string | null,"id"?: string,"name"?: string,"notes"?: string | null,"org_id"?: string,"program_id"?: string | null,"sort_order"?: number,"updated_at"?: string,"week_index"?: number | null
+                    "athlete_id"?: string | null,"block_id"?: string | null,"created_at"?: string,"day_index"?: number | null,"est_duration_min"?: number | null,"focus"?: (string)[],"goal"?: string | null,"id"?: string,"intensity_pct"?: number | null,"name"?: string,"notes"?: string | null,"org_id"?: string,"program_id"?: string | null,"sort_order"?: number,"updated_at"?: string,"week_index"?: number | null
                   }
                   Relationships: [
                     {
@@ -816,6 +816,9 @@ isOneToOne: false
                            },
 "schedule_program":
 { Args: { "p_program": string }; Returns: number
+                           },
+"set_week_intensity":
+{ Args: { "p_block": string,"p_pct": number,"p_week": number }; Returns: number
                            },
 "start_session":
 { Args: { "p_scheduled": string }; Returns: undefined
