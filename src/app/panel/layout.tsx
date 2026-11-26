@@ -9,6 +9,7 @@ import { initials } from "@/lib/utils";
 const items: NavItem[] = [
   { href: "/panel", label: "Inicio", icon: "home", exact: true },
   { href: "/panel/alumnos", label: "Alumnos", icon: "users" },
+  { href: "/panel/ejercicios", label: "Ejercicios", icon: "dumbbell" },
   { href: "/panel/grupos", label: "Grupos", icon: "groups" },
 ];
 

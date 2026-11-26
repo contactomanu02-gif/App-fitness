@@ -29,6 +29,7 @@ export const EQUIPMENT = [
   "Suspensión (TRX)",
   "Cajón pliométrico",
   "Máquinas de gimnasio",
+  "Palo de golf",
   "Solo peso corporal",
 ] as const;
 

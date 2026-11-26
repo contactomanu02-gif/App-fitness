@@ -1,5 +1,6 @@
 "use client";
-import { useActionState, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useFormAction } from "@/components/use-form-action";
 import { Card } from "@/components/ui/card";
 import { Field, FormError, FormNotice, Input } from "@/components/ui/form";
 import { SubmitButton } from "@/components/submit-button";
@@ -18,7 +19,7 @@ export function GroupEditor({
   athletes: Athlete[];
   members: string[];
 }) {
-  const [state, formAction] = useActionState(action, undefined);
+  const { state, onSubmit, pending } = useFormAction(action);
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState(new Set(members));
   const shown = useMemo(
@@ -26,7 +27,7 @@ export function GroupEditor({
     [athletes, filter],
   );
   return (
-    <form action={formAction} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
       <FormError message={state?.error} />
       {state?.ok ? <FormNotice message="Grupo guardado." /> : null}
       <Card className="p-5">
@@ -68,7 +69,7 @@ export function GroupEditor({
         )}
       </Card>
       <div className="flex justify-end">
-        <SubmitButton size="lg">Guardar grupo</SubmitButton>
+        <SubmitButton size="lg" forcePending={pending}>Guardar grupo</SubmitButton>
       </div>
     </form>
   );

@@ -95,6 +95,58 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"exercise_media": {
+                  Row: {
+                    "created_at": string,"exercise_id": string,"id": string,"org_id": string,"sort_order": number,"storage_path": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"exercise_id": string,"id"?: string,"org_id": string,"sort_order"?: number,"storage_path": string
+                  }
+                  Update: {
+                    "created_at"?: string,"exercise_id"?: string,"id"?: string,"org_id"?: string,"sort_order"?: number,"storage_path"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "exercise_media_exercise_id_fkey"
+      columns: ["exercise_id"]
+isOneToOne: false
+      referencedRelation: "exercises"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exercise_media_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"exercises": {
+                  Row: {
+                    "archived": boolean,"category": string,"coaching_cues": string | null,"created_at": string,"created_by": string | null,"description": string | null,"equipment": (string)[],"id": string,"instructions": string | null,"muscle_groups": (string)[],"name": string,"org_id": string | null,"source_exercise_id": string | null,"unilateral": boolean,"updated_at": string,"video_url": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived"?: boolean,"category": string,"coaching_cues"?: string | null,"created_at"?: string,"created_by"?: string | null,"description"?: string | null,"equipment"?: (string)[],"id"?: string,"instructions"?: string | null,"muscle_groups"?: (string)[],"name": string,"org_id"?: string | null,"source_exercise_id"?: string | null,"unilateral"?: boolean,"updated_at"?: string,"video_url"?: string | null
+                  }
+                  Update: {
+                    "archived"?: boolean,"category"?: string,"coaching_cues"?: string | null,"created_at"?: string,"created_by"?: string | null,"description"?: string | null,"equipment"?: (string)[],"id"?: string,"instructions"?: string | null,"muscle_groups"?: (string)[],"name"?: string,"org_id"?: string | null,"source_exercise_id"?: string | null,"unilateral"?: boolean,"updated_at"?: string,"video_url"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "exercises_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exercises_source_exercise_id_fkey"
+      columns: ["source_exercise_id"]
+isOneToOne: false
+      referencedRelation: "exercises"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"group_members": {
                   Row: {
                     "athlete_id": string,"group_id": string
@@ -279,6 +331,9 @@ isOneToOne: false
 "create_organization":
 { Args: { "p_name": string }; Returns: string
                            },
+"exercise_org":
+{ Args: { "p_exercise": string }; Returns: string
+                           },
 "get_invitation":
 { Args: { "p_token": string }; Returns: {
               "athlete_first_name": string,"email": string,"expires_at": string,"org_name": string
@@ -295,6 +350,9 @@ isOneToOne: false
                            },
 "is_self_athlete":
 { Args: { "p_athlete": string }; Returns: boolean
+                           },
+"storage_org":
+{ Args: { "p_name": string }; Returns: string
                            },
 "unlink_athlete":
 { Args: { "p_athlete": string }; Returns: undefined

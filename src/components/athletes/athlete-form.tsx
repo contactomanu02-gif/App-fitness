@@ -1,5 +1,6 @@
 "use client";
-import { useActionState, useState } from "react";
+import { useState } from "react";
+import { useFormAction } from "@/components/use-form-action";
 import { DAYS, EQUIPMENT, LEVELS, type SportField } from "@/lib/athletes";
 import { Field, FormError, Input, Select, Textarea } from "@/components/ui/form";
 import { Card } from "@/components/ui/card";
@@ -65,7 +66,7 @@ export function AthleteForm({
   sportValues?: Record<string, unknown>;
   submitLabel: string;
 }) {
-  const [state, formAction] = useActionState(action, undefined);
+  const { state, onSubmit, pending } = useFormAction(action);
   const golf = sports.find((s) => s.name === "Golf");
   const [sportId, setSportId] = useState(athlete?.sport_id ?? golf?.id ?? "");
   const sport = sports.find((s) => s.id === sportId);
@@ -73,7 +74,7 @@ export function AthleteForm({
   const customEquipment = (athlete?.equipment ?? []).filter((e) => !(EQUIPMENT as readonly string[]).includes(e));
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
       <FormError message={state?.error} />
       <Section title="Datos básicos">
         <Field label="Nombre" htmlFor="first_name">
@@ -198,7 +199,7 @@ export function AthleteForm({
       </Card>
 
       <div className="sticky bottom-20 z-10 flex justify-end md:bottom-4">
-        <SubmitButton size="lg" className="shadow-lg">{submitLabel}</SubmitButton>
+        <SubmitButton size="lg" className="shadow-lg" forcePending={pending}>{submitLabel}</SubmitButton>
       </div>
     </form>
   );
