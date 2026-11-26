@@ -1,0 +1,23 @@
+# Revisa si los videos de YouTube del catálogo se pueden reproducir dentro de la app
+# (algunos dueños de videos bloquean que se vean fuera de YouTube).
+name: Revisar videos
+
+on:
+  workflow_dispatch:
+
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar cada video
+        run: |
+          grep -ohE "(youtube\.com/watch\?v=|youtu\.be/)[A-Za-z0-9_-]{11}" supabase/migrations/*.sql | grep -oE "[A-Za-z0-9_-]{11}$" | sort -u > ids.txt
+          ok=0; mal=0
+          while read -r id; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "https://www.youtube.com/oembed?format=json&url=https://www.youtube.com/watch?v=$id")
+            page=$(curl -s -A "Mozilla/5.0" "https://www.youtube.com/embed/$id" | grep -o '"playableInEmbed":[a-z]*' | head -1)
+            echo "$id oembed=$code $page"
+            if [ "$code" = "200" ] && [ "$page" != '"playableInEmbed":false' ]; then ok=$((ok+1)); else mal=$((mal+1)); fi
+          done < ids.txt
+          echo "RESUMEN ok=$ok mal=$mal"
