@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Fragment } from "react";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Clock, Play } from "lucide-react";
+import { ArrowDown, ChevronLeft, CircleCheckBig, Clock } from "lucide-react";
+import { FinishForm } from "./cerrar/finish-form";
 import { requireAthlete } from "@/lib/session";
 import { CategoryBadge } from "@/components/category-badge";
 import { Badge, Card } from "@/components/ui/card";
@@ -13,7 +14,6 @@ import { splitBlocks, toneOf } from "@/lib/blocks";
 import { BlockPause, BlockSection } from "@/components/session/block-parts";
 import { longDate, todayISO } from "@/lib/dates";
 import { loadAthleteSession } from "@/lib/session-data";
-import { buttonVariants } from "@/components/ui/button";
 import { FormNotice } from "@/components/ui/form";
 import { ReopenButton } from "./reopen-button";
 import { ExerciseIssue, SwapNote } from "@/components/session/exercise-issue";
@@ -80,21 +80,15 @@ export default async function Page({
         <FormNotice message="¡Listo! Tu entrenador ya puede ver cómo te fue." />
       ) : null}
       {open ? (
-        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-          <Link
-            href={`/app/sesion/${s.id}/entrenar`}
-            className={buttonVariants({ size: "lg" })}
-          >
-            <Play size={18} />{" "}
-            {s.started_at ? "Seguir entrenando" : "Empezar entrenamiento"}
-          </Link>
-          <Link
-            href={`/app/sesion/${s.id}/cerrar?estado=skipped`}
-            className={buttonVariants({ variant: "outline", size: "lg" })}
-          >
-            No la pude hacer
-          </Link>
-        </div>
+        <a
+          href="#cerrar"
+          className="flex items-center justify-between gap-3 rounded-2xl bg-[#0b0b0b] px-4 py-3 text-sm text-white"
+        >
+          <span>
+            Hacé los ejercicios a tu ritmo. <b>Cuando termines, marcalo al final.</b>
+          </span>
+          <ArrowDown size={18} className="shrink-0 text-accent" />
+        </a>
       ) : (
         <Card className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -137,7 +131,7 @@ export default async function Page({
                 const url = photoOf(it);
                 const logs = logsFor(it.id);
                 return (
-                  <Card key={it.id} className="overflow-hidden">
+                  <Card key={it.id} className="overflow-hidden" data-testid="ejercicio">
                     <div className="flex gap-3 p-4">
                       <span className={`grid h-8 min-w-9 shrink-0 place-items-center rounded-lg px-1.5 text-sm font-bold ${toneOf(n).soft} ${toneOf(n).text}`}>
                         {labels[i] || i + 1}
@@ -213,6 +207,21 @@ export default async function Page({
           </Fragment>
         ))}
       </div>
+
+      {open ? (
+        <section id="cerrar" className="scroll-mt-20 overflow-hidden rounded-2xl border-2 border-success/40 bg-success-soft">
+          <div className="flex items-center gap-3 bg-emerald-600 px-4 py-3 text-white">
+            <CircleCheckBig size={24} />
+            <div>
+              <h2 className="font-display text-xl font-bold uppercase">¿Hiciste el entrenamiento?</h2>
+              <p className="text-xs text-white/85">Marcalo acá así tu entrenador sabe si entrenaste.</p>
+            </div>
+          </div>
+          <div className="p-4">
+            <FinishForm scheduledId={s.id} duration={w.est_duration_min} initialStatus={null} />
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

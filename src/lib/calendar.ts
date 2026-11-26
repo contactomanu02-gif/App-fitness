@@ -31,6 +31,6 @@ export const eventSchema = z
 export const SCHEDULE_STATUS = [
   { v: "planned", label: "Pendiente" },
   { v: "done", label: "Completada" },
-  { v: "partial", label: "Modificada" },
+  { v: "partial", label: "Hecha en parte" },
   { v: "skipped", label: "No realizada" },
 ] as const;

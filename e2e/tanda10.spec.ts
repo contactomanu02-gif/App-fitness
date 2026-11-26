@@ -38,7 +38,7 @@ test("variantes: el alumno cambia un ejercicio por falta de elemento y el entren
   const ctx = await browser.newContext();
   const ap = await ctx.newPage();
   await login(ap, athEmail);
-  await ap.goto(`/app/sesion/${sch!.id}/entrenar`);
+  await ap.goto(`/app/sesion/${sch!.id}`);
   const card = ap.getByTestId("ejercicio").filter({ hasText: "Sentadilla goblet" });
   await card.getByRole("button", { name: /No podés hacerlo/ }).click();
   await expect(card.getByRole("button", { name: "No tengo el elemento" })).toHaveAttribute("aria-pressed", "true");
@@ -57,9 +57,11 @@ test("variantes: el alumno cambia un ejercicio por falta de elemento y el entren
   await pal.getByRole("button", { name: "Solo avisar que hoy no lo hice" }).click();
   await expect(pal.getByText("le avisamos a tu entrenador")).toBeVisible();
 
-  // La serie del ejercicio cambiado se guarda con el ejercicio que hizo
-  await ap.getByRole("button", { name: `Marcar serie 1 de ${optionName}` }).click();
-  await expect.poll(async () => (await admin.from("set_logs").select("exercise_id").eq("scheduled_id", sch!.id)).data?.[0]?.exercise_id).not.toBe(goblet);
+  // Marca al final que entrenó
+  await ap.getByText("Sí, lo hice completo").click();
+  await ap.getByText("7", { exact: true }).first().click();
+  await ap.getByRole("button", { name: "Guardar" }).click();
+  await expect(ap.getByText("¡Listo! Tu entrenador ya puede ver cómo te fue.")).toBeVisible();
   await ctx.close();
 
   // El entrenador ve los avisos y la variante, y puede quitarla

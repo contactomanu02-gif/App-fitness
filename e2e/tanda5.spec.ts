@@ -12,7 +12,7 @@ async function login(page: Page, email: string) {
   await page.waitForURL(/\/(panel|app)/);
 }
 
-test("entrenar: series, descanso, cierre con dolor; el entrenador ve avisos y evolución", async ({ page, browser, isMobile }) => {
+test("entrenar: marcar al final si entrenó, esfuerzo y dolor; el entrenador ve avisos y evolución", async ({ page, browser, isMobile }) => {
   test.setTimeout(90_000);
   const today = todayISO();
 
@@ -54,27 +54,10 @@ test("entrenar: series, descanso, cierre con dolor; el entrenador ve avisos y ev
   await login(ap, athEmail);
   await expect(ap.getByText("Entrenamiento de hoy")).toBeVisible();
   await ap.getByText("Ver la sesión").click();
-  await ap.getByRole("link", { name: "Empezar entrenamiento" }).click();
-  await ap.waitForURL(/\/entrenar$/);
-  await expect(ap.getByLabel("Kg, Sentadilla goblet, serie 1")).toHaveValue("20");
-  await expect(ap.getByLabel("Reps, Sentadilla goblet, serie 1")).toHaveValue("8");
-  await ap.getByRole("button", { name: "Marcar serie 1 de Sentadilla goblet" }).click();
-  await expect(ap.getByRole("timer")).toContainText("Descanso");
-  await expect(ap.getByRole("timer")).toContainText("A la próxima serie", { timeout: 6000 });
-  await ap.getByLabel("Kg, Sentadilla goblet, serie 2").fill("22,5");
-  await ap.getByRole("button", { name: "Marcar serie 2 de Sentadilla goblet" }).click();
-  await ap.getByRole("button", { name: "Agregar serie" }).nth(1).click();
-  await ap.getByLabel("Reps, Press Pallof, serie 2").fill("12");
-  await ap.getByRole("button", { name: "Marcar serie 2 de Press Pallof" }).click();
-  await ap.getByRole("button", { name: "Marcar serie 1 de Press Pallof" }).click();
-  await expect(ap.getByText("4/4")).toBeVisible();
-  // Al recargar, lo marcado sigue ahí
-  await ap.reload();
-  await expect(ap.getByRole("button", { name: "Marcar serie 2 de Sentadilla goblet" })).toHaveAttribute("aria-pressed", "true");
-  await expect(ap.getByLabel("Kg, Sentadilla goblet, serie 2")).toHaveValue("22.5");
-
-  await ap.getByRole("link", { name: "Terminar sesión" }).click();
-  await ap.getByText("La hice con cambios").click();
+  // Ya no se marca serie por serie: al final de la sesión marca si entrenó
+  await expect(ap.getByRole("heading", { name: "¿Hiciste el entrenamiento?" })).toBeVisible();
+  await expect(ap.getByRole("button", { name: /Marcar serie/ })).toHaveCount(0);
+  await ap.getByText("Hice una parte").click();
   await ap.getByRole("button", { name: "Guardar" }).click();
   await expect(ap.getByText("Elegí qué tan difícil fue (1 a 10)")).toBeVisible();
   await ap.getByText("9", { exact: true }).first().click();
@@ -84,10 +67,9 @@ test("entrenar: series, descanso, cierre con dolor; el entrenador ve avisos y ev
   await ap.getByLabel("Comentario para tu entrenador (opcional)").fill("Agregué una serie de Pallof");
   await ap.getByRole("button", { name: "Guardar" }).click();
   await expect(ap.getByText("¡Listo! Tu entrenador ya puede ver cómo te fue.")).toBeVisible();
-  await expect(ap.getByText("La hice con cambios")).toHaveCount(0);
-  await expect(ap.getByText("Modificada").first()).toBeVisible();
+  await expect(ap.getByText("Hice una parte")).toHaveCount(0);
+  await expect(ap.getByText("Hecha en parte").first()).toBeVisible();
   await expect(ap.getByText(/Dolor en Lumbar \(5\/10\)/)).toBeVisible();
-  await expect(ap.getByText("Hiciste: 8 × 20 kg · 8 × 22.5 kg")).toBeVisible();
   await ctx.close();
 
   // --- El entrenador ---
@@ -101,13 +83,8 @@ test("entrenar: series, descanso, cierre con dolor; el entrenador ve avisos y ev
 
   await page.goto(`/panel/alumnos/${ath!.id}/seguimiento`);
   await expect(page.getByText("2 de 3 sesiones")).toBeVisible();
-  await expect(page.getByRole("img", { name: "Carga máxima de Sentadilla goblet" })).toBeVisible();
-  await page.getByText("Ver como tabla").last().click();
-  await expect(page.getByRole("cell", { name: "22.5 kg × 8" })).toBeVisible();
-  await expect(page.getByRole("cell", { name: "18 kg × 8" })).toBeVisible();
   await expect(page.getByText("“Agregué una serie de Pallof”")).toBeVisible();
 
-  await page.getByRole("link", { name: /Fuerza A.*Modificada/ }).click();
+  await page.getByRole("link", { name: /Fuerza A.*Hecha en parte/ }).click();
   await expect(page.getByTestId("registro-alumno")).toContainText("Esfuerzo 9/10");
-  await expect(page.getByTestId("registro-alumno")).toContainText("Press Pallof: 10 · 12");
 });

@@ -1,9 +1,9 @@
 import { z } from "@/lib/zod";
 
 export const FINISH_STATUS = [
-  { v: "done", label: "La hice completa" },
-  { v: "partial", label: "La hice con cambios" },
-  { v: "skipped", label: "No la pude hacer" },
+  { v: "done", label: "Sí, lo hice completo" },
+  { v: "partial", label: "Hice una parte" },
+  { v: "skipped", label: "No pude entrenar" },
 ] as const;
 
 const optInt = (min: number, max: number, msg: string) =>
