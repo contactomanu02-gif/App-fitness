@@ -82,7 +82,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <div className="mt-3 flex flex-wrap items-center gap-4">
         <Avatar text={initials(a.first_name, a.last_name)} className="h-14 w-14 text-lg" />
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{fullName(a)}</h1>
+          <h1 className="text-3xl">{fullName(a)}</h1>
           <p className="text-sm text-muted-fg">
             {[a.sports?.name, labelOf(LEVELS, a.level), age !== null ? `${age} años` : null].filter(Boolean).join(" · ") || "Ficha incompleta"}
           </p>

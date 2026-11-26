@@ -7,7 +7,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
   const { next } = await searchParams;
   return (
     <>
-      <h1 className="text-2xl font-semibold tracking-tight">Ingresar</h1>
+      <h1 className="text-3xl">Ingresar</h1>
       <p className="mt-1 text-sm text-muted-fg">Entrá con tu email y contraseña.</p>
       <SignInForm next={next ?? ""} />
       <div className="mt-6 space-y-2 text-center text-sm text-muted-fg">
@@ -16,12 +16,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
             Olvidé mi contraseña
           </Link>
         </p>
+        {process.env.COACH_SIGNUP_ENABLED === "false" ? null : (
         <p>
           ¿Sos entrenador y no tenés cuenta?{" "}
           <Link href="/registro" className="font-medium text-accent underline-offset-4 hover:underline">
             Registrate
           </Link>
         </p>
+        )}
       </div>
     </>
   );

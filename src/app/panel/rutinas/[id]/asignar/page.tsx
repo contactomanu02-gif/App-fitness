@@ -24,7 +24,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <Link href={`/panel/rutinas/${id}`} className="inline-flex items-center gap-1 text-sm text-muted-fg hover:text-fg">
         <ChevronLeft size={16} /> {p.name}
       </Link>
-      <h1 className="mt-2 text-2xl font-semibold tracking-tight">Asignar «{p.name}»</h1>
+      <h1 className="mt-2 text-3xl">Asignar «{p.name}»</h1>
       <p className="mb-5 text-sm text-muted-fg">{p.workouts.length} sesiones se van a agendar en el calendario de cada alumno.</p>
       <AssignForm action={action} defaultStart={nextMonday()} {...opts} />
     </div>

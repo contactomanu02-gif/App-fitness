@@ -16,7 +16,7 @@ export default async function Page() {
       <Link href={homeFor(s)} className="inline-flex items-center gap-1 text-sm text-muted-fg hover:text-fg">
         <ChevronLeft size={16} /> Volver
       </Link>
-      <h1 className="mt-2 mb-5 text-2xl font-semibold tracking-tight">Mi cuenta</h1>
+      <h1 className="mt-2 mb-5 text-3xl">Mi cuenta</h1>
       <div className="space-y-4">
         <Card>
           <CardHeader title="Datos" subtitle={s.user.email} />

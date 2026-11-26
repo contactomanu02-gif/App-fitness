@@ -63,7 +63,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       <Link href={`/panel/alumnos/${id}`} className="inline-flex items-center gap-1 text-sm text-muted-fg hover:text-fg">
         <ChevronLeft size={16} /> {fullName(athlete)}
       </Link>
-      <h1 className="mt-2 text-2xl font-semibold tracking-tight">Seguimiento</h1>
+      <h1 className="mt-2 text-3xl">Seguimiento</h1>
       <p className="mb-5 text-sm text-muted-fg">Últimas 12 semanas de {athlete.first_name}.</p>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

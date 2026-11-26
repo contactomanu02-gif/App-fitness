@@ -13,7 +13,7 @@ export default async function Page() {
       <Link href="/panel/ejercicios" className="inline-flex items-center gap-1 text-sm text-muted-fg hover:text-fg">
         <ChevronLeft size={16} /> Ejercicios
       </Link>
-      <h1 className="mt-2 mb-1 text-2xl font-semibold tracking-tight">Nuevo ejercicio</h1>
+      <h1 className="mt-2 mb-1 text-3xl">Nuevo ejercicio</h1>
       <p className="mb-5 text-sm text-muted-fg">Las fotos se agregan después de guardarlo.</p>
       <ExerciseForm action={saveExercise.bind(null, null)} submitLabel="Guardar ejercicio" />
     </div>

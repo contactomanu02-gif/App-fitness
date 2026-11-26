@@ -22,7 +22,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <Link href={`/panel/alumnos/${id}`} className="inline-flex items-center gap-1 text-sm text-muted-fg hover:text-fg">
         <ChevronLeft size={16} /> {fullName(athlete)}
       </Link>
-      <h1 className="mt-2 mb-5 text-2xl font-semibold tracking-tight">Editar ficha</h1>
+      <h1 className="mt-2 mb-5 text-3xl">Editar ficha</h1>
       <AthleteForm
         action={saveAthlete.bind(null, id)}
         sports={sports ?? []}

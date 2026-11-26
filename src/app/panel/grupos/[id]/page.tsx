@@ -22,7 +22,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <Link href="/panel/grupos" className="inline-flex items-center gap-1 text-sm text-muted-fg hover:text-fg">
         <ChevronLeft size={16} /> Grupos
       </Link>
-      <h1 className="mt-2 mb-5 text-2xl font-semibold tracking-tight">{group.name}</h1>
+      <h1 className="mt-2 mb-5 text-3xl">{group.name}</h1>
       <GroupEditor
         action={saveGroup.bind(null, id)}
         name={group.name}

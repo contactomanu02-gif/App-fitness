@@ -16,7 +16,7 @@ export default async function Page() {
       <header className="flex justify-end px-5 pt-4"><ThemeToggle /></header>
       <main className="flex flex-1 items-center justify-center px-5 py-10">
         <div className="w-full max-w-sm">
-          <h1 className="text-2xl font-semibold tracking-tight">Hola{first ? `, ${first}` : ""}</h1>
+          <h1 className="text-3xl">Hola{first ? `, ${first}` : ""}</h1>
           {s.isAthlete ? null : (
             <p className="mt-1 text-sm text-muted-fg">
               Último paso: poné el nombre de tu espacio de trabajo. Es lo que van a ver tus alumnos.

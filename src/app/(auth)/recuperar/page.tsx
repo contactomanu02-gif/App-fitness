@@ -9,7 +9,7 @@ export default function Page() {
   const [state, action] = useActionState(requestPasswordReset, undefined);
   return (
     <>
-      <h1 className="text-2xl font-semibold tracking-tight">Recuperar contraseña</h1>
+      <h1 className="text-3xl">Recuperar contraseña</h1>
       <p className="mt-1 text-sm text-muted-fg">Te mandamos un enlace para crear una nueva.</p>
       {state?.notice ? (
         <div className="mt-6"><FormNotice message={state.notice} /></div>

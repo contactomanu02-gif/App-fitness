@@ -15,7 +15,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
   const { sessions, events } = await loadCalendar(supabase, athlete.id, grid[0][0], grid.at(-1)![6], user.id);
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-semibold tracking-tight">Calendario</h1>
+      <h1 className="mb-1 text-3xl">Calendario</h1>
       <p className="mb-4 text-sm text-muted-fg">Cargá tus torneos y viajes para que tu entrenador los tenga en cuenta.</p>
       <MonthCalendar
         month={month}

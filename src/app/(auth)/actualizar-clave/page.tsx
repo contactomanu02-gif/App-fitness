@@ -8,7 +8,7 @@ export default function Page() {
   const [state, action] = useActionState(updatePassword, undefined);
   return (
     <>
-      <h1 className="text-2xl font-semibold tracking-tight">Nueva contraseña</h1>
+      <h1 className="text-3xl">Nueva contraseña</h1>
       <form action={action} className="mt-6 space-y-4">
         <FormError message={state?.error} />
         <Field label="Contraseña nueva" htmlFor="password" hint="Mínimo 8 caracteres.">

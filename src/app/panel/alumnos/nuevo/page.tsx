@@ -17,7 +17,7 @@ export default async function Page() {
       <Link href="/panel/alumnos" className="inline-flex items-center gap-1 text-sm text-muted-fg hover:text-fg">
         <ChevronLeft size={16} /> Alumnos
       </Link>
-      <h1 className="mt-2 mb-5 text-2xl font-semibold tracking-tight">Nuevo alumno</h1>
+      <h1 className="mt-2 mb-5 text-3xl">Nuevo alumno</h1>
       <AthleteForm action={saveAthlete.bind(null, null)} sports={sports ?? []} submitLabel="Guardar alumno" />
     </div>
   );

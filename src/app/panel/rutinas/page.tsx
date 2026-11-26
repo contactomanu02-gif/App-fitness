@@ -39,7 +39,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
     <div>
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Rutinas</h1>
+          <h1 className="text-3xl">Rutinas</h1>
           <p className="text-sm text-muted-fg">Plantillas para armar una vez y asignar muchas veces.</p>
         </div>
         {!sessions ? (

@@ -24,7 +24,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <Link href={`/panel/rutinas/sesion/${id}`} className="inline-flex items-center gap-1 text-sm text-muted-fg hover:text-fg">
         <ChevronLeft size={16} /> {w.name}
       </Link>
-      <h1 className="mt-2 mb-5 text-2xl font-semibold tracking-tight">Asignar «{w.name}»</h1>
+      <h1 className="mt-2 mb-5 text-3xl">Asignar «{w.name}»</h1>
       <AssignForm action={action} defaultStart={todayISO()} repeat {...opts} />
     </div>
   );

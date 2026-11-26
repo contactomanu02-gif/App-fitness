@@ -14,7 +14,7 @@ function Stat({ label, value, href, tone }: { label: string; value: number; href
   const body = (
     <Card className="h-full p-4 transition-colors hover:bg-muted/40">
       <p className="text-sm text-muted-fg">{label}</p>
-      <p className={`mt-1 text-3xl font-semibold tabular-nums tracking-tight ${tone === "danger" && value ? "text-danger" : tone === "warn" && value ? "text-warn" : ""}`}>
+      <p className={`mt-1 font-display text-4xl font-bold tabular-nums ${tone === "danger" && value ? "text-danger" : tone === "warn" && value ? "text-warn" : ""}`}>
         {value}
       </p>
     </Card>
@@ -64,7 +64,7 @@ export default async function Page() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight">{greeting}{first ? `, ${first}` : ""}</h1>
+      <h1 className="text-3xl">{greeting}{first ? `, ${first}` : ""}</h1>
       <p className="text-sm text-muted-fg">Resumen de tus alumnos.</p>
 
       {!list.length ? (
@@ -81,7 +81,7 @@ export default async function Page() {
             <Stat label="Alumnos activos" value={list.length} href="/panel/alumnos" />
             <Card className="h-full p-4">
               <p className="text-sm text-muted-fg">Cumplimiento semanal</p>
-              <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight">{week.pct === null ? "—" : `${week.pct}%`}</p>
+              <p className="mt-1 font-display text-4xl font-bold tabular-nums">{week.pct === null ? "—" : `${week.pct}%`}</p>
               <p className="text-xs text-muted-fg">{week.due ? `${week.done} de ${week.due} sesiones hasta hoy` : "Sin sesiones vencidas esta semana"}</p>
             </Card>
             <Stat label="Sin registrar (7 días)" value={pending.length} tone="warn" />

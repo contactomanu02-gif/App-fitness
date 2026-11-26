@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAthlete } from "@/lib/session";
 import { BottomNav, SideNav, type NavItem } from "@/components/shell/nav";
 import { ThemeToggle } from "@/components/theme";
+import { BrandMark, Logo } from "@/components/brand/logo";
 
 const items: NavItem[] = [
   { href: "/app", label: "Hoy", icon: "home", exact: true },
@@ -14,7 +15,7 @@ export default async function AthleteLayout({ children }: { children: React.Reac
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[220px_1fr]">
       <aside className="sticky top-0 hidden h-dvh self-start flex-col border-r border-border bg-card px-3 py-5 md:flex">
-        <p className="truncate px-3 pb-6 text-sm font-semibold">{athlete.organizations?.name}</p>
+        <BrandMark subtitle={athlete.organizations?.name} className="mb-6 px-2 py-1" />
         <SideNav items={items} />
         <div className="mt-auto space-y-1">
           {staffOrg ? (
@@ -26,7 +27,10 @@ export default async function AthleteLayout({ children }: { children: React.Reac
       </aside>
       <div className="min-w-0">
         <header className="sticky top-0 z-20 flex items-center justify-between bg-bg/90 px-4 pt-[env(safe-area-inset-top)] backdrop-blur md:hidden">
-          <p className="truncate py-3 text-sm font-semibold">{athlete.organizations?.name}</p>
+          <div className="flex min-w-0 items-center gap-2 py-2">
+            <Logo size={32} />
+            <span className="truncate font-display text-base font-bold tracking-wide uppercase">{athlete.organizations?.name}</span>
+          </div>
           <ThemeToggle />
         </header>
         <main className="mx-auto max-w-xl px-4 pt-3 pb-28 md:pt-8">{children}</main>

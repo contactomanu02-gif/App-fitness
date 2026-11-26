@@ -14,7 +14,7 @@ export default async function Page() {
     .order("name");
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-2xl font-semibold tracking-tight">Grupos</h1>
+      <h1 className="text-3xl">Grupos</h1>
       <p className="text-sm text-muted-fg">Agrupá alumnos para asignarles entrenamientos en bloque.</p>
       <Card className="mt-5 p-4">
         <NewGroupForm />

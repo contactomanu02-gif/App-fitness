@@ -25,7 +25,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       <Link href={`/app/sesion/${id}`} className="inline-flex items-center gap-1 text-sm text-muted-fg hover:text-fg">
         <ChevronLeft size={16} /> {s.workouts.name}
       </Link>
-      <h1 className="mt-2 mb-5 text-2xl font-semibold tracking-tight">¿Cómo te fue?</h1>
+      <h1 className="mt-2 mb-5 text-3xl">¿Cómo te fue?</h1>
       <FinishForm scheduledId={id} duration={duration} initialStatus={initial} />
     </div>
   );

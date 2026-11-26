@@ -4,6 +4,7 @@ import { requireStaff } from "@/lib/session";
 import { SideNav, BottomNav, type NavItem } from "@/components/shell/nav";
 import { ThemeToggle } from "@/components/theme";
 import { Avatar } from "@/components/ui/card";
+import { BrandMark, Logo } from "@/components/brand/logo";
 import { initials } from "@/lib/utils";
 
 const items: NavItem[] = [
@@ -21,10 +22,9 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[240px_1fr]">
       <aside className="sticky top-0 hidden h-dvh self-start flex-col border-r border-border bg-card px-3 py-5 md:flex">
-        <div className="px-3 pb-6">
-          <p className="truncate text-sm font-semibold" title={org.name}>{org.name}</p>
-          <p className="text-xs text-muted-fg">Panel del entrenador</p>
-        </div>
+        <Link href="/panel" className="mb-6 block rounded-xl px-2 py-1 hover:opacity-90" title={org.name}>
+          <BrandMark subtitle={org.name.trim().toLowerCase() === "fitness approach" ? "Panel del entrenador" : org.name} />
+        </Link>
         <SideNav items={items} />
         <div className="mt-auto space-y-1">
           {isAthlete ? (
@@ -49,7 +49,10 @@ export default async function PanelLayout({ children }: { children: React.ReactN
 
       <div className="min-w-0">
         <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-bg/90 px-4 pt-[env(safe-area-inset-top)] backdrop-blur md:hidden">
-          <p className="truncate py-3 text-sm font-semibold">{org.name}</p>
+          <Link href="/panel" className="flex min-w-0 items-center gap-2 py-2">
+            <Logo size={32} />
+            <span className="truncate font-display text-base font-bold tracking-wide uppercase">{org.name}</span>
+          </Link>
           <div className="flex items-center">
             <ThemeToggle />
             <Link href="/cuenta" aria-label="Mi cuenta" className="ml-1">

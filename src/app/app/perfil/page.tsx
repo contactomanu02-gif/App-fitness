@@ -33,7 +33,7 @@ export default async function Page() {
 
   return (
     <div className="space-y-4 pt-2">
-      <h1 className="text-2xl font-semibold tracking-tight">{fullName(a)}</h1>
+      <h1 className="text-3xl">{fullName(a)}</h1>
       <Card>
         <CardHeader title="Mi ficha" subtitle="La carga tu entrenador. Si algo está mal, avisale." />
         <dl className="divide-y divide-border px-5 pb-3">

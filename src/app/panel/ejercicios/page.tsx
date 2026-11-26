@@ -48,7 +48,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
     <div>
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Ejercicios</h1>
+          <h1 className="text-3xl">Ejercicios</h1>
           <p className="text-sm text-muted-fg">{exercises?.length ?? 0} {showArchived ? "archivados" : "en la biblioteca"}</p>
         </div>
         <Link href="/panel/ejercicios/nuevo" className={buttonVariants()}>

@@ -48,7 +48,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       <Link href={`/panel/alumnos/${id}`} className="inline-flex items-center gap-1 text-sm text-muted-fg hover:text-fg">
         <ChevronLeft size={16} /> {fullName(athlete)}
       </Link>
-      <h1 className="mt-2 text-2xl font-semibold tracking-tight">Calendario</h1>
+      <h1 className="mt-2 text-3xl">Calendario</h1>
       <p className="mb-4 text-sm text-muted-fg">Sesiones, torneos, viajes y descansos de {athlete.first_name}.</p>
       {sp.asignado ? (
         <div className="mb-4">

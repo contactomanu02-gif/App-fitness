@@ -27,7 +27,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <Link href={`/panel/ejercicios/${id}`} className="inline-flex items-center gap-1 text-sm text-muted-fg hover:text-fg">
         <ChevronLeft size={16} /> {ex.name}
       </Link>
-      <h1 className="mt-2 mb-5 text-2xl font-semibold tracking-tight">Editar ejercicio</h1>
+      <h1 className="mt-2 mb-5 text-3xl">Editar ejercicio</h1>
       <Card className="mb-4">
         <CardHeader title="Fotos" subtitle="Hasta 6. Se achican automáticamente al subirlas." />
         <div className="px-5 pb-5">

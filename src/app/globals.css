@@ -12,43 +12,50 @@
   --color-accent: var(--accent);
   --color-accent-fg: var(--accent-fg);
   --color-accent-soft: var(--accent-soft);
+  --color-ink: var(--ink);
+  --color-ink-fg: var(--ink-fg);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-face), var(--font-geist-sans), ui-sans-serif, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 :root {
-  --bg: #f5f6f5;
-  --fg: #0c110e;
+  --bg: #f4f4f4;
+  --fg: #0b0b0b;
   --card: #ffffff;
-  --muted: #eceeec;
-  --muted-fg: #5d6761;
-  --border: #e0e4e1;
-  --accent: #0e7a4c;
+  --muted: #ececec;
+  --muted-fg: #5f5f5f;
+  --border: #e2e2e2;
+  --accent: #d8121b;
   --accent-fg: #ffffff;
-  --accent-soft: #e3f3ea;
-  --danger: #c62828;
-  --danger-soft: #fdecec;
-  --warn: #a15c07;
+  --accent-soft: #fdeceb;
+  --ink: #0b0b0b;
+  --ink-fg: #ffffff;
+  --danger: #b3261e;
+  --danger-soft: #fbe9e7;
+  --warn: #9a5b00;
   --warn-soft: #fdf3e2;
   color-scheme: light;
 }
 
 .dark {
-  --bg: #090b0a;
-  --fg: #ecf1ee;
-  --card: #111513;
-  --muted: #1a201d;
-  --muted-fg: #8e9a93;
-  --border: #222a26;
-  --accent: #3ddc97;
-  --accent-fg: #03140c;
-  --accent-soft: #10291d;
-  --danger: #f87171;
-  --danger-soft: #2a1313;
+  --bg: #080808;
+  --fg: #f2f2f2;
+  --card: #121212;
+  --muted: #1c1c1c;
+  --muted-fg: #9a9a9a;
+  --border: #262626;
+  --accent: #ff3b3f;
+  --accent-fg: #ffffff;
+  --accent-soft: #2b1213;
+  --ink: #f2f2f2;
+  --ink-fg: #0b0b0b;
+  --danger: #ff6b5e;
+  --danger-soft: #2a1311;
   --warn: #fbbf24;
   --warn-soft: #2a210c;
   color-scheme: dark;
@@ -61,3 +68,14 @@ body {
 }
 
 input, select, textarea, button { font: inherit; }
+
+/* Títulos con la tipografía deportiva de la marca */
+@layer base {
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    line-height: 1.05;
+  }
+}

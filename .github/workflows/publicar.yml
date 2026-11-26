@@ -91,7 +91,7 @@ jobs:
         run: |
           npx wrangler deploy \
             --var NEXT_PUBLIC_SITE_URL:"${SITE_URL}" \
-            --var COACH_SIGNUP_ENABLED:"${{ vars.COACH_SIGNUP_ENABLED || 'true' }}" \
+            --var COACH_SIGNUP_ENABLED:"${{ vars.COACH_SIGNUP_ENABLED || 'false' }}" \
             --var EMAIL_FROM:"${{ vars.EMAIL_FROM }}"
           echo "$SERVICE_ROLE_KEY" | npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
           if [ -n "${{ secrets.RESEND_API_KEY }}" ]; then echo "${{ secrets.RESEND_API_KEY }}" | npx wrangler secret put RESEND_API_KEY; fi

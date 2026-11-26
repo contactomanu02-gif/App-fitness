@@ -35,7 +35,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       </Link>
       <div>
         <p className="text-sm text-muted-fg first-letter:uppercase">{s.date === today ? "Hoy" : longDate(s.date)}</p>
-        <h1 className="text-2xl font-semibold tracking-tight">{w.name}</h1>
+        <h1 className="text-3xl">{w.name}</h1>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {w.est_duration_min ? (
             <Badge>

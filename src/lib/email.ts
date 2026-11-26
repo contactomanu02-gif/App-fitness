@@ -29,7 +29,7 @@ export function invitationEmail(p: { firstName: string; orgName: string; link: s
   const html = `<div style="font-family:system-ui,sans-serif;max-width:480px;margin:auto;padding:24px;color:#0c110e">
   <p>Hola ${esc(p.firstName)}:</p>
   <p><strong>${esc(p.orgName)}</strong> te invitó a su plataforma de entrenamiento. Ahí vas a ver tus rutinas y registrar cada sesión.</p>
-  <p style="margin:28px 0"><a href="${esc(p.link)}" style="background:#0e7a4c;color:#fff;padding:12px 20px;border-radius:12px;text-decoration:none;font-weight:600">Crear mi cuenta</a></p>
+  <p style="margin:28px 0"><a href="${esc(p.link)}" style="background:#111111;color:#fff;padding:12px 20px;border-radius:12px;text-decoration:none;font-weight:600">Crear mi cuenta</a></p>
   <p style="color:#5d6761;font-size:13px">El enlace vence en 14 días.</p></div>`;
   return { subject, text, html };
 }
@@ -39,6 +39,6 @@ export function painEmail(p: { message: string; link: string }) {
   const text = `${p.message}\n\nVer la ficha: ${p.link}`;
   const html = `<div style="font-family:system-ui,sans-serif;max-width:480px;margin:auto;padding:24px;color:#0c110e">
   <p style="font-size:16px"><strong>${esc(p.message)}</strong></p>
-  <p style="margin:24px 0"><a href="${esc(p.link)}" style="background:#0e7a4c;color:#fff;padding:12px 20px;border-radius:12px;text-decoration:none;font-weight:600">Ver la ficha del alumno</a></p></div>`;
+  <p style="margin:24px 0"><a href="${esc(p.link)}" style="background:#111111;color:#fff;padding:12px 20px;border-radius:12px;text-decoration:none;font-weight:600">Ver la ficha del alumno</a></p></div>`;
   return { subject, text, html };
 }

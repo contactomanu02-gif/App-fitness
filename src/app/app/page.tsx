@@ -51,21 +51,21 @@ export default async function Page() {
     <div className="space-y-4">
       <div className="pt-2">
         <p className="text-sm text-muted-fg">{greeting}</p>
-        <h1 className="text-3xl font-semibold tracking-tight">{athlete.first_name}</h1>
+        <h1 className="text-4xl">{athlete.first_name}</h1>
       </div>
 
       {todays.length ? (
         todays.map((t) => (
           <Link key={t.id} href={`/app/sesion/${t.id}`} className="block">
-            <Card className="p-5 transition-colors hover:bg-muted/40">
-              <p className="text-sm font-medium text-accent">Entrenamiento de hoy</p>
-              <p className="mt-1 text-xl font-semibold">{t.workouts?.name}</p>
-              <p className="mt-1 text-sm text-muted-fg">
+            <Card className="relative overflow-hidden border-transparent bg-[#0b0b0b] p-5 text-white transition-opacity hover:opacity-95">
+              <p className="relative text-xs font-semibold tracking-[0.14em] text-[#ff3b3f] uppercase">Entrenamiento de hoy</p>
+              <p className="relative mt-1 font-display text-3xl font-bold uppercase">{t.workouts?.name}</p>
+              <p className="relative mt-1 text-sm text-white/70">
                 {t.workouts?.workout_items.length} ejercicios
                 {t.workouts?.est_duration_min ? ` · ${t.workouts.est_duration_min} min` : ""}
                 {t.status !== "planned" ? ` · ${labelOf(SCHEDULE_STATUS, t.status)}` : ""}
               </p>
-              <span className={buttonVariants({ className: "mt-4 w-full" })}>Ver la sesión</span>
+              <span className={buttonVariants({ variant: "brand", className: "relative mt-4 w-full" })}>Ver la sesión</span>
             </Card>
           </Link>
         ))

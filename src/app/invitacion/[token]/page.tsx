@@ -20,7 +20,7 @@ export default async function Page({ params }: { params: Promise<{ token: string
   if (!inv) {
     body = (
       <>
-        <h1 className="text-2xl font-semibold tracking-tight">Invitación no válida</h1>
+        <h1 className="text-3xl">Invitación no válida</h1>
         <p className="mt-2 text-sm text-muted-fg">
           El enlace venció, ya se usó o fue reemplazado por uno nuevo. Pedile a tu entrenador que te mande otro.
         </p>
@@ -32,7 +32,7 @@ export default async function Page({ params }: { params: Promise<{ token: string
   } else if (user && user.email?.toLowerCase() === inv.email) {
     body = (
       <>
-        <h1 className="text-2xl font-semibold tracking-tight">Hola {inv.athlete_first_name}</h1>
+        <h1 className="text-3xl">Hola {inv.athlete_first_name}</h1>
         <p className="mt-2 text-sm text-muted-fg">
           <span className="font-medium text-fg">{inv.org_name}</span> te invitó a entrenar con su plataforma.
         </p>
@@ -42,7 +42,7 @@ export default async function Page({ params }: { params: Promise<{ token: string
   } else if (user) {
     body = (
       <>
-        <h1 className="text-2xl font-semibold tracking-tight">Estás con otra cuenta</h1>
+        <h1 className="text-3xl">Estás con otra cuenta</h1>
         <p className="mt-2 text-sm text-muted-fg">
           Esta invitación es para <span className="font-medium text-fg">{inv.email}</span>. Salí y volvé a abrir el enlace.
         </p>
@@ -54,7 +54,7 @@ export default async function Page({ params }: { params: Promise<{ token: string
   } else {
     body = (
       <>
-        <h1 className="text-2xl font-semibold tracking-tight">Hola {inv.athlete_first_name}</h1>
+        <h1 className="text-3xl">Hola {inv.athlete_first_name}</h1>
         <p className="mt-2 text-sm text-muted-fg">
           <span className="font-medium text-fg">{inv.org_name}</span> te invitó a entrenar con su plataforma. Creá tu contraseña para entrar.
         </p>
