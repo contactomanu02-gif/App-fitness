@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Plataforma de entrenamiento
 
-## Getting Started
+App web (PWA) para entrenadores y sus alumnos. Next.js 15 + Supabase (PostgreSQL con RLS, Auth, Storage).
 
-First, run the development server:
+## Desarrollo local
+
+Requisitos: Node 22, pnpm, Docker.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+npx supabase start          # base, auth y storage locales
+cp .env.example .env.local  # completar con los valores de `npx supabase status`
+pnpm dev                    # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Los emails locales (recuperar contraseña) se ven en Mailpit: http://127.0.0.1:54324
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Pruebas
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npx vitest run                           # unitarias + reglas de seguridad de la base (requiere supabase local)
+pnpm build && pnpm start &               # servidor de producción
+npx playwright test --trace off          # recorridos completos en escritorio y celular
+```
 
-## Learn More
+## Estructura
 
-To learn more about Next.js, take a look at the following resources:
+- `supabase/migrations/`: esquema, reglas de seguridad por fila y funciones (invitaciones, alta de espacio).
+- `src/app/panel/`: panel del entrenador. `src/app/app/`: app del alumno.
+- `src/app/invitacion/[token]`: aceptación de invitaciones.
+- `src/lib/`: validaciones, sesión, clientes de Supabase, emails.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Variables de entorno
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ver `.env.example`. `SUPABASE_SERVICE_ROLE_KEY` se usa solo en el servidor (crear la cuenta del alumno al aceptar una invitación).
+`COACH_SIGNUP_ENABLED=false` cierra el registro de nuevos entrenadores.
