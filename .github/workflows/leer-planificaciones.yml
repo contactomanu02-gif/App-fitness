@@ -1,0 +1,50 @@
+# Lee las planificaciones del entrenador para que Claude las complete.
+# El resultado sale CIFRADO (solo Claude lo puede abrir): el repositorio es público
+# y no queremos que nadie más vea los datos.
+name: Leer planificaciones
+
+on:
+  workflow_dispatch:
+
+env:
+  SUPABASE_PROJECT_ID: jixprysxcuyzpvreohgi
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  CLAVE_PUBLICA: age1pl2lk295nykuus9ltc45hjlmsxuq2ywdrqr7zr3dsehjatzanp8sp76usa
+
+jobs:
+  leer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Instalar age
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age >/dev/null
+      - name: Leer y cifrar
+        run: |
+          read -r -d '' SQL <<'SQL' || true
+          select json_build_object(
+            'planificaciones', (select coalesce(json_agg(p order by p.created_at), '[]') from (
+              select pr.id, pr.name, pr.goal, pr.description, pr.status, pr.athlete_id is not null as es_de_alumno, pr.created_at,
+                (select coalesce(json_agg(b order by b.sort_order), '[]') from (
+                  select bl.id, bl.name, bl.goal, bl.weeks, bl.sort_order,
+                    (select coalesce(json_agg(w order by w.week_index, w.day_index, w.sort_order), '[]') from (
+                      select wo.id, wo.name, wo.goal, wo.week_index, wo.day_index, wo.sort_order, wo.est_duration_min, wo.intensity_pct, wo.notes,
+                        (select count(*) from public.workout_items wi where wi.workout_id = wo.id) as ejercicios
+                      from public.workouts wo where wo.block_id = bl.id) w) as sesiones
+                  from public.program_blocks bl where bl.program_id = pr.id) b) as bloques
+              from public.programs pr) p),
+            'sesiones_sueltas', (select coalesce(json_agg(json_build_object('id', id, 'name', name, 'goal', goal, 'notes', notes)), '[]')
+              from public.workouts where program_id is null and athlete_id is null),
+            'ejercicios', (select coalesce(json_agg(json_build_object('id', e.id, 'name', e.name, 'category', e.category, 'propio', e.org_id is not null) order by e.name), '[]')
+              from public.exercises e where not e.archived)
+          ) as datos
+          SQL
+          jq -n --arg q "$SQL" '{query: $q}' > body.json
+          curl -sf -X POST "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+            --data @body.json -o datos.json
+          age -r "$CLAVE_PUBLICA" -o datos.json.age datos.json
+          rm -f datos.json body.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: planificaciones
+          path: datos.json.age
+          retention-days: 1

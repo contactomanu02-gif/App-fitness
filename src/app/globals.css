@@ -79,3 +79,11 @@ input, select, textarea, button { font: inherit; }
     line-height: 1.05;
   }
 }
+
+/* Barra de carga al cambiar de sección */
+@keyframes nav-progress {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+.nav-progress { animation: nav-progress 1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .nav-progress { animation: none; width: 100%; } }

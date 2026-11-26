@@ -1,3 +1,4 @@
+import { NavProgress } from "@/components/nav-progress";
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme";
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es-AR" suppressHydrationWarning>
       <body className={`${sans.variable} ${mono.variable} ${display.variable} min-h-dvh font-sans antialiased`}>
         <ThemeProvider>{children}</ThemeProvider>
+        <NavProgress />
         <ServiceWorkerRegister />
       </body>
     </html>
