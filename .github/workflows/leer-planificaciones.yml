@@ -11,6 +11,9 @@ env:
   SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
   CLAVE_PUBLICA: age1pl2lk295nykuus9ltc45hjlmsxuq2ywdrqr7zr3dsehjatzanp8sp76usa
 
+permissions:
+  contents: write
+
 jobs:
   leer:
     runs-on: ubuntu-latest
@@ -43,8 +46,9 @@ jobs:
             --data @body.json -o datos.json
           age -r "$CLAVE_PUBLICA" -o datos.json.age datos.json
           rm -f datos.json body.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: planificaciones
-          path: datos.json.age
-          retention-days: 1
+      - name: Dejar el archivo cifrado en una rama temporal
+        run: |
+          git init -q tmp && mv datos.json.age tmp/ && cd tmp
+          git config user.name "github-actions" && git config user.email "github-actions@users.noreply.github.com"
+          git checkout -q -b datos-claude && git add datos.json.age && git commit -qm "Datos cifrados para Claude"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" datos-claude
