@@ -44,6 +44,9 @@ test("inicio con dos zonas y registro del alumno con el enlace del entrenador", 
   await page.getByLabel("Handicap").fill("12");
   await page.getByText("Mar", { exact: true }).click();
   await page.getByText("Jue", { exact: true }).click();
+  await page.getByRole("button", { name: "Seguir" }).click();
+  await expect(page.getByLabel("Nivel")).toBeVisible(); // falta elegir si tiene competencias
+  await page.getByText("Sí, las cargo").click();
   await page.getByLabel("Competencia").fill("Abierto del Norte");
   await page.getByLabel("Desde").fill(addDays(todayISO(), 20));
   await page.getByLabel("Lugar").fill("Tucumán");

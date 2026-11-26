@@ -22,6 +22,7 @@ export function JoinWizard({ code, orgName, sports, loggedInEmail }: { code: str
   const [injuries, setInjuries] = useState<"no" | "si">("no");
   const [injuryRows, setInjuryRows] = useState(1);
   const [compRows, setCompRows] = useState(1);
+  const [hasComps, setHasComps] = useState<"si" | "no" | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
   const sport = sports.find((s) => s.id === sportId);
@@ -203,28 +204,45 @@ export function JoinWizard({ code, orgName, sports, loggedInEmail }: { code: str
             </div>
           </fieldset>
           <fieldset className="space-y-3 rounded-2xl border-2 border-accent/30 bg-accent-soft/40 p-3">
-            <legend className="px-1 text-sm font-semibold">Tus próximas competencias</legend>
-            <p className="text-xs text-muted-fg">Tu entrenador arma la planificación en base a estas fechas. Si todavía no las sabés, dejalo vacío y las cargás después en tu calendario.</p>
-            {Array.from({ length: compRows }, (_, i) => (
-              <div key={i} className="grid grid-cols-2 gap-3 rounded-xl bg-card p-3">
-                <Field label="Competencia" htmlFor={`comp_title_${i}`} className="col-span-2">
-                  <Input id={`comp_title_${i}`} name={`comp_title_${i}`} placeholder="Ej.: Campeonato del club" maxLength={120} />
-                </Field>
-                <Field label="Desde" htmlFor={`comp_start_${i}`}>
-                  <Input id={`comp_start_${i}`} name={`comp_start_${i}`} type="date" min={today()} />
-                </Field>
-                <Field label="Hasta" htmlFor={`comp_end_${i}`}>
-                  <Input id={`comp_end_${i}`} name={`comp_end_${i}`} type="date" min={today()} />
-                </Field>
-                <Field label="Lugar" htmlFor={`comp_loc_${i}`} className="col-span-2">
-                  <Input id={`comp_loc_${i}`} name={`comp_loc_${i}`} placeholder="Opcional" maxLength={120} />
-                </Field>
-              </div>
-            ))}
-            {compRows < 5 ? (
-              <button type="button" onClick={() => setCompRows((n) => n + 1)} className="text-sm font-medium text-accent">
-                + Agregar otra competencia
-              </button>
+            <legend className="px-1 text-sm font-semibold">¿Tenés competencias en los próximos meses?</legend>
+            <p className="text-xs text-muted-fg">Tu entrenador arma la planificación en base a estas fechas. Las podés cargar o cambiar después en tu calendario.</p>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                ["si", "Sí, las cargo"],
+                ["no", "No hay por el momento"],
+              ] as const).map(([v, label]) => (
+                <label key={v} className="cursor-pointer">
+                  <input type="radio" name="has_competitions" value={v} required checked={hasComps === v} onChange={() => setHasComps(v)} className="peer sr-only" />
+                  <span className="grid min-h-12 place-items-center rounded-xl border border-border bg-card px-2 text-center text-sm font-medium transition peer-checked:border-accent peer-checked:bg-accent peer-checked:text-accent-fg peer-focus-visible:ring-2 peer-focus-visible:ring-accent/40">
+                    {label}
+                  </span>
+                </label>
+              ))}
+            </div>
+            {hasComps === "si" ? (
+              <>
+                {Array.from({ length: compRows }, (_, i) => (
+                  <div key={i} className="grid grid-cols-2 gap-3 rounded-xl bg-card p-3">
+                    <Field label="Competencia" htmlFor={`comp_title_${i}`} className="col-span-2">
+                      <Input id={`comp_title_${i}`} name={`comp_title_${i}`} required placeholder="Ej.: Campeonato del club" maxLength={120} />
+                    </Field>
+                    <Field label="Desde" htmlFor={`comp_start_${i}`}>
+                      <Input id={`comp_start_${i}`} name={`comp_start_${i}`} type="date" required min={today()} />
+                    </Field>
+                    <Field label="Hasta" htmlFor={`comp_end_${i}`}>
+                      <Input id={`comp_end_${i}`} name={`comp_end_${i}`} type="date" min={today()} />
+                    </Field>
+                    <Field label="Lugar" htmlFor={`comp_loc_${i}`} className="col-span-2">
+                      <Input id={`comp_loc_${i}`} name={`comp_loc_${i}`} placeholder="Opcional" maxLength={120} />
+                    </Field>
+                  </div>
+                ))}
+                {compRows < 5 ? (
+                  <button type="button" onClick={() => setCompRows((n) => n + 1)} className="text-sm font-medium text-accent">
+                    + Agregar otra competencia
+                  </button>
+                ) : null}
+              </>
             ) : null}
           </fieldset>
           <Field label="¿Qué querés lograr?" htmlFor="goals" hint="Por ejemplo: pegarle más largo, sacarme el dolor de espalda, jugar más torneos.">
