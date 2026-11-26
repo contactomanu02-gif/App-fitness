@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 const base =
   "w-full rounded-xl border border-border bg-card px-3.5 text-[15px] text-fg placeholder:text-muted-fg/70 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:opacity-60";
 
-export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+export function Input({ className, ...props }: React.ComponentProps<"input">) {
   return <input className={cn(base, "h-11", className)} {...props} />;
 }
 

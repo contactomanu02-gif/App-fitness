@@ -1,0 +1,102 @@
+import { z } from "@/lib/zod";
+
+export const WEEKDAYS = [
+  { v: 1, short: "Lun", label: "Lunes" },
+  { v: 2, short: "Mar", label: "Martes" },
+  { v: 3, short: "Mié", label: "Miércoles" },
+  { v: 4, short: "Jue", label: "Jueves" },
+  { v: 5, short: "Vie", label: "Viernes" },
+  { v: 6, short: "Sáb", label: "Sábado" },
+  { v: 7, short: "Dom", label: "Domingo" },
+] as const;
+
+export const PROGRAM_STATUS = [
+  { v: "draft", label: "Borrador" },
+  { v: "active", label: "Activa" },
+  { v: "archived", label: "Archivada" },
+] as const;
+
+const optText = (max: number) =>
+  z.preprocess((v) => (typeof v === "string" && v.trim() === "" ? null : typeof v === "string" ? v.trim() : v ?? null), z.string().max(max).nullable());
+
+export const programSchema = z.object({
+  name: z.string().trim().min(1, "Poné un nombre").max(120),
+  goal: optText(300),
+  description: optText(2000),
+});
+
+export const blockSchema = z.object({
+  name: z.string().trim().min(1, "Poné un nombre al bloque").max(80),
+  goal: optText(300),
+  weeks: z.coerce.number().int().min(1, "Mínimo 1 semana").max(16, "Máximo 16 semanas por bloque"),
+});
+
+const optInt = (min: number, max: number, msg: string) =>
+  z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+    z.number({ error: msg }).int(msg).min(min, msg).max(max, msg).nullable(),
+  );
+
+export const workoutItemSchema = z.object({
+  exercise_id: z.uuid(),
+  group_label: z.string().regex(/^[A-Z]$/).nullable(),
+  sets: optInt(1, 50, "Las series van de 1 a 50"),
+  reps: optText(30),
+  load: optText(40),
+  rest_sec: optInt(0, 1800, "El descanso va de 0 a 1800 segundos"),
+  tempo: optText(20),
+  rpe: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? null : Number(String(v).replace(",", "."))),
+    z.number({ error: "El RPE va de 1 a 10" }).min(1, "El RPE va de 1 a 10").max(10, "El RPE va de 1 a 10").nullable(),
+  ),
+  notes: optText(1000),
+});
+
+export const workoutSchema = z.object({
+  name: z.string().trim().min(1, "Poné un nombre a la sesión").max(120),
+  goal: optText(300),
+  est_duration_min: optInt(1, 600, "La duración va de 1 a 600 minutos"),
+  focus: z.array(z.string()).max(10),
+  notes: optText(2000),
+  items: z.array(workoutItemSchema).max(80, "Máximo 80 ejercicios por sesión"),
+});
+
+export type WorkoutInput = z.input<typeof workoutSchema>;
+export type WorkoutItemInput = z.input<typeof workoutItemSchema>;
+
+/**
+ * Asigna letras de grupo (A, B, C…) a partir de qué ejercicios van unidos al anterior.
+ * Cada ejercicio suelto también recibe su letra: así se lee como A1, A2, B1… igual que en papel.
+ */
+export function groupLabels(linked: boolean[]): (string | null)[] {
+  let g = -1;
+  return linked.map((l, i) => {
+    if (i === 0 || !l) g++;
+    return g < 26 ? String.fromCharCode(65 + g) : null;
+  });
+}
+
+/** Etiqueta visible de cada ejercicio: A1, A2, B1… (solo numera si el grupo tiene más de uno). */
+export function displayLabels(labels: (string | null)[]): string[] {
+  const size = new Map<string, number>();
+  labels.forEach((l) => l && size.set(l, (size.get(l) ?? 0) + 1));
+  const seen = new Map<string, number>();
+  return labels.map((l) => {
+    if (!l) return "";
+    const n = (seen.get(l) ?? 0) + 1;
+    seen.set(l, n);
+    return (size.get(l) ?? 0) > 1 ? `${l}${n}` : l;
+  });
+}
+
+/** Resumen corto de la prescripción: «3 × 8-10 · 20 kg · 60 s». */
+export function prescription(i: { sets?: number | null; reps?: string | null; load?: string | null; rest_sec?: number | null; rpe?: number | null }) {
+  const parts: string[] = [];
+  if (i.sets && i.reps) parts.push(`${i.sets} × ${i.reps}`);
+  else if (i.sets) parts.push(`${i.sets} series`);
+  else if (i.reps) parts.push(i.reps);
+  if (i.load) parts.push(i.load);
+  if (i.rpe) parts.push(`RPE ${i.rpe}`);
+  if (i.rest_sec != null) parts.push(i.rest_sec >= 60 && i.rest_sec % 60 === 0 ? `${i.rest_sec / 60} min` : `${i.rest_sec} s`);
+  return parts.join(" · ");
+}
