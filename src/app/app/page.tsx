@@ -9,7 +9,8 @@ import { EVENT_KINDS, SCHEDULE_STATUS } from "@/lib/calendar";
 
 export const metadata = { title: "Hoy" };
 
-export default async function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ bienvenida?: string }> }) {
+  const { bienvenida } = await searchParams;
   const { athlete, supabase } = await requireAthlete();
   const { data: injuries } = await supabase
     .from("injuries")
@@ -53,6 +54,12 @@ export default async function Page() {
         <p className="text-sm text-muted-fg">{greeting}</p>
         <h1 className="text-4xl">{athlete.first_name}</h1>
       </div>
+      {bienvenida ? (
+        <Card className="border-accent/40 bg-accent-soft p-4 text-sm">
+          <p className="font-semibold">¡Listo, ya estás registrado!</p>
+          <p className="mt-1">Tu entrenador ya tiene tus datos. Cuando te asigne entrenamientos, los vas a ver acá. Tip: agregá esta página a la pantalla de inicio de tu celular.</p>
+        </Card>
+      ) : null}
 
       {todays.length ? (
         todays.map((t) => (

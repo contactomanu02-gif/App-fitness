@@ -195,14 +195,14 @@ isOneToOne: false
                   ]
                 },"athletes": {
                   Row: {
-                    "birth_date": string | null,"created_at": string,"email": string | null,"equipment": (string)[],"first_name": string,"goals": string | null,"height_cm": number | null,"id": string,"last_name": string,"level": string | null,"notes": string | null,"org_id": string,"phone": string | null,"sessions_per_week": number | null,"sex": string | null,"sport_id": string | null,"status": string,"training_days": (string)[],"updated_at": string,"user_id": string | null,"weight_kg": number | null
+                    "birth_date": string | null,"created_at": string,"email": string | null,"equipment": (string)[],"first_name": string,"goals": string | null,"height_cm": number | null,"id": string,"last_name": string,"level": string | null,"notes": string | null,"org_id": string,"phone": string | null,"self_registered": boolean,"sessions_per_week": number | null,"sex": string | null,"sport_id": string | null,"status": string,"training_days": (string)[],"updated_at": string,"user_id": string | null,"weight_kg": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "birth_date"?: string | null,"created_at"?: string,"email"?: string | null,"equipment"?: (string)[],"first_name": string,"goals"?: string | null,"height_cm"?: number | null,"id"?: string,"last_name"?: string,"level"?: string | null,"notes"?: string | null,"org_id": string,"phone"?: string | null,"sessions_per_week"?: number | null,"sex"?: string | null,"sport_id"?: string | null,"status"?: string,"training_days"?: (string)[],"updated_at"?: string,"user_id"?: string | null,"weight_kg"?: number | null
+                    "birth_date"?: string | null,"created_at"?: string,"email"?: string | null,"equipment"?: (string)[],"first_name": string,"goals"?: string | null,"height_cm"?: number | null,"id"?: string,"last_name"?: string,"level"?: string | null,"notes"?: string | null,"org_id": string,"phone"?: string | null,"self_registered"?: boolean,"sessions_per_week"?: number | null,"sex"?: string | null,"sport_id"?: string | null,"status"?: string,"training_days"?: (string)[],"updated_at"?: string,"user_id"?: string | null,"weight_kg"?: number | null
                   }
                   Update: {
-                    "birth_date"?: string | null,"created_at"?: string,"email"?: string | null,"equipment"?: (string)[],"first_name"?: string,"goals"?: string | null,"height_cm"?: number | null,"id"?: string,"last_name"?: string,"level"?: string | null,"notes"?: string | null,"org_id"?: string,"phone"?: string | null,"sessions_per_week"?: number | null,"sex"?: string | null,"sport_id"?: string | null,"status"?: string,"training_days"?: (string)[],"updated_at"?: string,"user_id"?: string | null,"weight_kg"?: number | null
+                    "birth_date"?: string | null,"created_at"?: string,"email"?: string | null,"equipment"?: (string)[],"first_name"?: string,"goals"?: string | null,"height_cm"?: number | null,"id"?: string,"last_name"?: string,"level"?: string | null,"notes"?: string | null,"org_id"?: string,"phone"?: string | null,"self_registered"?: boolean,"sessions_per_week"?: number | null,"sex"?: string | null,"sport_id"?: string | null,"status"?: string,"training_days"?: (string)[],"updated_at"?: string,"user_id"?: string | null,"weight_kg"?: number | null
                   }
                   Relationships: [
                     {
@@ -423,14 +423,14 @@ isOneToOne: false
                   ]
                 },"organizations": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"id": string,"name": string,"plan": string,"updated_at": string
+                    "created_at": string,"created_by": string | null,"id": string,"join_code": string,"name": string,"plan": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"name": string,"plan"?: string,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"join_code"?: string,"name": string,"plan"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"name"?: string,"plan"?: string,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"join_code"?: string,"name"?: string,"plan"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -743,6 +743,9 @@ isOneToOne: false
               "athlete_first_name": string,"email": string,"expires_at": string,"org_name": string
             }[]
                            },
+"get_join_info":
+{ Args: { "p_code": string }; Returns: Json
+                           },
 "group_org":
 { Args: { "p_group": string }; Returns: string
                            },
@@ -769,6 +772,9 @@ isOneToOne: false
                            },
 "is_visible_schedule":
 { Args: { "p_athlete": string,"p_program": string }; Returns: boolean
+                           },
+"join_with_code":
+{ Args: { "p_code": string,"p_data": Json,"p_injuries"?: Json,"p_sport_values"?: Json }; Returns: string
                            },
 "log_set":
 { Args: { "p_done": boolean,"p_item": string,"p_load": number,"p_reps": number,"p_scheduled": string,"p_set": number }; Returns: undefined
@@ -799,8 +805,14 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"new_join_code":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
 "program_org":
 { Args: { "p": string }; Returns: string
+                           },
+"regenerate_join_code":
+{ Args: { "p_org": string }; Returns: string
                            },
 "reopen_session":
 { Args: { "p_scheduled": string }; Returns: undefined

@@ -125,3 +125,12 @@ export async function deleteInjury(injuryId: string) {
   await supabase.from("injuries").delete().eq("id", injuryId);
   revalidatePath("/panel", "layout");
 }
+
+/** Cambia el código del enlace de registro (el anterior deja de funcionar). */
+export async function regenerateJoinCode(): Promise<{ code?: string; error?: string }> {
+  const { supabase, org } = await requireStaff();
+  const { data, error } = await supabase.rpc("regenerate_join_code", { p_org: org.id });
+  if (error || !data) return { error: "No se pudo cambiar el enlace." };
+  revalidatePath("/panel/alumnos");
+  return { code: data };
+}

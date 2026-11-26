@@ -60,7 +60,7 @@ describe("asignación y calendario", () => {
   });
 
   it("el alumno ve su calendario, editar su copia no toca la plantilla", async () => {
-    const { data: rows } = await ath.client!.from("scheduled_workouts").select("id, workout_id, workouts(name, workout_items(id))");
+    const { data: rows } = await ath.client!.from("scheduled_workouts").select("id, workout_id, workouts(name, workout_items(id))").order("date");
     expect(rows!.length).toBe(3);
     expect((rows![0].workouts as unknown as { workout_items: unknown[] }).workout_items.length).toBe(1);
     const wid = rows![0].workout_id;

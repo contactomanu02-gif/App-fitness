@@ -6,6 +6,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/form";
 import { ageFrom, cn, fullName, initials } from "@/lib/utils";
 import { LEVELS, labelOf } from "@/lib/athletes";
+import { siteUrl } from "@/lib/utils";
+import { JoinLinkCard } from "@/components/athletes/join-link-card";
+import { regenerateJoinCode } from "./actions";
 
 export const metadata = { title: "Alumnos" };
 
@@ -16,13 +19,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
 
   let query = supabase
     .from("athletes")
-    .select("id, first_name, last_name, email, birth_date, level, user_id, sports!athletes_sport_id_fkey(name), injuries(status), invitations(accepted_at, revoked_at, expires_at)")
+    .select("id, first_name, last_name, email, birth_date, level, user_id, self_registered, created_at, sports!athletes_sport_id_fkey(name), injuries(status), invitations(accepted_at, revoked_at, expires_at)")
     .eq("org_id", org.id)
     .eq("status", status)
     .order("first_name");
   const term = q.trim().replace(/[%,()]/g, "");
   if (term) query = query.or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%`);
-  const { data: athletes } = await query;
+  const [{ data: athletes }, { data: orgRow }] = await Promise.all([query, supabase.from("organizations").select("join_code").eq("id", org.id).single()]);
 
   return (
     <div>
@@ -35,6 +38,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
           <Plus size={18} /> <span>Nuevo alumno</span>
         </Link>
       </div>
+
+      {orgRow?.join_code ? <JoinLinkCard site={siteUrl()} code={orgRow.join_code} orgName={org.name} regenerate={regenerateJoinCode} /> : null}
 
       <form className="mt-5 flex flex-col gap-2 sm:flex-row" role="search">
         <div className="relative flex-1">
@@ -65,7 +70,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
           ) : status === "active" ? (
             <EmptyState
               title="Todavía no cargaste alumnos"
-              text="Creá la ficha de cada alumno y después mandale la invitación para que entre a su cuenta."
+              text="Pasales el enlace de arriba para que se registren solos, o cargá vos la ficha de cada uno."
               action={<Link href="/panel/alumnos/nuevo" className={buttonVariants()}>Cargar el primero</Link>}
             />
           ) : (
@@ -88,6 +93,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
+                      {a.self_registered && Date.now() - new Date(a.created_at).getTime() < 7 * 864e5 ? <Badge tone="warn">Nuevo</Badge> : null}
                       {activeInjuries ? <Badge tone="danger">{activeInjuries === 1 ? "1 lesión" : `${activeInjuries} lesiones`}</Badge> : null}
                       {a.user_id ? (
                         <Badge tone="accent">Con cuenta</Badge>

@@ -10,10 +10,10 @@ export default function Page() {
       <>
         <h1 className="text-3xl">Registro cerrado</h1>
         <p className="mt-2 text-sm text-muted-fg">
-          Por ahora no se pueden crear cuentas de entrenador nuevas. Si sos alumno, entrá con la invitación que te mandó tu entrenador.
+          Por ahora las cuentas de entrenador nuevas se crean a pedido. Si sos alumno, registrate con el código de tu entrenador.
         </p>
-        <Link href="/ingresar" className="mt-6 inline-block font-medium text-accent underline-offset-4 hover:underline">
-          Ir a ingresar
+        <Link href="/unirme" className="mt-6 inline-block font-medium text-accent underline-offset-4 hover:underline">
+          Soy alumno, registrarme
         </Link>
       </>
     );
@@ -22,7 +22,7 @@ export default function Page() {
     <>
       <h1 className="text-3xl">Crear cuenta de entrenador</h1>
       <p className="mt-1 text-sm text-muted-fg">
-        Los alumnos no se registran acá: les llega una invitación de su entrenador.
+        Si sos alumno, registrate con el código de tu entrenador.
       </p>
       <SignUpForm />
       <p className="mt-6 text-center text-sm text-muted-fg">
