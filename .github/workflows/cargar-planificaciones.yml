@@ -1,0 +1,47 @@
+# Carga en producción sesiones que preparó Claude, sin que el contenido quede público:
+# el runner crea una clave de un solo uso, publica solo la parte pública,
+# espera el archivo cifrado con esa clave, lo aplica y borra la rama temporal.
+name: Cargar planificaciones
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  SUPABASE_PROJECT_ID: jixprysxcuyzpvreohgi
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+jobs:
+  cargar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Instalar age
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age >/dev/null
+      - name: Clave de un solo uso y espera del archivo
+        run: |
+          REMOTE="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          age-keygen -o clave.txt 2>/dev/null
+          git init -q buzon && cd buzon
+          git config user.name "github-actions" && git config user.email "github-actions@users.noreply.github.com"
+          git checkout -q -b claude-buzon
+          age-keygen -y ../clave.txt > clave-publica.txt
+          git add clave-publica.txt && git commit -qm "Clave pública de un solo uso" && git push -qf "$REMOTE" claude-buzon
+          for i in $(seq 1 100); do
+            sleep 15
+            git fetch -q "$REMOTE" claude-buzon && git reset -q --hard FETCH_HEAD
+            if [ -f cargar.sql.age ]; then break; fi
+          done
+          if [ ! -f cargar.sql.age ]; then git push -q "$REMOTE" --delete claude-buzon; echo "::error::No llegó el archivo"; exit 1; fi
+          age -d -i ../clave.txt -o ../cargar.sql cargar.sql.age
+          git push -q "$REMOTE" --delete claude-buzon
+      - name: Aplicar en la base
+        run: |
+          jq -n --rawfile q cargar.sql '{query: $q}' > body.json
+          curl -sS -f -X POST "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+            --data @body.json -o resultado.json || { echo "::error::La base rechazó la carga"; head -c 500 resultado.json; exit 1; }
+          rm -f cargar.sql body.json
+          echo "Carga aplicada."
