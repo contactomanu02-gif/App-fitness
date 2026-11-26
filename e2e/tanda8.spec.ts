@@ -31,6 +31,7 @@ test("videos: el catálogo trae video y el entrenador puede poner el suyo", asyn
   await login(page, coach.email, /\/panel/);
   await page.goto(`/panel/ejercicios/${ex!.id}`);
   await expect(page.getByText("Video del catálogo")).toBeVisible();
+  await page.getByRole("button", { name: "Reproducir video: Press Pallof" }).click();
   await expect(page.locator("iframe[title='Video: Press Pallof']")).toHaveAttribute("src", /LWrUioYVcZ0/);
   await page.getByLabel("Usar mi video").fill("https://youtu.be/bbbbbbbbbbb");
   await page.getByRole("button", { name: "Guardar video" }).click();
@@ -44,6 +45,7 @@ test("videos: el catálogo trae video y el entrenador puede poner el suyo", asyn
   await login(ap, email, /\/app/);
   await ap.getByText("Ver la sesión").click();
   await ap.getByText("Cómo se hace").first().click();
+  await ap.getByRole("button", { name: "Reproducir video: Press Pallof" }).click();
   await expect(ap.locator("iframe[title='Video: Press Pallof']")).toHaveAttribute("src", /bbbbbbbbbbb/);
   await ctx.close();
 });

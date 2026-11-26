@@ -38,3 +38,22 @@ describe("prescripción", () => {
     expect(prescription({ sets: 4, rest_sec: 120, rpe: 8 })).toBe("4 series");
   });
 });
+
+describe("ayudas para el alumno", () => {
+  it("explica los grupos solo en el primer ejercicio de un grupo de 2 o más", async () => {
+    const { groupIntro } = await import("./programs");
+    const labels = ["A", "A", "A", "B", null, "C", "C"];
+    expect(groupIntro(labels, 0)).toContain("Bloque A");
+    expect(groupIntro(labels, 0)).toContain("3 ejercicios");
+    expect(groupIntro(labels, 1)).toBeNull();
+    expect(groupIntro(labels, 3)).toBeNull();
+    expect(groupIntro(labels, 4)).toBeNull();
+    expect(groupIntro(labels, 5)).toContain("Bloque C");
+  });
+  it("pide kilos solo en fuerza o si hay carga indicada", async () => {
+    const { tracksLoad } = await import("./programs");
+    expect(tracksLoad("fuerza", null)).toBe(true);
+    expect(tracksLoad("potencia", null)).toBe(false);
+    expect(tracksLoad("movilidad", "banda")).toBe(true);
+  });
+});

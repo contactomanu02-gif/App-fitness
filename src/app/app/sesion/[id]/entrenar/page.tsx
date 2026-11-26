@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { requireAthlete } from "@/lib/session";
 import { loadAthleteSession } from "@/lib/session-data";
-import { displayLabels, prescription } from "@/lib/programs";
+import { displayLabels, groupIntro, prescription, tracksLoad } from "@/lib/programs";
 import { defaultsFrom } from "@/lib/tracking";
 import { Trainer, type TrainerItem } from "./trainer";
 
@@ -27,6 +27,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     return {
       id: it.id,
       label: labels[i] || String(i + 1),
+      intro: groupIntro(items.map((x) => x.group_label), i),
+      showLoad: tracksLoad(it.exercises?.category, it.load),
       name: it.exercises?.name ?? "Ejercicio",
       prescription: prescription({ ...it, rpe: it.rpe === null ? null : Number(it.rpe) }),
       tempo: it.tempo,

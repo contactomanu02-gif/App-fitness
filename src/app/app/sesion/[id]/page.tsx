@@ -7,7 +7,7 @@ import { VideoEmbed } from "@/components/exercises/video-embed";
 import { CATEGORIES } from "@/lib/exercises";
 import { labelOf } from "@/lib/athletes";
 import { SCHEDULE_STATUS } from "@/lib/calendar";
-import { displayLabels, prescription } from "@/lib/programs";
+import { displayLabels, prescription, groupIntro } from "@/lib/programs";
 import { longDate, todayISO } from "@/lib/dates";
 import { loadAthleteSession } from "@/lib/session-data";
 import { buttonVariants } from "@/components/ui/button";
@@ -84,6 +84,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
           const logs = logsFor(it.id);
           return (
             <li key={it.id}>
+              {groupIntro(items.map((x) => x.group_label), i) ? <p className="mb-2 px-1 text-sm text-muted-fg">{groupIntro(items.map((x) => x.group_label), i)}</p> : null}
               <Card className="overflow-hidden">
                 <div className="flex gap-3 p-4">
                   <span className="grid h-8 min-w-9 shrink-0 place-items-center rounded-lg bg-accent-soft px-1.5 text-sm font-bold text-accent">{labels[i] || i + 1}</span>

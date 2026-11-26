@@ -90,6 +90,23 @@ export function displayLabels(labels: (string | null)[]): string[] {
   });
 }
 
+/**
+ * Texto que explica al alumno cómo hacer un grupo de ejercicios (A1, A2, A3…).
+ * Devuelve el texto solo en el primer ejercicio de un grupo de 2 o más; si no, null.
+ */
+export function groupIntro(labels: (string | null)[], i: number): string | null {
+  const l = labels[i];
+  if (!l || (i > 0 && labels[i - 1] === l)) return null;
+  const n = labels.filter((x) => x === l).length;
+  if (n < 2) return null;
+  return `Bloque ${l} · Hacé una serie de cada uno (${n} ejercicios) y volvé a empezar hasta completar las series.`;
+}
+
+/** Ejercicios en los que tiene sentido anotar el peso. */
+export function tracksLoad(category: string | null | undefined, load: string | null | undefined) {
+  return category === "fuerza" || Boolean(load);
+}
+
 /** Resumen corto de la prescripción: «3 × 8-10 · 20 kg». Pausas y RPE ya no se muestran (pedido de Manu). */
 export function prescription(i: { sets?: number | null; reps?: string | null; load?: string | null; rest_sec?: number | null; rpe?: number | null }) {
   const parts: string[] = [];

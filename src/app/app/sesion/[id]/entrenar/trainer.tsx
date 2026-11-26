@@ -19,6 +19,8 @@ export type TrainerItem = {
   rest: number;
   photo: string | null;
   video: string | null;
+  intro: string | null;
+  showLoad: boolean;
   instructions: string | null;
   cues: string | null;
   sets: SetRow[];
@@ -126,6 +128,7 @@ export function Trainer({ scheduledId, name, intensity, notes, items: initial }:
           const complete = it.sets.every((s) => s.done);
           return (
             <li key={it.id}>
+              {it.intro ? <p className="mb-2 px-1 text-sm text-muted-fg">{it.intro}</p> : null}
               <Card className={cn("overflow-hidden", complete && "border-accent/40")} data-testid="ejercicio">
                 <div className="flex gap-3 p-4">
                   <span className={cn("grid h-8 min-w-9 shrink-0 place-items-center rounded-lg px-1.5 text-sm font-bold", complete ? "bg-accent text-accent-fg" : "bg-accent-soft text-accent")}>
@@ -144,14 +147,14 @@ export function Trainer({ scheduledId, name, intensity, notes, items: initial }:
                 </div>
 
                 <div className="border-t border-border px-4 py-2">
-                  <div className="grid grid-cols-[48px_1fr_1fr_52px] gap-2 px-1 pb-1 text-[11px] font-medium text-muted-fg">
+                  <div className={cn("grid gap-2 px-1 pb-1 text-[11px] font-medium text-muted-fg", it.showLoad ? "grid-cols-[48px_1fr_1fr_52px]" : "grid-cols-[48px_1fr_52px]")}>
                     <span>Serie</span>
                     <span>Reps</span>
-                    <span>Kg</span>
+                    {it.showLoad ? <span>Kg</span> : null}
                     <span className="sr-only">Hecha</span>
                   </div>
                   {it.sets.map((s, k) => (
-                    <div key={k} className={cn("grid grid-cols-[48px_1fr_1fr_52px] items-center gap-2 rounded-xl px-1 py-1", s.done && "bg-accent-soft/60")}>
+                    <div key={k} className={cn("grid items-center", it.showLoad ? "grid-cols-[48px_1fr_1fr_52px]" : "grid-cols-[48px_1fr_52px]", "gap-2 rounded-xl px-1 py-1", s.done && "bg-accent-soft/60")}>
                       <span className="text-sm font-semibold text-muted-fg">{k + 1}</span>
                       <input
                         inputMode="numeric"
@@ -161,6 +164,7 @@ export function Trainer({ scheduledId, name, intensity, notes, items: initial }:
                         aria-label={`Reps, ${it.name}, serie ${k + 1}`}
                         className="h-11 w-full rounded-xl border border-border bg-card px-3 text-center text-base tabular-nums outline-none focus:border-accent"
                       />
+{it.showLoad ? (
                       <input
                         inputMode="decimal"
                         value={s.load ?? ""}
@@ -169,6 +173,7 @@ export function Trainer({ scheduledId, name, intensity, notes, items: initial }:
                         aria-label={`Kg, ${it.name}, serie ${k + 1}`}
                         className="h-11 w-full rounded-xl border border-border bg-card px-3 text-center text-base tabular-nums outline-none focus:border-accent"
                       />
+                      ) : null}
                       <button
                         type="button"
                         onClick={() => toggle(i, k)}

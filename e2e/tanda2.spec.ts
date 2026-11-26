@@ -47,6 +47,7 @@ test("biblioteca: buscar, filtrar, copiar del catálogo, crear con foto y video,
   await page.getByLabel("Video (YouTube o Vimeo)").fill("https://youtu.be/dQw4w9WgXcQ");
   await page.getByRole("button", { name: "Guardar ejercicio" }).click();
   await expect(page.getByRole("heading", { name: "Rotación con banda en postura" })).toBeVisible();
+  await page.getByRole("button", { name: "Reproducir video: Rotación con banda en postura" }).click();
   await expect(page.locator('iframe[src*="youtube-nocookie.com/embed/dQw4w9WgXcQ"]')).toHaveCount(1);
 
   // Subir una foto
