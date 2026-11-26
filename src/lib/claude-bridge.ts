@@ -225,7 +225,6 @@ export function buildExport(input: ExportInput, request?: string) {
     ].filter(Boolean);
     L.push(`- ${basics.join(" · ")}`);
     if (a.training_days.length || a.sessions_per_week) L.push(`- Disponibilidad: ${[a.sessions_per_week ? `${a.sessions_per_week} sesiones por semana` : null, a.training_days.length ? `días ${a.training_days.join(", ")}` : null].filter(Boolean).join(", ")}`);
-    if (a.equipment.length) L.push(`- Equipamiento disponible: ${a.equipment.join(", ")}`);
     if (a.goals) L.push(`- Objetivos: ${a.goals}`);
     for (const f of a.sportFields) L.push(`- ${f.label}: ${f.value}`);
     if (a.notes) L.push(`- Notas: ${a.notes}`);

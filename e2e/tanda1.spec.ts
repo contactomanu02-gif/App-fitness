@@ -37,7 +37,6 @@ test("recorrido completo: entrenador, alumno, invitación, lesiones y grupos", a
   await page.getByLabel("Mano dominante").selectOption("Diestro");
   await page.getByText("Mar", { exact: true }).click();
   await page.getByText("Jue", { exact: true }).click();
-  await page.getByText("Mancuernas", { exact: true }).click();
   await page.getByRole("button", { name: "Guardar alumno" }).click();
 
   await expect(page.getByRole("heading", { name: "Juan Pérez" })).toBeVisible();

@@ -172,7 +172,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                     .join(" · ") || null
                 }
               />
-              <Row label="Equipamiento" value={a.equipment.join(", ")} />
             </dl>
             {a.goals ? (
               <div className="border-t border-border px-5 py-4">

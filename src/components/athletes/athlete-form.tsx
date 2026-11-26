@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useFormAction } from "@/components/use-form-action";
-import { DAYS, EQUIPMENT, LEVELS, type SportField } from "@/lib/athletes";
+import { DAYS, LEVELS, type SportField } from "@/lib/athletes";
 import { Field, FormError, Input, Select, Textarea } from "@/components/ui/form";
 import { Card } from "@/components/ui/card";
 import { SubmitButton } from "@/components/submit-button";
@@ -71,7 +71,6 @@ export function AthleteForm({
   const [sportId, setSportId] = useState(athlete?.sport_id ?? golf?.id ?? "");
   const sport = sports.find((s) => s.id === sportId);
   const fields = [...(sport?.sport_fields ?? [])].sort((a, b) => a.sort_order - b.sort_order);
-  const customEquipment = (athlete?.equipment ?? []).filter((e) => !(EQUIPMENT as readonly string[]).includes(e));
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
@@ -182,17 +181,6 @@ export function AthleteForm({
         <Field label="Sesiones por semana" htmlFor="sessions_per_week" className="max-w-40">
           <Input id="sessions_per_week" name="sessions_per_week" inputMode="numeric" defaultValue={athlete?.sessions_per_week ?? ""} />
         </Field>
-        <div>
-          <p className="mb-2 text-sm font-medium">Equipamiento disponible</p>
-          <div className="flex flex-wrap gap-2">
-            {EQUIPMENT.map((e) => (
-              <Chip key={e} name="equipment" value={e} label={e} defaultChecked={athlete?.equipment.includes(e)} />
-            ))}
-          </div>
-          <Field label="Otro equipamiento" htmlFor="equipment_other" hint="Separado por comas." className="mt-3">
-            <Input id="equipment_other" name="equipment_other" defaultValue={customEquipment.join(", ")} />
-          </Field>
-        </div>
         <Field label="Notas privadas" htmlFor="notes" hint="Solo las ves vos.">
           <Textarea id="notes" name="notes" defaultValue={athlete?.notes ?? ""} maxLength={4000} />
         </Field>
