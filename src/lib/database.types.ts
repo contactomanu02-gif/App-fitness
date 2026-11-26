@@ -55,6 +55,98 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"assessment_results": {
+                  Row: {
+                    "assessment_id": string,"id": string,"note": string | null,"org_id": string,"passed": boolean | null,"side": string,"test_id": string,"value": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assessment_id": string,"id"?: string,"note"?: string | null,"org_id": string,"passed"?: boolean | null,"side"?: string,"test_id": string,"value"?: number | null
+                  }
+                  Update: {
+                    "assessment_id"?: string,"id"?: string,"note"?: string | null,"org_id"?: string,"passed"?: boolean | null,"side"?: string,"test_id"?: string,"value"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "assessment_results_assessment_id_fkey"
+      columns: ["assessment_id"]
+isOneToOne: false
+      referencedRelation: "assessments"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assessment_results_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assessment_results_test_id_fkey"
+      columns: ["test_id"]
+isOneToOne: false
+      referencedRelation: "assessment_tests"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"assessment_test_catalog": {
+                  Row: {
+                    "bilateral": boolean,"category": string,"higher_is_better": boolean,"id": string,"instructions": string | null,"kind": string,"name": string,"sort_order": number,"target": number | null,"unit": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "bilateral"?: boolean,"category": string,"higher_is_better"?: boolean,"id"?: string,"instructions"?: string | null,"kind": string,"name": string,"sort_order"?: number,"target"?: number | null,"unit"?: string | null
+                  }
+                  Update: {
+                    "bilateral"?: boolean,"category"?: string,"higher_is_better"?: boolean,"id"?: string,"instructions"?: string | null,"kind"?: string,"name"?: string,"sort_order"?: number,"target"?: number | null,"unit"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"assessment_tests": {
+                  Row: {
+                    "archived": boolean,"bilateral": boolean,"category": string,"created_at": string,"higher_is_better": boolean,"id": string,"instructions": string | null,"kind": string,"name": string,"org_id": string,"sort_order": number,"target": number | null,"unit": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived"?: boolean,"bilateral"?: boolean,"category": string,"created_at"?: string,"higher_is_better"?: boolean,"id"?: string,"instructions"?: string | null,"kind": string,"name": string,"org_id": string,"sort_order"?: number,"target"?: number | null,"unit"?: string | null
+                  }
+                  Update: {
+                    "archived"?: boolean,"bilateral"?: boolean,"category"?: string,"created_at"?: string,"higher_is_better"?: boolean,"id"?: string,"instructions"?: string | null,"kind"?: string,"name"?: string,"org_id"?: string,"sort_order"?: number,"target"?: number | null,"unit"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "assessment_tests_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"assessments": {
+                  Row: {
+                    "athlete_id": string,"created_at": string,"created_by": string | null,"date": string,"id": string,"notes": string | null,"org_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "athlete_id": string,"created_at"?: string,"created_by"?: string | null,"date"?: string,"id"?: string,"notes"?: string | null,"org_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "athlete_id"?: string,"created_at"?: string,"created_by"?: string | null,"date"?: string,"id"?: string,"notes"?: string | null,"org_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "assessments_athlete_id_fkey"
+      columns: ["athlete_id"]
+isOneToOne: false
+      referencedRelation: "athletes"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assessments_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"athlete_groups": {
                   Row: {
                     "created_at": string,"description": string | null,"id": string,"name": string,"org_id": string
@@ -628,6 +720,9 @@ isOneToOne: false
 "group_org":
 { Args: { "p_group": string }; Returns: string
                            },
+"init_assessment_tests":
+{ Args: { "p_org": string }; Returns: undefined
+                           },
 "is_my_scheduled_workout":
 { Args: { "p_workout": string }; Returns: boolean
                            },
@@ -680,6 +775,9 @@ isOneToOne: false
                            },
 "reopen_session":
 { Args: { "p_scheduled": string }; Returns: undefined
+                           },
+"save_assessment":
+{ Args: { "p_assessment": string,"p_athlete": string,"p_date": string,"p_notes": string,"p_results": Json }; Returns: string
                            },
 "save_workout":
 { Args: { "p_data": Json,"p_workout": string }; Returns: undefined
