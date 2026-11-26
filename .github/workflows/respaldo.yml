@@ -1,0 +1,40 @@
+# Respaldo diario de la base de datos (cifrado). Se guarda 30 días en la pestaña Actions.
+# Para restaurar: descargar el archivo, descifrar con la frase BACKUP_PASSPHRASE y cargarlo con psql.
+name: Respaldo diario
+
+on:
+  schedule:
+    - cron: "17 7 * * *" # 4:17 en Argentina
+  workflow_dispatch:
+
+env:
+  SUPABASE_PROJECT_ID: jixprysxcuyzpvreohgi
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+  BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+
+jobs:
+  respaldo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Revisar secretos
+        run: |
+          if [ -z "$BACKUP_PASSPHRASE" ]; then echo "::error::Falta el secreto BACKUP_PASSPHRASE."; exit 1; fi
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+      - name: Exportar
+        run: |
+          supabase db dump --linked -f roles.sql --role-only
+          supabase db dump --linked -f schema.sql
+          supabase db dump --linked -f data.sql --data-only --use-copy
+          tar czf respaldo.tgz roles.sql schema.sql data.sql
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" --symmetric --cipher-algo AES256 -o "respaldo-$(date +%F).tgz.gpg" respaldo.tgz
+          rm -f roles.sql schema.sql data.sql respaldo.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: respaldo-${{ github.run_id }}
+          path: respaldo-*.tgz.gpg
+          retention-days: 30
