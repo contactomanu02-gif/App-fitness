@@ -26,7 +26,7 @@ export default async function Page() {
   const { supabase, org, profile } = await requireStaff();
   const today = todayISO();
   const from14 = addDays(today, -13);
-  const [{ data: athletes }, { data: injuries }, { data: alerts }, { data: recent }] = await Promise.all([
+  const [{ data: athletes }, { data: injuries }, { data: alerts }, { data: recent }, { data: comps }] = await Promise.all([
     supabase.from("athletes").select("id, user_id, email, invitations(accepted_at, revoked_at, expires_at)").eq("org_id", org.id).eq("status", "active"),
     supabase
       .from("injuries")
@@ -45,6 +45,16 @@ export default async function Page() {
       .gte("date", from14)
       .lte("date", today)
       .order("date", { ascending: false }),
+    supabase
+      .from("calendar_events")
+      .select("id, title, start_date, location, athlete_id, athletes!inner(first_name, last_name, status)")
+      .eq("org_id", org.id)
+      .eq("kind", "torneo")
+      .eq("athletes.status", "active")
+      .gte("end_date", today)
+      .lte("start_date", addDays(today, 90))
+      .order("start_date")
+      .limit(12),
   ]);
   const rows = recent ?? [];
   const week = adherence(rows, mondayOf(today), addDays(mondayOf(today), 6), today);
@@ -87,6 +97,38 @@ export default async function Page() {
             <Stat label="Sin registrar (7 días)" value={pending.length} tone="warn" />
             <Stat label="Lesiones activas" value={injuries?.length ?? 0} tone="danger" />
           </div>
+
+          <Card className="mt-4">
+            <CardHeader title="Calendario competitivo" subtitle="Competencias de tus alumnos en los próximos 90 días: planificá en base a ellas." />
+            {comps?.length ? (
+              <ul className="divide-y divide-border px-5 pb-3">
+                {comps.map((c) => {
+                  const days = Math.round((new Date(`${c.start_date}T12:00:00Z`).getTime() - new Date(`${today}T12:00:00Z`).getTime()) / 864e5);
+                  return (
+                    <li key={c.id}>
+                      <Link href={`/panel/alumnos/${c.athlete_id}`} className="flex items-center gap-3 py-2.5 hover:opacity-80">
+                        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-center leading-none ${days <= 14 ? "bg-accent text-accent-fg" : "bg-muted"}`}>
+                          <span>
+                            <b className="block text-base">{Math.max(0, days)}</b>
+                            <span className="text-[9px] uppercase">días</span>
+                          </span>
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-medium">{c.title}</span>
+                          <span className="block truncate text-sm text-muted-fg">
+                            {fullName(c.athletes)} · {shortDate(c.start_date)}
+                            {c.location ? ` · ${c.location}` : ""}
+                          </span>
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="px-5 pb-4 text-sm text-muted-fg">Ningún alumno cargó competencias todavía. Ellos las cargan al registrarse o desde su calendario, y vos desde la agenda de cada alumno.</p>
+            )}
+          </Card>
 
           {alerts?.length ? (
             <Card className="mt-4">

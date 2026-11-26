@@ -10,7 +10,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <Logo size={168} priority className="relative h-28 w-28 md:h-64 md:w-64" />
         <p className="relative mt-5 hidden font-display text-4xl font-bold tracking-wide uppercase md:block">{BRAND_NAME}</p>
         <p className="relative mt-2 max-w-xs text-center text-sm text-white/70 md:text-base">
-          Entrenamiento y seguimiento para golfistas.
+          Entrenamiento para deportistas, planificado según tu calendario de competencias.
         </p>
         <ThemeToggle className="absolute top-[max(env(safe-area-inset-top),12px)] right-3 text-white/70 hover:bg-white/10 hover:text-white" />
       </section>

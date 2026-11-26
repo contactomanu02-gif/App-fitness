@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Dumbbell } from "lucide-react";
+import { Dumbbell, Trophy } from "lucide-react";
 import { requireAthlete } from "@/lib/session";
 import { Badge, Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
@@ -24,7 +24,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
   const today = todayISO();
   const monday = mondayOf(today);
   const sunday = addDays(monday, 6);
-  const [{ data: upcoming }, { data: weekEvents }] = await Promise.all([
+  const [{ data: upcoming }, { data: weekEvents }, { data: nextComp }] = await Promise.all([
     supabase
       .from("scheduled_workouts")
       .select("id, date, status, workouts(name, est_duration_min, intensity_pct, workout_items(id))")
@@ -39,7 +39,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
       .lte("start_date", sunday)
       .gte("end_date", today)
       .order("start_date"),
+    supabase
+      .from("calendar_events")
+      .select("title, start_date, end_date, location")
+      .eq("athlete_id", athlete.id)
+      .eq("kind", "torneo")
+      .gte("end_date", today)
+      .order("start_date")
+      .limit(1)
+      .maybeSingle(),
   ]);
+  const daysToComp = nextComp ? Math.round((new Date(`${nextComp.start_date}T12:00:00Z`).getTime() - new Date(`${today}T12:00:00Z`).getTime()) / 864e5) : null;
   const todays = (upcoming ?? []).filter((u) => u.date === today);
   const next = (upcoming ?? []).find((u) => u.date > today && u.status === "planned");
   const week = DAYS.map((d, i) => {
@@ -140,6 +150,43 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
           </div>
         </Card>
       ) : null}
+
+      {nextComp && daysToComp !== null ? (
+        <Link href={`/app/calendario?mes=${nextComp.start_date.slice(0, 7)}`} className="block">
+          <Card className="flex items-center gap-4 p-4 transition hover:border-accent">
+            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-accent text-accent-fg">
+              {daysToComp <= 0 ? (
+                <Trophy size={28} />
+              ) : (
+                <span className="text-center leading-none">
+                  <span className="block font-display text-3xl font-bold">{daysToComp}</span>
+                  <span className="text-[10px] font-semibold uppercase">{daysToComp === 1 ? "día" : "días"}</span>
+                </span>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold tracking-wide text-accent uppercase">{daysToComp <= 0 ? "Estás compitiendo" : "Próxima competencia"}</p>
+              <p className="truncate font-semibold">{nextComp.title}</p>
+              <p className="text-sm text-muted-fg">
+                {longDate(nextComp.start_date)}
+                {nextComp.location ? ` · ${nextComp.location}` : ""}
+              </p>
+            </div>
+          </Card>
+        </Link>
+      ) : (
+        <Link href="/app/calendario" className="block">
+          <Card className="flex items-center gap-4 border-dashed p-4 transition hover:border-accent">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent">
+              <Trophy size={22} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold">Cargá tus próximas competencias</p>
+              <p className="text-sm text-muted-fg">Tu entrenador arma tu planificación en base a ellas.</p>
+            </div>
+          </Card>
+        </Link>
+      )}
 
       <Link href="/app/perfil#molestias" className={buttonVariants({ variant: "outline", className: "w-full" })}>
         Avisar una molestia o dolor

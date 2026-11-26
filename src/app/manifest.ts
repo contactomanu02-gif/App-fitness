@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Fitness Approach",
     short_name: "Fitness Approach",
-    description: "Entrenamiento y seguimiento para golfistas, en el celular.",
+    description: "Entrenamiento para deportistas, planificado según su calendario de competencias.",
     start_url: "/",
     display: "standalone",
     background_color: "#0b0b0b",

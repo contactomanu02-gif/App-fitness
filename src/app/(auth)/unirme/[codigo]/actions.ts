@@ -57,6 +57,17 @@ export async function registerAthlete(code: string, _: JoinState, form: FormData
     }))
     .filter((x) => x.body_area && form.get("has_injuries") === "si");
 
+  const competitions = [0, 1, 2, 3, 4]
+    .map((i) => ({
+      title: String(form.get(`comp_title_${i}`) ?? "").trim().slice(0, 120),
+      start_date: String(form.get(`comp_start_${i}`) ?? ""),
+      end_date: String(form.get(`comp_end_${i}`) ?? ""),
+      location: String(form.get(`comp_loc_${i}`) ?? "").trim().slice(0, 120),
+    }))
+    .filter((c) => c.title || c.start_date);
+  const badComp = competitions.find((c) => !c.title || !/^\d{4}-\d{2}-\d{2}$/.test(c.start_date) || (c.end_date && c.end_date < c.start_date));
+  if (badComp) return { error: "Revisá tus competencias: cada una necesita nombre y fecha de inicio, y la fecha de fin no puede ser anterior.", step: 3 };
+
   if (!loggedIn) {
     const acc = accountSchema.safeParse({ email: form.get("email"), password: form.get("password") });
     if (!acc.success) return { error: acc.error.issues[0].message, step: 1 };
@@ -82,6 +93,7 @@ export async function registerAthlete(code: string, _: JoinState, form: FormData
     p_data: { ...data.data, birth_date: data.data.birth_date ?? "", sport_id: data.data.sport_id ?? "" },
     p_sport_values: sport.values,
     p_injuries: injuries,
+    p_competitions: competitions,
   });
   if (error) return { error: joinError(error.message), step: 4 };
   redirect("/app?bienvenida=1");

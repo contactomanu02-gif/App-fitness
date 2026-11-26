@@ -39,7 +39,7 @@ export async function loadExport(supabase: DB, orgId: string, athleteId: string 
 
   const today = todayISO();
   const from = addDays(today, -28);
-  const [{ data: a }, { data: ev }, { data: sched }, { data: logs }, tests] = await Promise.all([
+  const [{ data: a }, { data: ev }, { data: sched }, { data: logs }, tests, { data: comps }] = await Promise.all([
     supabase
       .from("athletes")
       .select("*, sports!athletes_sport_id_fkey(id, name, sport_fields(key, label, unit, sort_order)), athlete_sport_profiles(sport_id, values), injuries(*)")
@@ -60,6 +60,14 @@ export async function loadExport(supabase: DB, orgId: string, athleteId: string 
       .eq("athlete_id", athleteId)
       .gte("scheduled_workouts.date", from),
     loadTests(supabase, orgId, { includeArchived: true }),
+    supabase
+      .from("calendar_events")
+      .select("title, start_date, end_date, location")
+      .eq("athlete_id", athleteId)
+      .eq("kind", "torneo")
+      .gte("end_date", today)
+      .lte("start_date", addDays(today, 183))
+      .order("start_date"),
   ]);
   if (!a) return { library };
 
@@ -130,6 +138,13 @@ export async function loadExport(supabase: DB, orgId: string, athleteId: string 
         .map((i) => ({ body_area: i.body_area, severity: labelOf(SEVERITIES, i.severity) ?? i.severity, status: i.status, description: i.description, limitations: i.limitations })),
       assessment,
       recent,
+      competitions: (comps ?? []).map((c) => ({
+        title: c.title,
+        start: shortDate(c.start_date),
+        end: shortDate(c.end_date),
+        weeksAway: Math.max(0, Math.round((new Date(`${c.start_date}T12:00:00Z`).getTime() - new Date(`${today}T12:00:00Z`).getTime()) / (7 * 864e5))),
+        location: c.location,
+      })),
     },
   };
 }

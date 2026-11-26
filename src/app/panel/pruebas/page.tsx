@@ -17,7 +17,7 @@ export default async function Page() {
     <div className="mx-auto max-w-3xl">
       <h1 className="text-3xl">Pruebas de evaluación</h1>
       <p className="mt-1 text-sm text-muted-fg">
-        Tu lista de pruebas para la evaluación física. Arrancó con una lista sugerida para golfistas: cambiala, sacá lo que no uses y agregá las tuyas.
+        Tu lista de pruebas para la evaluación física. Arrancó con una lista sugerida orientada a golf: cambiala, sacá lo que no uses y agregá las tuyas.
       </p>
 
       {TEST_CATEGORIES.map((c) => {

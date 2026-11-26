@@ -181,6 +181,7 @@ export type ExportInput = {
     injuries: { body_area: string; severity: string; status: string; description: string | null; limitations: string | null }[];
     assessment: { date: string; notes: string | null; lines: string[] } | null;
     recent: { done: number; planned: number; avgRpe: number | null; pains: string[]; comments: string[]; loads: string[] } | null;
+    competitions?: { title: string; start: string; end: string; weeksAway: number; location: string | null }[];
   };
   library: { category: string; names: string[] }[];
 };
@@ -212,7 +213,7 @@ const EXAMPLE = `{
 
 export function buildExport(input: ExportInput, request?: string) {
   const L: string[] = [];
-  L.push("Sos mi asistente para armar entrenamientos (soy preparador físico; mis alumnos son principalmente golfistas). Lo que armes lo reviso yo antes de dárselo al alumno.");
+  L.push("Sos mi asistente para armar entrenamientos (soy preparador físico; mis alumnos son deportistas, sobre todo golfistas). Lo que armes lo reviso yo antes de dárselo al alumno.");
   L.push("");
   const a = input.athlete;
   if (a) {
@@ -237,6 +238,11 @@ export function buildExport(input: ExportInput, request?: string) {
     for (const i of a.injuries)
       L.push(`- ${i.body_area} (${i.severity}, ${i.status.replace("_", " ")})${i.description ? `: ${i.description}` : ""}${i.limitations ? `. Limitaciones: ${i.limitations}` : ""}`);
     L.push("");
+    L.push("## Calendario competitivo (próximos 6 meses)");
+    if (!a.competitions?.length) L.push("- No tiene competencias cargadas. Si te parece importante saberlo, preguntame antes de armar la planificación.");
+    for (const c of a.competitions ?? [])
+      L.push(`- ${c.title}: ${c.start}${c.end !== c.start ? ` al ${c.end}` : ""} (en ${c.weeksAway} ${c.weeksAway === 1 ? "semana" : "semanas"})${c.location ? `, ${c.location}` : ""}`);
+    L.push("");
     if (a.assessment) {
       L.push(`## Última evaluación física (${a.assessment.date})`);
       for (const l of a.assessment.lines) L.push(`- ${l}`);
@@ -254,6 +260,11 @@ export function buildExport(input: ExportInput, request?: string) {
   }
   L.push("## Mi biblioteca de ejercicios (usá solo estos nombres, escritos igual)");
   for (const g of input.library) L.push(`- ${g.category}: ${g.names.join("; ")}`);
+  L.push("");
+  L.push("## Planificá según el calendario competitivo");
+  L.push("- Ordená los bloques hacia atrás desde la competencia más importante: carga y fuerza lejos de la fecha, potencia y velocidad al acercarse, y bajá el volumen la semana de la competencia para que llegue fresco.");
+  L.push("- La semana de competencia: sesiones cortas de mantenimiento y activación, nada que deje fatiga. Después de competir, una semana más liviana antes de volver a cargar.");
+  L.push("- Si hay varias competencias seguidas, priorizá mantener y no intentes picos en todas. Decime qué semanas quedan pegadas a una competencia.");
   L.push("");
   L.push("## Cómo responder");
   L.push("1. Primero explicame en pocas líneas por qué elegiste cada cosa (esto queda entre nosotros).");

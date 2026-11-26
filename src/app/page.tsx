@@ -21,7 +21,7 @@ export default async function Home() {
           <Logo size={168} priority className="h-28 w-28 md:h-40 md:w-40" />
           <h1 className="mt-5 font-display text-5xl leading-none font-bold tracking-wide uppercase md:text-6xl">{BRAND_NAME}</h1>
           <p className="mt-3 max-w-md text-base text-white/75 md:text-lg">
-            Preparación física para golfistas. Tu plan, tus sesiones y tu progreso en un solo lugar.
+            Preparación física para deportistas, planificada en base a tu calendario competitivo. Para que llegues a cada competencia en tu mejor momento.
           </p>
         </div>
       </section>
@@ -33,22 +33,40 @@ export default async function Home() {
             href="/acceso/alumno"
             icon={<Dumbbell size={26} />}
             title="Soy alumno"
-            text="Mirá tu entrenamiento de hoy, marcá tus series y seguí tu progreso."
+            text="Cargá tus competencias, mirá el entrenamiento de hoy y seguí tu progreso."
             accent
           />
           <RoleCard
             href="/acceso/entrenador"
             icon={<ClipboardList size={26} />}
             title="Soy entrenador"
-            text="Armá rutinas, asigná planificaciones y seguí a tus alumnos."
+            text="Planificá según el calendario competitivo de cada deportista y seguí cómo entrena."
           />
         </div>
-        <ul className="mt-8 grid gap-3 text-sm text-muted-fg sm:grid-cols-3">
+        <section className="mt-8 overflow-hidden rounded-3xl bg-[#0b0b0b] p-5 text-white md:p-6">
+          <p className="font-display text-2xl font-bold tracking-wide uppercase">Planificación según tu calendario competitivo</p>
+          <p className="mt-1 text-sm text-white/70">Cada etapa se arma mirando tus próximas competencias.</p>
+          <ol className="mt-4 grid gap-2 sm:grid-cols-4">
+            {[
+              ["Base", "Fuerza y volumen, lejos de la competencia"],
+              ["Potencia", "Velocidad y transferencia a tu deporte"],
+              ["Puesta a punto", "Menos volumen para llegar fresco"],
+              ["Competencia", "Activación y mantenimiento, sin fatiga"],
+            ].map(([t, d], i) => (
+              <li key={t} className="relative rounded-2xl bg-white/[0.06] p-3">
+                <span className={`mb-2 block h-1.5 rounded-full ${["bg-sky-500", "bg-amber-500", "bg-emerald-500", "bg-[#d8121b]"][i]}`} />
+                <b className="block text-sm">{t}</b>
+                <span className="text-xs text-white/65">{d}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+        <ul className="mt-4 grid gap-3 text-sm text-muted-fg sm:grid-cols-3">
           <li className="rounded-2xl border border-border bg-card px-4 py-3">
-            <b className="block text-fg">Videos de cada ejercicio</b>Se ven dentro de la app.
+            <b className="block text-fg">Tus competencias en el calendario</b>Cargalas vos y tu entrenador planifica en base a ellas.
           </li>
           <li className="rounded-2xl border border-border bg-card px-4 py-3">
-            <b className="block text-fg">Desde el celular</b>Agregala a tu pantalla de inicio.
+            <b className="block text-fg">Videos de cada ejercicio</b>Se ven dentro de la app.
           </li>
           <li className="rounded-2xl border border-border bg-card px-4 py-3">
             <b className="block text-fg">Tu entrenador te sigue</b>Ve cómo te fue en cada sesión.

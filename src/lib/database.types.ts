@@ -774,7 +774,7 @@ isOneToOne: false
 { Args: { "p_athlete": string,"p_program": string }; Returns: boolean
                            },
 "join_with_code":
-{ Args: { "p_code": string,"p_data": Json,"p_injuries"?: Json,"p_sport_values"?: Json }; Returns: string
+{ Args: { "p_code": string,"p_competitions"?: Json,"p_data": Json,"p_injuries"?: Json,"p_sport_values"?: Json }; Returns: string
                            },
 "log_set":
 { Args: { "p_done": boolean,"p_item": string,"p_load": number,"p_reps": number,"p_scheduled": string,"p_set": number }; Returns: undefined

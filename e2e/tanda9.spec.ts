@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { admin, newCoach } from "../tests/db/helpers";
+import { addDays, todayISO } from "../src/lib/dates";
 
 test("inicio con dos zonas y registro del alumno con el enlace del entrenador", async ({ page, browser }) => {
   test.setTimeout(90_000);
@@ -43,6 +44,9 @@ test("inicio con dos zonas y registro del alumno con el enlace del entrenador", 
   await page.getByLabel("Handicap").fill("12");
   await page.getByText("Mar", { exact: true }).click();
   await page.getByText("Jue", { exact: true }).click();
+  await page.getByLabel("Competencia").fill("Abierto del Norte");
+  await page.getByLabel("Desde").fill(addDays(todayISO(), 20));
+  await page.getByLabel("Lugar").fill("Tucumán");
   await page.getByLabel("¿Qué querés lograr?").fill("Pegarle más largo");
   await page.getByRole("button", { name: "Seguir" }).click();
 
@@ -54,6 +58,8 @@ test("inicio con dos zonas y registro del alumno con el enlace del entrenador", 
   await page.getByRole("button", { name: "Terminar registro" }).click();
   await page.waitForURL(/\/app\?bienvenida=1/);
   await expect(page.getByText("¡Listo, ya estás registrado!")).toBeVisible();
+  await expect(page.getByText("Próxima competencia")).toBeVisible();
+  await expect(page.getByText("Abierto del Norte")).toBeVisible();
 
   // El entrenador la ve con sus datos
   const ctx = await browser.newContext();
@@ -63,6 +69,8 @@ test("inicio con dos zonas y registro del alumno con el enlace del entrenador", 
   await cp.getByLabel("Contraseña").fill("clave-segura-123");
   await cp.getByRole("button", { name: "Ingresar" }).click();
   await cp.waitForURL(/\/panel/);
+  await expect(cp.getByText("Calendario competitivo")).toBeVisible();
+  await expect(cp.getByText("Abierto del Norte")).toBeVisible();
   await cp.goto("/panel/alumnos");
   await expect(cp.getByText("Enlace para que tus alumnos se registren")).toBeVisible();
   await expect(cp.getByTestId("join-link")).toHaveValue(new RegExp(`/unirme/${code}$`));
