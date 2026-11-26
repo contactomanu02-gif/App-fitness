@@ -271,6 +271,44 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"exercise_swaps": {
+                  Row: {
+                    "athlete_id": string,"created_at": string,"id": string,"note": string | null,"org_id": string,"original_exercise_id": string,"reason": string,"replacement_exercise_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "athlete_id": string,"created_at"?: string,"id"?: string,"note"?: string | null,"org_id": string,"original_exercise_id": string,"reason": string,"replacement_exercise_id": string
+                  }
+                  Update: {
+                    "athlete_id"?: string,"created_at"?: string,"id"?: string,"note"?: string | null,"org_id"?: string,"original_exercise_id"?: string,"reason"?: string,"replacement_exercise_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "exercise_swaps_athlete_id_fkey"
+      columns: ["athlete_id"]
+isOneToOne: false
+      referencedRelation: "athletes"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exercise_swaps_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exercise_swaps_original_exercise_id_fkey"
+      columns: ["original_exercise_id"]
+isOneToOne: false
+      referencedRelation: "exercises"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exercise_swaps_replacement_exercise_id_fkey"
+      columns: ["replacement_exercise_id"]
+isOneToOne: false
+      referencedRelation: "exercises"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"exercise_video_overrides": {
                   Row: {
                     "exercise_id": string,"org_id": string,"updated_at": string,"video_url": string
@@ -717,6 +755,9 @@ isOneToOne: false
 "athlete_org":
 { Args: { "p_athlete": string }; Returns: string
                            },
+"clear_my_swap":
+{ Args: { "p_swap": string }; Returns: undefined
+                           },
 "copy_program":
 { Args: { "p_athlete"?: string,"p_name"?: string,"p_program": string }; Returns: string
                            },
@@ -819,6 +860,9 @@ isOneToOne: false
                            },
 "reopen_session":
 { Args: { "p_scheduled": string }; Returns: undefined
+                           },
+"report_exercise":
+{ Args: { "p_item": string,"p_note": string,"p_reason": string,"p_replacement": string,"p_scheduled": string }; Returns: undefined
                            },
 "save_assessment":
 { Args: { "p_assessment": string,"p_athlete": string,"p_date": string,"p_notes": string,"p_results": Json }; Returns: string

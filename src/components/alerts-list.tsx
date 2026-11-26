@@ -1,15 +1,15 @@
 "use client";
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { AlertTriangle, CircleSlash, Flame, Check } from "lucide-react";
+import { AlertTriangle, CircleSlash, Flame, Check, Replace, PackageX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { markAlertRead, markAllAlertsRead } from "@/app/panel/agenda-actions";
 
 type Alert = { id: string; kind: string; message: string; athlete_id: string; when: string };
-const ICON = { pain: AlertTriangle, skipped: CircleSlash, rpe_high: Flame } as const;
-const TONE: Record<string, string> = { pain: "bg-danger-soft text-danger", skipped: "bg-warn-soft text-warn", rpe_high: "bg-warn-soft text-warn" };
-const LABEL: Record<string, string> = { pain: "Dolor", skipped: "No realizada", rpe_high: "Esfuerzo muy alto" };
+const ICON = { pain: AlertTriangle, skipped: CircleSlash, rpe_high: Flame, swap: Replace, missing: PackageX } as const;
+const TONE: Record<string, string> = { pain: "bg-danger-soft text-danger", skipped: "bg-warn-soft text-warn", rpe_high: "bg-warn-soft text-warn", swap: "bg-violet-soft text-violet", missing: "bg-violet-soft text-violet" };
+const LABEL: Record<string, string> = { pain: "Dolor", skipped: "No realizada", rpe_high: "Esfuerzo muy alto", swap: "Cambió un ejercicio", missing: "No pudo hacer un ejercicio" };
 
 export function AlertsList({ alerts }: { alerts: Alert[] }) {
   const [pending, start] = useTransition();

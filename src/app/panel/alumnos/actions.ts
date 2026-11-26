@@ -134,3 +134,10 @@ export async function regenerateJoinCode(): Promise<{ code?: string; error?: str
   revalidatePath("/panel/alumnos");
   return { code: data };
 }
+
+/** El entrenador quita una variante: el alumno vuelve a ver el ejercicio original. */
+export async function removeSwap(swapId: string, athleteId: string) {
+  const { supabase } = await requireStaff();
+  await supabase.from("exercise_swaps").delete().eq("id", swapId);
+  revalidatePath(`/panel/alumnos/${athleteId}`);
+}

@@ -106,3 +106,55 @@ async function notifyPain(scheduledId: string, orgId: string) {
   const mail = painEmail({ message: alert.message, link: `${siteUrl()}/panel/alumnos/${alert.athlete_id}` });
   await Promise.all((profiles ?? []).map((p) => (p.email ? sendEmail({ to: p.email, ...mail }) : null)));
 }
+
+// ---------- Variantes: "no puedo hacer este ejercicio" ----------
+
+export type Alternative = { id: string; name: string; category: string; equipment: string[] };
+
+/** Ejercicios para reemplazar uno: misma categoría y, primero, los que no usan el mismo elemento. */
+export async function getAlternatives(exerciseId: string, q: string): Promise<Alternative[]> {
+  const { supabase } = await requireAthlete();
+  const { data: ex } = await supabase.from("exercises").select("id, name, category, equipment").eq("id", exerciseId).maybeSingle();
+  if (!ex) return [];
+  const term = q.trim().replace(/[%_,()]/g, " ").slice(0, 60);
+  let query = supabase.from("exercises").select("id, name, category, equipment").eq("archived", false).neq("id", exerciseId).order("name").limit(300);
+  query = term ? query.ilike("name", `%${term}%`) : query.eq("category", ex.category);
+  const { data } = await query;
+  // Primero: mismo movimiento (comparte palabras del nombre, ej. "Sentadilla"), misma categoría y sin el elemento que falta.
+  const words = (n: string) => n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-zñ]+/).filter((w) => w.length > 3);
+  const mine = new Set(words(ex.name));
+  const first = words(ex.name)[0];
+  const missing = new Set(ex.equipment);
+  const score = (e: { name: string; category: string; equipment: string[] }) => {
+    const w = words(e.name);
+    return (
+      (w[0] === first ? -4 : 0) -
+      w.filter((x) => mine.has(x)).length * 2 +
+      (e.category === ex.category ? 0 : 2) +
+      (e.equipment.some((x) => missing.has(x)) ? 1 : 0)
+    );
+  };
+  return (data ?? []).sort((a, b) => score(a) - score(b) || a.name.localeCompare(b.name)).slice(0, term ? 20 : 12);
+}
+
+export async function reportExercise(scheduledId: string, itemId: string, reason: string, replacementId: string | null, note: string) {
+  const { supabase } = await requireAthlete();
+  const { error } = await supabase.rpc("report_exercise", {
+    p_scheduled: scheduledId,
+    p_item: itemId,
+    p_reason: reason,
+    p_replacement: replacementId as string,
+    p_note: note.slice(0, 300),
+  });
+  if (error) return { error: "No pudimos guardar el cambio. Probá de nuevo." };
+  revalidatePath("/app", "layout");
+  return {};
+}
+
+export async function clearMySwap(swapId: string) {
+  const { supabase } = await requireAthlete();
+  const { error } = await supabase.rpc("clear_my_swap", { p_swap: swapId });
+  if (error) return { error: "No pudimos volver al ejercicio original." };
+  revalidatePath("/app", "layout");
+  return {};
+}

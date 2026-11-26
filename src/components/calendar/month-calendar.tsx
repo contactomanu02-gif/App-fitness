@@ -28,11 +28,22 @@ type State = { error?: string; ok?: string } | undefined;
 
 const EVENT_ICON = { torneo: Flag, viaje: Plane, descanso: Moon, otro: CalendarPlus } as const;
 const EVENT_TONE: Record<string, string> = {
-  torneo: "bg-warn-soft text-warn",
-  viaje: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300",
-  descanso: "bg-muted text-muted-fg",
-  otro: "bg-muted text-fg",
+  torneo: "bg-amber-400 text-black dark:bg-amber-400 dark:text-black",
+  viaje: "bg-sky-500 text-white",
+  descanso: "bg-violet-500 text-white",
+  otro: "bg-slate-500 text-white",
 };
+const EVENT_DOT: Record<string, string> = { torneo: "bg-amber-400", viaje: "bg-sky-500", descanso: "bg-violet-500", otro: "bg-slate-500" };
+
+/** Color de fondo del día según lo que tiene (la competencia manda). */
+function dayTone(sessions: CalSession[], events: CalEvent[]) {
+  if (events.some((e) => e.kind === "torneo")) return "bg-amber-400/25 dark:bg-amber-400/20";
+  if (sessions.length && sessions.every((s) => s.status === "done")) return "bg-emerald-500/20 dark:bg-emerald-500/20";
+  if (sessions.length) return "bg-red-600/12 dark:bg-red-500/20";
+  if (events.some((e) => e.kind === "viaje")) return "bg-sky-500/15";
+  if (events.length) return "bg-violet-500/12";
+  return "";
+}
 
 export function MonthCalendar({
   month,
@@ -145,6 +156,20 @@ export function MonthCalendar({
       ) : (
         grid
       )}
+      <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-fg" aria-label="Referencias">
+        {[
+          ["bg-accent", "Entrenamiento"],
+          ["bg-emerald-500", "Hecho"],
+          ["bg-amber-400", "Competencia"],
+          ["bg-sky-500", "Viaje"],
+          ["bg-violet-500", "Descanso"],
+        ].map(([c, l]) => (
+          <li key={l} className="flex items-center gap-1.5">
+            <span className={cn("h-2.5 w-2.5 rounded-full", c)} aria-hidden />
+            {l}
+          </li>
+        ))}
+      </ul>
       {canMove ? <p className="mt-2 hidden text-xs text-muted-fg md:block">Arrastrá una sesión a otro día para moverla.</p> : null}
 
       <section className="mt-5" aria-label="Día elegido">
@@ -187,7 +212,7 @@ export function MonthCalendar({
           {daySessions.map((s) => (
             <Link key={s.id} href={sessionHref(s)} className="block">
               <Card className="flex items-center gap-3 p-3 transition-colors hover:bg-muted/40">
-                <div className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-xl", s.status === "done" ? "bg-accent text-accent-fg" : "bg-accent-soft text-accent")}>
+                <div className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-xl", s.status === "done" ? "bg-emerald-600 text-white" : "bg-accent text-accent-fg")}>
                   {s.status === "done" ? <Check size={17} /> : <Dumbbell size={17} />}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -246,7 +271,8 @@ function DayCell({
       ref={setNodeRef}
       className={cn(
         "relative min-h-16 border-r border-border p-1 last:border-r-0 md:min-h-28 md:p-1.5",
-        !inMonth && "bg-muted/40",
+        dayTone(sessions, events),
+        !inMonth && "opacity-45",
         selected && "ring-2 ring-accent ring-inset",
         isOver && "bg-accent-soft",
       )}
@@ -262,7 +288,7 @@ function DayCell({
       <span
         className={cn(
           "pointer-events-none relative z-10 grid h-6 w-6 place-items-center rounded-full text-xs",
-          today ? "bg-fg font-semibold text-bg" : inMonth ? "" : "text-muted-fg",
+          today ? "bg-accent font-bold text-white" : sessions.length || events.length ? "font-semibold" : inMonth ? "" : "text-muted-fg",
         )}
       >
         {day}
@@ -270,10 +296,10 @@ function DayCell({
       {/* Celular: puntitos. Compu: chips. */}
       <div className="pointer-events-none relative z-10 mt-1 flex flex-wrap gap-0.5 md:hidden">
         {events.map((e) => (
-          <span key={e.id} className={cn("h-1.5 w-1.5 rounded-full", e.kind === "torneo" ? "bg-warn" : e.kind === "viaje" ? "bg-sky-500" : "bg-muted-fg")} />
+          <span key={e.id} className={cn("h-2 w-2 rounded-full", EVENT_DOT[e.kind] ?? "bg-slate-500")} />
         ))}
         {sessions.map((s) => (
-          <span key={s.id} className={cn("h-1.5 w-1.5 rounded-full", s.status === "done" ? "bg-accent" : "border border-accent")} />
+          <span key={s.id} className={cn("h-2 w-2 rounded-full", s.status === "done" ? "bg-emerald-500" : "bg-accent")} />
         ))}
       </div>
       <div className="relative z-10 mt-1 hidden space-y-1 md:block">
@@ -305,7 +331,7 @@ function SessionChip({ s, draggable, href }: { s: CalSession; draggable: boolean
       style={transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined}
       className={cn(
         "block truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium",
-        s.status === "done" ? "bg-accent text-accent-fg" : "bg-accent-soft text-accent",
+        s.status === "done" ? "bg-emerald-600 text-white" : "bg-accent text-accent-fg",
         draggable && "cursor-grab touch-none",
         isDragging && "relative z-50 shadow-lg",
       )}

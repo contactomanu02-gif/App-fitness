@@ -60,6 +60,8 @@ export default async function Page({
         : (it.rest_sec ?? 0);
     return {
       id: it.id,
+      exerciseId: it.exercises?.id ?? null,
+      swap: it.swap ? { id: it.swap.id, originalName: it.swap.originalName } : null,
       label: labels[i] || String(i + 1),
       block: blockOf.get(i)!,
       showLoad: tracksLoad(it.exercises?.category, it.load),

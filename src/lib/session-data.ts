@@ -13,7 +13,25 @@ export async function loadAthleteSession(supabase: SupabaseClient<Database>, sch
     .eq("athlete_id", athleteId)
     .maybeSingle();
   if (!s || !s.workouts) return null;
-  const items = [...s.workouts.workout_items].sort((a, b) => a.sort_order - b.sort_order);
+  type Swap = { id: string; originalId: string; originalName: string; reason: string };
+  const items = [...s.workouts.workout_items]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((i) => ({ ...i, swap: null as Swap | null }));
+  // Variantes que eligió el alumno: muestran el ejercicio de reemplazo en lugar del original.
+  const { data: swaps } = await supabase
+    .from("exercise_swaps")
+    .select("id, reason, original_exercise_id, replacement:exercises!exercise_swaps_replacement_exercise_id_fkey(id, name, category, coaching_cues, instructions, video_url, exercise_media(storage_path, sort_order))")
+    .eq("athlete_id", athleteId);
+  if (swaps?.length) {
+    const byOriginal = new Map(swaps.map((x) => [x.original_exercise_id, x]));
+    for (const i of items) {
+      const sw = i.exercises ? byOriginal.get(i.exercises.id) : undefined;
+      if (sw?.replacement && i.exercises) {
+        i.swap = { id: sw.id, originalId: i.exercises.id, originalName: i.exercises.name, reason: sw.reason };
+        i.exercises = sw.replacement;
+      }
+    }
+  }
   // Si el entrenador puso su propio video para un ejercicio del catálogo, el alumno ve ese.
   const exIds = items.map((i) => i.exercises?.id).filter(Boolean) as string[];
   if (exIds.length) {

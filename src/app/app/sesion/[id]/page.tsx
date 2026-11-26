@@ -16,6 +16,7 @@ import { loadAthleteSession } from "@/lib/session-data";
 import { buttonVariants } from "@/components/ui/button";
 import { FormNotice } from "@/components/ui/form";
 import { ReopenButton } from "./reopen-button";
+import { ExerciseIssue, SwapNote } from "@/components/session/exercise-issue";
 
 export const metadata = { title: "Sesión" };
 
@@ -159,6 +160,7 @@ export default async function Page({
                             {it.notes}
                           </p>
                         ) : null}
+                        {it.swap ? <SwapNote swap={it.swap} /> : null}
                         {logs.length ? (
                           <p className="mt-2 text-xs text-muted-fg">
                             Hiciste:{" "}
@@ -200,6 +202,9 @@ export default async function Page({
                           ) : null}
                         </div>
                       </details>
+                    ) : null}
+                    {open && ex ? (
+                      <ExerciseIssue scheduledId={s.id} itemId={it.id} exerciseId={ex.id} exerciseName={ex.name} />
                     ) : null}
                   </Card>
                 );

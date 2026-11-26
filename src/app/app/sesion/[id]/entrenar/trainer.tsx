@@ -18,10 +18,13 @@ import { Card } from "@/components/ui/card";
 import { VideoEmbed } from "@/components/exercises/video-embed";
 import { cn } from "@/lib/utils";
 import { logSet } from "../../../actions";
+import { ExerciseIssue, SwapNote } from "@/components/session/exercise-issue";
 
 type SetRow = { reps: number | null; load: number | null; done: boolean };
 export type TrainerItem = {
   id: string;
+  exerciseId: string | null;
+  swap: { id: string; originalName: string } | null;
   label: string;
   name: string;
   prescription: string;
@@ -340,6 +343,7 @@ export function Trainer({
                             {it.notes}
                           </p>
                         ) : null}
+                        {it.swap ? <SwapNote swap={it.swap} /> : null}
                       </div>
                       {it.photo ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -446,6 +450,9 @@ export function Trainer({
                           ) : null}
                         </div>
                       </details>
+                    ) : null}
+                    {it.exerciseId ? (
+                      <ExerciseIssue scheduledId={scheduledId} itemId={it.id} exerciseId={it.exerciseId} exerciseName={it.name} />
                     ) : null}
                   </Card>
                 );

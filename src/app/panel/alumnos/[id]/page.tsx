@@ -18,6 +18,7 @@ import {
   deleteAthlete,
   deleteInjury,
   inviteAthlete,
+  removeSwap,
   setAthleteStatus,
   setInjuryStatus,
   unlinkAthlete,
@@ -51,7 +52,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     .maybeSingle();
   if (!a) notFound();
   const today = todayISO();
-  const [{ data: upcoming }, { data: programs }] = await Promise.all([
+  const [{ data: upcoming }, { data: programs }, { data: swaps }] = await Promise.all([
     supabase
       .from("scheduled_workouts")
       .select("id, workout_id, date, status, workouts(name)")
@@ -60,6 +61,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       .order("date")
       .limit(5),
     supabase.from("programs").select("id, name, status, start_date").eq("athlete_id", id).order("start_date", { ascending: false }),
+    supabase
+      .from("exercise_swaps")
+      .select("id, reason, note, created_at, original:exercises!exercise_swaps_original_exercise_id_fkey(name), replacement:exercises!exercise_swaps_replacement_exercise_id_fkey(name)")
+      .eq("athlete_id", id)
+      .order("created_at", { ascending: false }),
   ]);
 
   const age = ageFrom(a.birth_date);
@@ -198,6 +204,33 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                   );
                 })}
               </dl>
+            </Card>
+          ) : null}
+
+          {swaps?.length ? (
+            <Card>
+              <CardHeader title="Variantes de ejercicios" subtitle="Cambios que hizo el alumno. Se aplican en todas sus sesiones hasta que los quites." />
+              <ul className="divide-y divide-border px-5 pb-3">
+                {swaps.map((x) => (
+                  <li key={x.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                    <div className="min-w-0 text-sm">
+                      <p>
+                        <span className="text-muted-fg line-through">{x.original?.name}</span> → <b>{x.replacement?.name}</b>
+                      </p>
+                      <p className="text-xs text-muted-fg">
+                        {x.reason === "sin_elemento" ? "No tenía el elemento" : x.reason === "molestia" ? "Le molestaba" : "Otro motivo"} · {formatDate(x.created_at.slice(0, 10))}
+                        {x.note ? ` · ${x.note}` : ""}
+                      </p>
+                    </div>
+                    <ConfirmAction
+                      onConfirm={removeSwap.bind(null, x.id, id)}
+                      label="Quitar variante"
+                      confirmLabel="Sí, quitar"
+                      question={`¿Volver a «${x.original?.name}» en sus sesiones?`}
+                    />
+                  </li>
+                ))}
+              </ul>
             </Card>
           ) : null}
 
