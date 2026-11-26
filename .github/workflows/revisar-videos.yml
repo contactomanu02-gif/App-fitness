@@ -4,6 +4,10 @@ name: Revisar videos
 
 on:
   workflow_dispatch:
+    inputs:
+      extra:
+        description: "IDs de YouTube extra para probar (separados por espacio)"
+        required: false
 
 jobs:
   revisar:
@@ -13,6 +17,7 @@ jobs:
       - name: Probar cada video
         run: |
           grep -ohE "(youtube\.com/watch\?v=|youtu\.be/)[A-Za-z0-9_-]{11}" supabase/migrations/*.sql | grep -oE "[A-Za-z0-9_-]{11}$" | sort -u > ids.txt
+          for x in ${{ inputs.extra }}; do echo "$x" >> ids.txt; done
           ok=0; mal=0
           while read -r id; do
             code=$(curl -s -o /dev/null -w "%{http_code}" "https://www.youtube.com/oembed?format=json&url=https://www.youtube.com/watch?v=$id")
