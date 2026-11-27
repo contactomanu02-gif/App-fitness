@@ -4,7 +4,9 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  // html_handling "none": /offline.html y /abrir.html se sirven tal cual, SIN redirigir a /offline o /abrir.
+  // Esa redirección, guardada por el service worker, es lo que rompió la app en iPhone.
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS", "html_handling": "none" },
   "observability": { "enabled": true },
   // Cloudflare ubica la app cerca de la base de datos (São Paulo) si así responde más rápido.
   "placement": { "mode": "smart" }

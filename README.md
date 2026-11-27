@@ -21,7 +21,22 @@ Los emails locales (recuperar contraseña) se ven en Mailpit: http://127.0.0.1:5
 npx vitest run                           # unitarias + reglas de seguridad de la base (requiere supabase local)
 pnpm build && pnpm start &               # servidor de producción
 npx playwright test --trace off          # recorridos completos en escritorio y celular
+
+# App instalada (service worker activo) en iPhone/WebKit y Android, sobre el servidor de Cloudflare:
+npx opennextjs-cloudflare build && cp .env.local .dev.vars && npx wrangler dev --port 8787 &
+npx playwright install webkit
+BASE_URL=http://localhost:8787 npx playwright test --config e2e-pwa/playwright.config.ts
 ```
+
+Todo esto corre solo en GitHub (`.github/workflows/pruebas.yml`) en cada pull request y antes de
+cada publicación: si algo falla, no se publica. Después de publicar se prueba la app real en
+iPhone/Android y, si falla, Cloudflare vuelve sola a la versión anterior.
+
+Reglas del service worker (`public/sw.js`), por Safari en iPhone:
+- Nunca guardar ni devolver una respuesta que vino de una redirección (`clean()`).
+- Los archivos que guarda (`PRECACHE`) tienen que responder 200 directo (lo verifica `e2e-pwa`).
+- Cambiar `VERSION` cuando cambia lo que se guarda.
+- No borrar `public/abrir.html`: los íconos instalados antes del 27/11/2026 abren esa dirección.
 
 ## Estructura
 
