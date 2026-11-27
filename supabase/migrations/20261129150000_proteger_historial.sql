@@ -33,7 +33,7 @@ begin
     and public.workout_has_history(w.id);
   if cardinality(v_ids) > 0 then
     update public.scheduled_workouts set program_id = null where workout_id = any (v_ids);
-    update public.workouts set program_id = null, block_id = null where id = any (v_ids);
+    update public.workouts set program_id = null, block_id = null, week_index = null, day_index = null where id = any (v_ids);
   end if;
   return old;
 end $$;

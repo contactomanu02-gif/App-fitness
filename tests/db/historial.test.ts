@@ -42,7 +42,7 @@ describe("el historial de los alumnos no se pierde", () => {
   it("borrar un bloque o sacar del calendario una sesión hecha no la borra", async () => {
     const s = await setup(a, exId);
     const { data: blk } = await a.client.from("program_blocks").select("id").eq("program_id", s.programId).single();
-    await a.client.from("program_blocks").delete().eq("id", blk!.id);
+    expect((await a.client.from("program_blocks").delete().eq("id", blk!.id)).error).toBeNull();
     expect((await a.client.from("scheduled_workouts").select("id").eq("athlete_id", s.athleteId)).data).toEqual([{ id: s.done.id }]);
     await a.client.from("workouts").delete().eq("id", s.done.workout_id);
     expect((await a.client.from("scheduled_workouts").select("id").eq("athlete_id", s.athleteId)).data).toEqual([{ id: s.done.id }]);
