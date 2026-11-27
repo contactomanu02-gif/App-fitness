@@ -109,22 +109,6 @@ const HABITOS: ChallengeTemplate[] = [
     steps: [{ text: "Dormir 8 horas o más", times: 15 }],
   },
   {
-    key: "colores",
-    title: "Comé colores",
-    description: "Frutas y verduras en tus comidas: energía y recuperación.",
-    icon: "leaf",
-    points: 100,
-    steps: [{ text: "Fruta o verdura en almuerzo y cena", times: 20 }],
-  },
-  {
-    key: "sin-gaseosas",
-    title: "Sin gaseosas",
-    description: "Agua en lugar de gaseosas y jugos azucarados.",
-    icon: "water",
-    points: 100,
-    steps: [{ text: "Un día entero sin gaseosas ni jugos con azúcar", times: 20 }],
-  },
-  {
     key: "tu-deporte",
     title: "Más horas de tu deporte",
     description: "Lo que entrenás en el gimnasio se aprovecha jugando. Sumá práctica fuera del gimnasio.",
