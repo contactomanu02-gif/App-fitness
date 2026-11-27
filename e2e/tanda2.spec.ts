@@ -17,7 +17,7 @@ test("biblioteca: buscar, filtrar, copiar del catálogo, crear con foto y video,
   await page.goto("/panel/ejercicios");
   await expect(page.getByText(/\d+ en la biblioteca/)).toBeVisible();
   await page.getByRole("link", { name: "Potencia", exact: true }).click();
-  await expect(page.getByText("Lanzamiento rotacional de balón medicinal")).toBeVisible();
+  await expect(page.getByText("Lanzamiento rotacional de pelota medicinal")).toBeVisible();
   await expect(page.getByText("Sentadilla goblet")).toHaveCount(0);
   await page.getByLabel("Buscar ejercicio").fill("pallof");
   await page.getByLabel("Buscar ejercicio").press("Enter");

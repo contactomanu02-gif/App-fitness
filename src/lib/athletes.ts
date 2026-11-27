@@ -25,7 +25,7 @@ export const EQUIPMENT = [
   "Banco",
   "Rack",
   "Poleas",
-  "Balón medicinal",
+  "Pelota medicinal",
   "Suspensión (TRX)",
   "Cajón pliométrico",
   "Máquinas de gimnasio",
