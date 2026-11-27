@@ -66,8 +66,11 @@ jobs:
           mkdir -p "$RUNNER_TEMP/prueba" && cd "$RUNNER_TEMP/prueba"
           supabase init --force > /dev/null
           # Mismas versiones de Auth/Storage que producción (las deja «supabase link»).
-          cp -r "$GITHUB_WORKSPACE/supabase/.temp" supabase/ && ls supabase/.temp
-          supabase start -x studio,imgproxy,edge-runtime,logflare,vector,realtime,postgres-meta,supavisor
+          mkdir -p supabase/.temp
+          for f in gotrue-version storage-version storage-migration; do
+            [ -f "$GITHUB_WORKSPACE/supabase/.temp/$f" ] && cp "$GITHUB_WORKSPACE/supabase/.temp/$f" supabase/.temp/ && echo "$f: $(cat supabase/.temp/$f)"
+          done
+          supabase start -x studio,imgproxy,edge-runtime,logflare,vector,realtime,postgres-meta,supavisor,postgrest
           db="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
           "$GITHUB_WORKSPACE/scripts/respaldo/restaurar.sh" "$RUNNER_TEMP/r" "$db"
           eval "$(supabase status -o env | grep -E '^(API_URL|SERVICE_ROLE_KEY)=')"
