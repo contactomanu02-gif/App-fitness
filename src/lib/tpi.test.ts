@@ -71,7 +71,8 @@ describe("test TPI", () => {
       Toe Touch Pass
       Cervical Rotation Limited`;
     const r = parseReportText(txt);
-    expect(r).toMatchObject({
+    const only = Object.fromEntries(Object.entries(r).map(([k, v]) => [k, v!.rating]));
+    expect(only).toMatchObject({
       inclinacion_pelvica: "mal",
       rotacion_pelvica: "bien",
       rotacion_torso: "regular",
@@ -81,6 +82,32 @@ describe("test TPI", () => {
     });
     expect(r.bisagra_muneca).toBeUndefined();
     expect(parseReportText("nada que ver")).toEqual({});
+  });
+
+  it("lee un reporte de MyTPI donde el resultado está en el texto que explica cada prueba", () => {
+    // Estructura de un reporte real (texto resumido, sin datos del alumno). «di ! cult» es la ligadura rota al copiar.
+    const txt = `Result: Setup Posture You have too much arch in your lower back at set up.
+      Overhead Deep Squat The Overhead Deep Squat Test is one of the most informative tests. If a golfer is unable to perform a full deep squat it is almost impossible to maintain posture.
+      In your case, it is tough for you to perform a full deep squat while keeping your heels on the ground. It is also di ! cult for you to perform a full deep squat when the club is removed.
+      Because of this limited flexibility in your calves, maintaining posture is di ! cult for you. You do a great job of evenly distributing your weight.
+      Toe Touch The Toe Touch Test is a great test for overall mobility. It is di ! cult for you to bend over and touch your toes with your knees locked.
+      Single Leg Balance When testing the right side, you are able to stand for 6-10 seconds. This reduced balance on your right side can limit your ability to load.
+      Pelvic Tilt The ability to move and control the pelvis is critical. You can properly perform a standing Pelvic Tilt which demonstrates good mobility in your hips.
+      Although you can perform the Pelvic Tilt Test, the movement shows perturbation. This indicates that you have poor motor control for the orientation of the pelvis.
+      Seated Trunk Rotation In the backswing direction (to the right), you have excellent rotational mobility of over 45 degrees.
+      In the downswing direction (to the left), you have limited rotational mobility of 45 degrees.
+      Lower Quarter Rotation The test measures rotational mobility to determine if there may be an increased chance of Sway. When turning, you have normal range of motion in both lower extremities.
+      Wrist Hinge In the Wrist Hinge Test, you have a good hinge up (radial deviation) in both wrists. This excellent result will help you set the club.`;
+    const r = parseReportText(txt);
+    expect(r).toEqual({
+      sentadilla_profunda: { rating: "mal", side: "-" },
+      tocar_pies: { rating: "mal", side: "-" },
+      equilibrio_una_pierna: { rating: "mal", side: "D" },
+      inclinacion_pelvica: { rating: "regular", side: "-" },
+      rotacion_tronco_sentado: { rating: "regular", side: "I" },
+      rotacion_cadera: { rating: "bien", side: "-" },
+      bisagra_muneca: { rating: "bien", side: "-" },
+    });
   });
 
   it("lee el formulario y solo guarda el lado en pruebas con lados que no salieron bien", () => {

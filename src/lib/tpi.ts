@@ -337,19 +337,57 @@ const norm = (s: string) =>
     .replace(/[̀-ͯ]/g, "")
     .replace(/\s+/g, " ");
 
-const RATING_WORDS: { rating: Rating; re: RegExp }[] = [
-  { rating: "mal", re: /\b(fail(ed)?|no pasa|no paso|unable|not able|mal|limited both|positive)\b/ },
-  { rating: "regular", re: /\b(partial(ly)?|limited|mas o menos|regular|moderate|borderline)\b/ },
-  { rating: "bien", re: /\b(pass(ed)?|pasa|paso|bien|able|normal|negative)\b/ },
+/** Resultado escrito explícito justo después del nombre de la prueba (reportes cortos). */
+const EXPLICIT: { rating: Rating; re: RegExp }[] = [
+  { rating: "mal", re: /\b(fail(ed)?|no pasa|no paso|mal)\b/ },
+  { rating: "regular", re: /\b(partial(ly)?|mas o menos|regular|limited)\b/ },
+  { rating: "bien", re: /\b(pass(ed)?|pasa|paso|bien)\b/ },
 ];
 
+// Reportes de MyTPI: el resultado es un ícono, pero el texto que le habla al golfista
+// («you have difficulty…», «you have normal range…») dice cómo le fue.
+const NEG = /\b(difficult(y)?|unable|tough for you|too much|limit(ed|s|ation|ations)?|less than|reduced|reduction|poor|perturbation|0-5 seconds|restrict(ed|ion|ions)?|lack of|can ?not|weak(ness)?|dificil|dificultad|limitad[oa]s?|limitacion(es)?|no puede|pobre|debil(idad)?)\b/;
+const POS = /\b(good|great|excellent|normal|properly perform|matches|bien|buena?|excelente|normal(es)?|correctamente)\b/;
+const ADDRESS = /\b(you|your|usted|tu|tus|vos|tenes|tiene)\b/;
+
+/** Arregla las ligaduras que se rompen al copiar texto de un PDF («di ! cult» → «difficult»). */
+const fixLigatures = (s: string) => s.replace(/di\s*[!"]\s*cult/g, "difficult").replace(/a\s*"\s*ect/g, "affect").replace(/e\s*[!"]\s*ort/g, "effort");
+
+export type ReadResult = { rating: Rating; side: TpiSide };
+
+function judgeSection(section: string): ReadResult | null {
+  const head = section.slice(0, 30);
+  for (const w of EXPLICIT) {
+    if (w.re.test(head) && !/\b(the|el|la)\b/.test(head.slice(0, 5))) return { rating: w.rating, side: "-" };
+  }
+  const sentences = section.split(/(?<=[.;])\s+/).filter((x) => ADDRESS.test(x));
+  let pos = 0;
+  let neg = 0;
+  const negSides = new Set<"I" | "D">();
+  for (const x of sentences) {
+    if (NEG.test(x)) {
+      neg++;
+      const left = /\b(left|izquierd[oa])\b/.test(x);
+      const right = /\b(right|derech[oa])\b/.test(x);
+      if (left && !right) negSides.add("I");
+      if (right && !left) negSides.add("D");
+    } else if (POS.test(x)) pos++;
+  }
+  if (!pos && !neg) return null;
+  const side: TpiSide = negSides.size === 1 ? [...negSides][0] : "-";
+  if (!neg) return { rating: "bien", side: "-" };
+  if (!pos || neg >= 3 * pos) return { rating: "mal", side };
+  return { rating: "regular", side };
+}
+
 /**
- * Busca cada prueba en el texto del reporte y toma la primera palabra de
- * resultado que aparece después de su nombre (antes de la próxima prueba).
+ * Busca cada prueba en el texto del reporte y decide el resultado con lo que
+ * dice su sección (hasta la próxima prueba): una palabra explícita como
+ * «pass/fail» o, en los reportes de MyTPI, el texto que explica el resultado.
  * Es solo una ayuda: lo que no se reconoce queda vacío para cargar a mano.
  */
-export function parseReportText(raw: string): Partial<Record<string, Rating>> {
-  const text = norm(raw);
+export function parseReportText(raw: string): Partial<Record<string, ReadResult>> {
+  const text = fixLigatures(norm(raw.replace(/[\u2018\u2019]/g, "'")));
   const hits: { key: string; at: number; end: number }[] = [];
   for (const t of TPI_TESTS) {
     let best: { at: number; end: number } | null = null;
@@ -364,16 +402,11 @@ export function parseReportText(raw: string): Partial<Record<string, Rating>> {
     if (best) hits.push({ key: t.key, ...best });
   }
   hits.sort((a, b) => a.at - b.at);
-  const out: Partial<Record<string, Rating>> = {};
+  const out: Partial<Record<string, ReadResult>> = {};
   hits.forEach((h, i) => {
-    const stop = i + 1 < hits.length ? hits[i + 1].at : Math.min(text.length, h.end + 160);
-    const window = text.slice(h.end, Math.min(stop, h.end + 160));
-    let first: { rating: Rating; pos: number } | null = null;
-    for (const w of RATING_WORDS) {
-      const found = w.re.exec(window);
-      if (found && (!first || found.index < first.pos)) first = { rating: w.rating, pos: found.index };
-    }
-    if (first) out[h.key] = first.rating;
+    const stop = i + 1 < hits.length ? hits[i + 1].at : text.length;
+    const r = judgeSection(text.slice(h.end, Math.min(stop, h.end + 6000)).trim());
+    if (r) out[h.key] = r;
   });
   return out;
 }
