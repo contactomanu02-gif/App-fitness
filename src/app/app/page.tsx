@@ -12,6 +12,7 @@ import { loadProgress } from "@/components/progress/progress-view";
 import { ScoreRing } from "@/components/progress/score-ring";
 import { LiftsForm } from "@/components/progress/lifts-form";
 import { ChallengeCard } from "@/components/progress/challenge-card";
+import { Stars } from "@/components/stars";
 import { PushToggle } from "@/components/push-toggle";
 import { saveMyLifts } from "./actions";
 
@@ -42,14 +43,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
       .limit(30),
     supabase
       .from("calendar_events")
-      .select("id, kind, title, start_date, end_date")
+      .select("id, kind, title, start_date, end_date, importance")
       .eq("athlete_id", athlete.id)
       .lte("start_date", sunday)
       .gte("end_date", today)
       .order("start_date"),
     supabase
       .from("calendar_events")
-      .select("title, start_date, end_date, location")
+      .select("title, start_date, end_date, location, importance")
       .eq("athlete_id", athlete.id)
       .eq("kind", "torneo")
       .gte("end_date", today)
@@ -148,6 +149,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
             {weekEvents.map((e) => (
               <Badge key={e.id} tone={e.kind === "torneo" ? "warn" : "neutral"}>
                 {labelOf(EVENT_KINDS, e.kind)}: {e.title}
+                {e.kind === "torneo" ? <Stars value={e.importance} size={11} className="ml-1" /> : null}
               </Badge>
             ))}
           </div>
@@ -263,6 +265,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
             <div className="min-w-0 flex-1">
               <p className="kicker text-accent">{daysToComp <= 0 ? "Estás compitiendo" : "Próxima competencia"}</p>
               <p className="truncate font-semibold">{nextComp.title}</p>
+              <Stars value={nextComp.importance} size={16} className="my-0.5" />
               <p className="text-sm text-muted-fg">
                 {longDate(nextComp.start_date)}
                 {nextComp.location ? ` · ${nextComp.location}` : ""}
