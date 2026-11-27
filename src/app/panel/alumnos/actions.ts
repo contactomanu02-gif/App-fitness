@@ -3,7 +3,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/session";
 import { athleteFormToObject, athleteSchema, injurySchema, sportValuesFromForm } from "@/lib/athletes";
-import { emailConfigured, invitationEmail, sendEmail } from "@/lib/email";
+import { emailConfigured, invitationEmail, recoveryLink, sendEmail } from "@/lib/email";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { siteUrl } from "@/lib/utils";
 
 export type AthleteFormState = { error?: string } | undefined;
@@ -140,4 +141,21 @@ export async function removeSwap(swapId: string, athleteId: string) {
   const { supabase } = await requireStaff();
   await supabase.from("exercise_swaps").delete().eq("id", swapId);
   revalidatePath(`/panel/alumnos/${athleteId}`);
+}
+
+export type ResetLinkState = { error?: string; link?: string } | undefined;
+
+/** Enlace para que el alumno cree una contraseña nueva (el entrenador se lo manda por WhatsApp). Vence en 24 horas. */
+export async function createResetLink(athleteId: string, _: ResetLinkState, _form: FormData): Promise<ResetLinkState> {
+  const { supabase } = await requireStaff();
+  // La consulta con el cliente del entrenador asegura que el alumno sea suyo.
+  const { data: ath } = await supabase.from("athletes").select("user_id").eq("id", athleteId).maybeSingle();
+  if (!ath?.user_id) return { error: "Este alumno todavía no tiene cuenta." };
+  const admin = createAdminClient();
+  const { data: u } = await admin.auth.admin.getUserById(ath.user_id);
+  const email = u?.user?.email;
+  if (!email) return { error: "No encontramos el email de la cuenta." };
+  const { data, error } = await admin.auth.admin.generateLink({ type: "recovery", email });
+  if (error || !data.properties?.hashed_token) return { error: "No pudimos generar el enlace. Probá de nuevo." };
+  return { link: recoveryLink(data.properties.hashed_token) };
 }
