@@ -43,16 +43,15 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { supabase } = await requireStaff();
-  const { data: a } = await supabase
-    .from("athletes")
-    .select(
-      "*, sports!athletes_sport_id_fkey(id, name, sport_fields(key, label, field_type, unit, sort_order)), athlete_sport_profiles(sport_id, values), injuries(*), invitations(created_at, accepted_at, revoked_at, expires_at), group_members(athlete_groups(id, name))",
-    )
-    .eq("id", id)
-    .maybeSingle();
-  if (!a) notFound();
   const today = todayISO();
-  const [{ data: upcoming }, { data: programs }, { data: swaps }] = await Promise.all([
+  const [{ data: a }, { data: upcoming }, { data: programs }, { data: swaps }] = await Promise.all([
+    supabase
+      .from("athletes")
+      .select(
+        "*, sports!athletes_sport_id_fkey(id, name, sport_fields(key, label, field_type, unit, sort_order)), athlete_sport_profiles(sport_id, values), injuries(*), invitations(created_at, accepted_at, revoked_at, expires_at), group_members(athlete_groups(id, name))",
+      )
+      .eq("id", id)
+      .maybeSingle(),
     supabase
       .from("scheduled_workouts")
       .select("id, workout_id, date, status, workouts(name)")
@@ -67,6 +66,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       .eq("athlete_id", id)
       .order("created_at", { ascending: false }),
   ]);
+  if (!a) notFound();
 
   const age = ageFrom(a.birth_date);
   const sportValues = (a.athlete_sport_profiles.find((p) => p.sport_id === a.sport_id)?.values ?? {}) as Record<string, unknown>;

@@ -22,6 +22,7 @@ export function SideNav({ items }: { items: NavItem[] }) {
           <Link
             key={item.href}
             href={item.href}
+            prefetch
             aria-current={active ? "page" : undefined}
             className={cn(
               "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
@@ -52,6 +53,7 @@ export function BottomNav({ items }: { items: NavItem[] }) {
             <Link
               key={item.href}
               href={item.href}
+              prefetch
               aria-current={active ? "page" : undefined}
               className={cn("flex flex-col items-center gap-1 py-2 text-[11px] font-medium", active ? "text-white" : "text-white/60")}
             >

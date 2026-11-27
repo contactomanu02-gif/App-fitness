@@ -19,8 +19,8 @@ const TONES: BlockTone[] = [
 export const toneOf = (n: number) => TONES[n % TONES.length];
 
 const KIND: Record<string, string> = {
-  movilidad: "Entrada en calor",
-  activacion: "Entrada en calor",
+  movilidad: "Movilidad",
+  activacion: "Activación",
   potencia: "Potencia",
   velocidad: "Velocidad",
   fuerza: "Fuerza",
@@ -28,10 +28,21 @@ const KIND: Record<string, string> = {
   estabilidad: "Estabilidad",
   resistencia: "Resistencia",
 };
+const WARMUP = new Set(["movilidad", "activacion"]);
 
 export type Block<T> = { key: string; letter: string; title: string; rounds: number; items: { item: T; index: number }[] };
 
-export function splitBlocks<T extends { group_label: string | null; sets: number | null; category?: string | null }>(items: T[]): Block<T>[] {
+type BlockItem = { group_label: string | null; sets: number | null; category?: string | null; load?: string | null };
+
+/**
+ * Los dos primeros bloques (la sesión suele empezar con zona media) son «Entrada en calor»
+ * si todo es movilidad, activación o ejercicios sin peso (sentadillas y estocadas sin carga).
+ */
+function isWarmup(items: { item: BlockItem }[]) {
+  return items.every(({ item }) => (item.category && WARMUP.has(item.category)) || /sin peso/i.test(item.load ?? ""));
+}
+
+export function splitBlocks<T extends BlockItem>(items: T[]): Block<T>[] {
   const blocks: Block<T>[] = [];
   items.forEach((item, index) => {
     const last = blocks.at(-1);
@@ -40,12 +51,17 @@ export function splitBlocks<T extends { group_label: string | null; sets: number
   });
   return blocks.map((b, n) => {
     const count = new Map<string, number>();
-    b.items.forEach(({ item }) => item.category && count.set(item.category, (count.get(item.category) ?? 0) + 1));
-    const top = [...count.entries()].sort((a, c) => c[1] - a[1])[0]?.[0];
+    b.items.forEach(({ item }) => {
+      const kind = item.category ? KIND[item.category] : undefined;
+      if (kind) count.set(kind, (count.get(kind) ?? 0) + 1);
+    });
+    // Si hay empate entre dos tipos (p. ej. sentadilla + salto), el nombre lleva los dos: «Fuerza y potencia».
+    const [first, second] = [...count.entries()].sort((a, c) => c[1] - a[1]);
+    const top = first && second && second[1] === first[1] ? `${first[0]} y ${second[0].toLowerCase()}` : first?.[0];
     return {
       ...b,
       letter: b.letter || String(n + 1),
-      title: (top && KIND[top]) || "Ejercicios",
+      title: n <= 1 && isWarmup(b.items) ? "Entrada en calor" : top || "Ejercicios",
       rounds: Math.max(1, ...b.items.map(({ item }) => item.sets ?? 1)),
     };
   });

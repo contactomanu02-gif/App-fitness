@@ -11,7 +11,7 @@ const items: NavItem[] = [
 ];
 
 export default async function AthleteLayout({ children }: { children: React.ReactNode }) {
-  const { athlete, staffOrg } = await requireAthlete();
+  const { staffOrg } = await requireAthlete();
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[220px_1fr]">
       <aside className="sticky top-0 hidden h-dvh self-start flex-col border-r border-white/10 bg-[#0b0b0b] px-3 py-5 text-white md:flex">

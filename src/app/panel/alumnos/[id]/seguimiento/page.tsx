@@ -19,10 +19,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const { supabase, org } = await requireStaff();
   const today = todayISO();
   const from = addDays(today, -7 * 12);
-  const { data: athlete } = await supabase.from("athletes").select("id, first_name, last_name").eq("id", id).eq("org_id", org.id).maybeSingle();
-  if (!athlete) notFound();
 
-  const [{ data: rows }, { data: logs }] = await Promise.all([
+  const [{ data: athlete }, { data: rows }, { data: logs }] = await Promise.all([
+    supabase.from("athletes").select("id, first_name, last_name").eq("id", id).eq("org_id", org.id).maybeSingle(),
     supabase
       .from("scheduled_workouts")
       .select("id, workout_id, date, status, session_rpe, duration_min, comment, pain, pain_area, pain_level, workouts(name)")
@@ -36,6 +35,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       .eq("athlete_id", id)
       .gte("scheduled_workouts.date", from),
   ]);
+  if (!athlete) notFound();
   const list = rows ?? [];
   const weeks = weeklyCompliance(list, today, 8);
   const last14 = adherence(list, addDays(today, -13), today, today);

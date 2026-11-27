@@ -3,25 +3,29 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 
 /** Sesión agendada de un alumno con ejercicios, fotos firmadas y series registradas. */
-export async function loadAthleteSession(supabase: SupabaseClient<Database>, scheduledId: string, athleteId: string) {
-  const { data: s } = await supabase
+export async function loadAthleteSession(supabase: SupabaseClient<Database>, scheduledId: string, athleteId: string, orgId: string) {
+  // Las tres consultas van juntas (en paralelo): la sesión, las variantes del alumno y los videos propios del entrenador.
+  const [{ data: s }, { data: swaps }, { data: own }] = await Promise.all([
+    supabase
     .from("scheduled_workouts")
     .select(
       "id, org_id, date, status, started_at, completed_at, duration_min, session_rpe, comment, pain, pain_area, pain_level, programs(name), workouts(name, goal, est_duration_min, intensity_pct, focus, notes, workout_items(id, sort_order, group_label, sets, reps, load, rest_sec, tempo, rpe, notes, exercises(id, name, category, coaching_cues, instructions, video_url, exercise_media(storage_path, sort_order)))), set_logs(workout_item_id, set_number, reps, load_kg)",
     )
     .eq("id", scheduledId)
     .eq("athlete_id", athleteId)
-    .maybeSingle();
+    .maybeSingle(),
+    supabase
+      .from("exercise_swaps")
+      .select("id, reason, original_exercise_id, replacement:exercises!exercise_swaps_replacement_exercise_id_fkey(id, name, category, coaching_cues, instructions, video_url, exercise_media(storage_path, sort_order))")
+      .eq("athlete_id", athleteId),
+    supabase.from("exercise_video_overrides").select("exercise_id, video_url").eq("org_id", orgId),
+  ]);
   if (!s || !s.workouts) return null;
   type Swap = { id: string; originalId: string; originalName: string; reason: string };
   const items = [...s.workouts.workout_items]
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((i) => ({ ...i, swap: null as Swap | null }));
   // Variantes que eligió el alumno: muestran el ejercicio de reemplazo en lugar del original.
-  const { data: swaps } = await supabase
-    .from("exercise_swaps")
-    .select("id, reason, original_exercise_id, replacement:exercises!exercise_swaps_replacement_exercise_id_fkey(id, name, category, coaching_cues, instructions, video_url, exercise_media(storage_path, sort_order))")
-    .eq("athlete_id", athleteId);
   if (swaps?.length) {
     const byOriginal = new Map(swaps.map((x) => [x.original_exercise_id, x]));
     for (const i of items) {
@@ -33,9 +37,7 @@ export async function loadAthleteSession(supabase: SupabaseClient<Database>, sch
     }
   }
   // Si el entrenador puso su propio video para un ejercicio del catálogo, el alumno ve ese.
-  const exIds = items.map((i) => i.exercises?.id).filter(Boolean) as string[];
-  if (exIds.length) {
-    const { data: own } = await supabase.from("exercise_video_overrides").select("exercise_id, video_url").eq("org_id", s.org_id).in("exercise_id", exIds);
+  if (own?.length) {
     const byEx = new Map((own ?? []).map((o) => [o.exercise_id, o.video_url]));
     for (const i of items) if (i.exercises && byEx.has(i.exercises.id)) i.exercises.video_url = byEx.get(i.exercises.id)!;
   }

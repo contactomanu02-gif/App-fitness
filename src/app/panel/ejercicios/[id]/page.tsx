@@ -31,16 +31,13 @@ function Block({ title, text }: { title: string; text: string | null }) {
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { supabase, org } = await requireStaff();
-  const { data: ex } = await supabase
-    .from("exercises")
-    .select("*, exercise_media(id, storage_path, sort_order)")
-    .eq("id", id)
-    .maybeSingle();
+  const [{ data: ex }, { data: ov }] = await Promise.all([
+    supabase.from("exercises").select("*, exercise_media(id, storage_path, sort_order)").eq("id", id).maybeSingle(),
+    supabase.from("exercise_video_overrides").select("video_url").eq("org_id", org.id).eq("exercise_id", id).maybeSingle(),
+  ]);
   if (!ex) notFound();
   const own = ex.org_id === org.id;
-  const { data: override } = own
-    ? { data: null }
-    : await supabase.from("exercise_video_overrides").select("video_url").eq("org_id", org.id).eq("exercise_id", id).maybeSingle();
+  const override = own ? null : ov;
   const videoUrl = override?.video_url ?? ex.video_url;
   const media = [...ex.exercise_media].sort((a, b) => a.sort_order - b.sort_order);
   const signed = media.length ? (await supabase.storage.from("exercise-media").createSignedUrls(media.map((m) => m.storage_path), 3600)).data ?? [] : [];
