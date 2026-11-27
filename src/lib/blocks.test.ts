@@ -18,4 +18,21 @@ describe("bloques de la sesión", () => {
     expect(blockHowTo(b[1])).toContain("4 vueltas");
     expect(blockHowTo(b[2])).toBe("3 series");
   });
+
+  it("entrada en calor con sentadillas sin peso y bloques de solo movilidad", () => {
+    const calor = splitBlocks([
+      { group_label: "A", sets: 2, category: "core" },
+      { group_label: "B", sets: 1, category: "fuerza" },
+      { group_label: "B", sets: 1, category: "fuerza" },
+      { group_label: "B", sets: 1, category: "fuerza" },
+      { group_label: "B", sets: 1, category: "movilidad" },
+      { group_label: "C", sets: 4, category: "fuerza" },
+    ]);
+    expect(calor.map((x) => x.title)).toEqual(["Zona media", "Entrada en calor", "Fuerza"]);
+    const movilidad = splitBlocks([
+      { group_label: "A", sets: 1, category: "core" },
+      { group_label: "B", sets: 1, category: "movilidad" },
+    ]);
+    expect(movilidad.map((x) => x.title)).toEqual(["Zona media", "Movilidad"]);
+  });
 });
