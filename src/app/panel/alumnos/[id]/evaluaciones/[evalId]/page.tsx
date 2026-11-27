@@ -37,7 +37,7 @@ export default async function Page({ params }: { params: Promise<{ id: string; e
       </Link>
       <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl">Evaluación</h1>
+          <h1 className="text-[40px]">Evaluación</h1>
           <p className="mt-1 text-sm text-muted-fg">{ev.athletes ? fullName(ev.athletes) : ""} · {longDate(ev.date, true)}</p>
         </div>
         <Link href={`/panel/alumnos/${id}/evaluaciones/${evalId}/editar`} className={buttonVariants({ variant: "outline", size: "sm" })}>

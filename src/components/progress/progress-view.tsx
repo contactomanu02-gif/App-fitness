@@ -97,9 +97,10 @@ function Tile({ icon: Icon, label, value, sub, tone }: { icon: typeof Flame; lab
 export function ScoreHero({ p, name }: { p: Progress; name?: string }) {
   const level = levelOf(p.current.score);
   return (
-    <Card className="overflow-hidden border-transparent bg-[#0b0b0b] p-5 text-white">
-      <p className="text-xs font-semibold tracking-[0.14em] text-[#ff3b3f] uppercase">Puntaje de {monthName(p.thisMonth)}</p>
-      <div className="mt-3 flex items-center gap-5">
+    <Card className="notch-lg hero-brand relative overflow-hidden border-transparent p-5 text-white">
+      <span aria-hidden className="watermark -right-3 -bottom-4 text-[120px]">{p.current.score}</span>
+      <p className="kicker relative text-[#ff3b3f]">Puntaje de {monthName(p.thisMonth)}</p>
+      <div className="relative mt-3 flex items-center gap-5">
         <ScoreRing score={p.current.score} tone={level.tone} />
         <div className="min-w-0 flex-1">
           <p className="font-display text-3xl font-bold uppercase leading-none">{level.label}</p>

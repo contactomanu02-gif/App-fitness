@@ -69,24 +69,24 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Card className="p-4">
           <p className="text-sm text-muted-fg">Cumplimiento 14 días</p>
-          <p className="mt-1 text-3xl font-semibold tabular-nums">{last14.pct === null ? "—" : `${last14.pct}%`}</p>
+          <p className="mt-1 font-display text-4xl leading-none font-extrabold tabular-nums">{last14.pct === null ? "—" : `${last14.pct}%`}</p>
           <p className="text-xs text-muted-fg">{last14.done} de {last14.due} sesiones</p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-muted-fg">Sesiones hechas</p>
-          <p className="mt-1 text-3xl font-semibold tabular-nums">{closed.length}</p>
+          <p className="mt-1 font-display text-4xl leading-none font-extrabold tabular-nums">{closed.length}</p>
           <p className="text-xs text-muted-fg">en 12 semanas</p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-muted-fg">Esfuerzo promedio</p>
-          <p className="mt-1 text-3xl font-semibold tabular-nums">
+          <p className="mt-1 font-display text-4xl leading-none font-extrabold tabular-nums">
             {rpeSeries.length ? (rpeSeries.reduce((s, r) => s + (r.session_rpe ?? 0), 0) / rpeSeries.length).toFixed(1) : "—"}
           </p>
           <p className="text-xs text-muted-fg">de 10, últimas {rpeSeries.length}</p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-muted-fg">Con dolor</p>
-          <p className={`mt-1 text-3xl font-semibold tabular-nums ${list.some((r) => r.pain) ? "text-danger" : ""}`}>{list.filter((r) => r.pain).length}</p>
+          <p className={`mt-1 font-display text-4xl leading-none font-extrabold tabular-nums ${list.some((r) => r.pain) ? "text-danger" : ""}`}>{list.filter((r) => r.pain).length}</p>
           <p className="text-xs text-muted-fg">sesiones</p>
         </Card>
       </div>

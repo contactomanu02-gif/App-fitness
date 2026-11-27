@@ -15,7 +15,7 @@ export default async function Page() {
   const archived = tests.filter((t) => t.archived);
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-3xl">Pruebas de evaluación</h1>
+      <h1 className="text-[40px]">Pruebas de evaluación</h1>
       <p className="mt-1 text-sm text-muted-fg">
         Tu lista de pruebas para la evaluación física. Arrancó con una lista sugerida orientada a golf: cambiala, sacá lo que no uses y agregá las tuyas.
       </p>

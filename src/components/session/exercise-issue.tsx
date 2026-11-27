@@ -78,7 +78,7 @@ export function ExerciseIssue({ scheduledId, itemId, exerciseId, exerciseName }:
   if (!open)
     return (
       <div className="border-t border-border px-4 py-2.5">
-        <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5 text-sm font-medium text-violet">
+        <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5 font-condensed text-[13px] font-bold tracking-[0.06em] text-violet uppercase">
           <Replace size={15} /> ¿No podés hacerlo? Cambialo
         </button>
         {done ? <p className="mt-1 text-xs text-success">{done}</p> : null}

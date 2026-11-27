@@ -49,7 +49,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       {imported ? <ImportedNotice /> : null}
       <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-3xl">{program.name}</h1>
+          <h1 className="text-[40px]">{program.name}</h1>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {program.athlete_id && program.athletes ? (
               <Badge tone="accent">Asignada a {fullName(program.athletes)}</Badge>

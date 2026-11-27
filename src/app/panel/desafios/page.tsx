@@ -41,7 +41,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
     <div className="mx-auto max-w-4xl space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl">Desafíos del mes</h1>
+          <h1 className="text-[40px]">Desafíos del mes</h1>
           <p className="text-sm text-muted-fg">Actividades fuera de la rutina que tus alumnos ven en el inicio de su app y marcan cada vez que las hacen. Suman a su puntaje de Progreso.</p>
         </div>
         <div className="flex items-center gap-1">

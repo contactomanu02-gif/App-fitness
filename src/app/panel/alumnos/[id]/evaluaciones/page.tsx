@@ -40,7 +40,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       </Link>
       <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl">Evaluación física</h1>
+          <h1 className="text-[40px]">Evaluación física</h1>
           <p className="mt-1 text-sm text-muted-fg">Solo la ves vos. En rojo, lo que está por debajo del objetivo.</p>
         </div>
         <div className="flex gap-2">
