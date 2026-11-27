@@ -1,0 +1,204 @@
+/* Informe mensual: hoja A4 con la marca. Colores fijos (siempre claro), igual en pantalla y en el PDF. */
+
+.rp-sheet {
+  --rp-ink: #0b0b0b;
+  --rp-red: #d8121b;
+  --rp-paper: #ffffff;
+  --rp-soft: #f4f3ef;
+  --rp-line: #e3e0d9;
+  --rp-muted: #6b6862;
+  --rp-ok: #047857;
+  position: relative;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 210mm;
+  background: var(--rp-paper);
+  color: var(--rp-ink);
+  padding: 0 0 10mm;
+  font-size: 12.5px;
+  line-height: 1.4;
+  box-shadow: 0 18px 50px -24px rgb(11 11 11 / 0.45);
+  color-scheme: light;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.rp-sheet * { box-sizing: border-box; }
+.rp-sheet b { font-weight: 700; }
+
+/* ---------------- cabecera negra */
+.rp-head {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "brand athlete" "kicker athlete" "month athlete";
+  column-gap: 16px;
+  padding: 9mm 11mm 8mm;
+  background:
+    radial-gradient(22rem 14rem at 105% -10%, rgb(255 59 63 / 0.42), transparent 60%),
+    radial-gradient(18rem 12rem at -10% 130%, rgb(216 18 27 / 0.2), transparent 65%),
+    #0b0b0b;
+  color: #fff;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 26px), calc(100% - 26px) 100%, 0 100%);
+}
+.rp-head-brand { grid-area: brand; display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; }
+.rp-logo { border-radius: 9999px; width: 46px; height: 46px; }
+.rp-brand-name { font-stretch: 62%; font-style: italic; font-weight: 800; font-size: 17px; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1; }
+.rp-brand-sub { font-size: 10.5px; color: rgb(255 255 255 / 0.6); margin-top: 2px; }
+.rp-head-kicker {
+  grid-area: kicker;
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 16px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #ff3b3f;
+  position: relative; z-index: 1;
+}
+.rp-head-kicker::before { content: ""; width: 16px; height: 3px; background: #ff3b3f; transform: skewX(-30deg); }
+.rp-head-month {
+  grid-area: month;
+  font-stretch: 62%; font-style: italic; font-weight: 900; text-transform: uppercase;
+  font-size: 46px; line-height: 0.92; letter-spacing: 0.005em;
+  position: relative; z-index: 1;
+}
+.rp-head-athlete { grid-area: athlete; align-self: end; text-align: right; position: relative; z-index: 1; max-width: 70mm; }
+.rp-athlete-name { font-stretch: 62%; font-style: italic; font-weight: 800; text-transform: uppercase; font-size: 26px; line-height: 1; }
+.rp-athlete-meta { margin-top: 4px; font-size: 11px; color: rgb(255 255 255 / 0.7); }
+.rp-head-slash {
+  position: absolute; top: 0; right: 0; width: 150px; height: 150px; pointer-events: none;
+  background: linear-gradient(58deg, transparent 0 calc(100% - 66px), rgb(255 59 63 / 0.9) calc(100% - 66px) calc(100% - 62px), transparent calc(100% - 62px) calc(100% - 50px), rgb(255 255 255 / 0.3) calc(100% - 50px) calc(100% - 48px), transparent calc(100% - 48px));
+}
+.rp-head-watermark {
+  position: absolute; right: 70mm; bottom: -18px; pointer-events: none; user-select: none;
+  font-stretch: 62%; font-style: italic; font-weight: 900; font-size: 150px; line-height: 0.8;
+  color: transparent; -webkit-text-stroke: 1.5px rgb(255 255 255 / 0.08);
+}
+
+.rp-inprogress { margin: 4mm 11mm 0; font-size: 11px; color: var(--rp-muted); }
+
+/* ---------------- tarjetas de números */
+.rp-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 5mm 11mm 0; }
+.rp-kpi { position: relative; background: var(--rp-soft); padding: 10px 12px 11px; border-top: 3px solid var(--rp-ink); }
+.rp-kpi-dark { background: var(--rp-ink); color: #fff; border-top-color: var(--rp-red); clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%); }
+.rp-kpi-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rp-muted); }
+.rp-kpi-dark .rp-kpi-label { color: #ff3b3f; }
+.rp-kpi-value { margin-top: 3px; font-stretch: 62%; font-style: italic; font-weight: 900; font-size: 38px; line-height: 0.95; font-variant-numeric: tabular-nums; }
+.rp-kpi-unit { font-size: 15px; font-weight: 700; font-style: normal; font-stretch: 78%; color: var(--rp-muted); margin-left: 2px; }
+.rp-kpi-dark .rp-kpi-unit { color: rgb(255 255 255 / 0.6); }
+.rp-kpi-sub { margin-top: 4px; font-size: 10.5px; color: var(--rp-muted); }
+.rp-kpi-dark .rp-kpi-sub { color: #fff; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 10px; }
+
+/* ---------------- secciones */
+.rp-section { padding: 5mm 11mm 0; break-inside: avoid; }
+.rp-grid2 { display: grid; grid-template-columns: 1fr 1fr; }
+.rp-grid2 > .rp-section + .rp-section { padding-left: 4mm; }
+.rp-grid2 > .rp-section:first-child { padding-right: 4mm; }
+.rp-h2 {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 8px;
+  font-stretch: 62%; font-style: italic; font-weight: 800; text-transform: uppercase;
+  font-size: 17px; letter-spacing: 0.02em; line-height: 1.1;
+  border-bottom: 1px solid var(--rp-line); padding-bottom: 5px;
+}
+.rp-h2::before { content: ""; width: 5px; height: 14px; flex-shrink: 0; background: var(--rp-red); transform: skewX(-20deg); }
+.rp-h2-sub { margin-left: auto; font-style: normal; font-stretch: 100%; font-weight: 500; text-transform: none; font-size: 10.5px; color: var(--rp-muted); }
+.rp-mt { margin-top: 12px; }
+.rp-small { margin-top: 7px; font-size: 10.5px; color: var(--rp-muted); }
+.rp-muted { color: var(--rp-muted); }
+.rp-num { font-variant-numeric: tabular-nums; }
+.rp-right, .rp-table .rp-right { text-align: right; }
+.rp-nowrap { white-space: nowrap; }
+
+/* semanas */
+.rp-weeks { display: flex; gap: 6px; align-items: flex-end; }
+.rp-week { flex: 1; min-width: 0; text-align: center; }
+.rp-week-bar { position: relative; height: 70px; background: var(--rp-soft); display: flex; align-items: flex-end; }
+.rp-week-fill { width: 100%; background: var(--rp-red); }
+.rp-week-none { background: transparent; }
+.rp-week-pct { position: absolute; inset: auto 0 calc(100% + 1px); font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rp-week-bar .rp-week-pct { inset: 4px 0 auto; color: var(--rp-ink); }
+.rp-week-bar .rp-week-pct-in { color: #fff; }
+.rp-week-label { margin-top: 4px; font-size: 10px; font-weight: 700; }
+.rp-week-sub { font-size: 9px; color: var(--rp-muted); }
+.rp-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 10.5px; color: var(--rp-muted); }
+.rp-legend b { color: var(--rp-ink); }
+
+/* barras de puntaje y desafíos */
+.rp-parts, .rp-challenges { display: grid; gap: 8px; }
+.rp-part-row { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; }
+.rp-track { margin-top: 3px; height: 7px; background: var(--rp-soft); overflow: hidden; }
+.rp-fill { height: 100%; background: var(--rp-red); transform-origin: left; clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+.rp-fill-ok { background: var(--rp-ok); }
+.rp-ch-title { display: inline-flex; gap: 5px; align-items: center; font-weight: 600; }
+.rp-check { color: var(--rp-ok); font-weight: 900; }
+
+/* pesos */
+.rp-lifts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.rp-lift { border: 1px solid var(--rp-line); border-left: 3px solid var(--rp-red); padding: 9px 10px 8px; }
+.rp-lift-name { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--rp-muted); }
+.rp-lift-value { font-stretch: 62%; font-style: italic; font-weight: 900; font-size: 30px; line-height: 1; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.rp-lift-sub { margin-top: 3px; font-size: 10.5px; color: var(--rp-muted); }
+.rp-lift-sub b { color: var(--rp-ink); }
+.rp-lift-foot { font-size: 10px; font-weight: 700; color: var(--rp-ok); }
+.rp-up { color: var(--rp-ok); font-weight: 700; }
+.rp-down { color: var(--rp-red); font-weight: 700; }
+.rp-spark { display: block; width: 100%; height: auto; margin-top: 4px; }
+.rp-spark-empty { margin-top: 6px; height: 40px; display: grid; place-items: center; background: var(--rp-soft); font-size: 10px; color: var(--rp-muted); }
+
+/* listas y tablas */
+.rp-list { display: grid; gap: 5px; font-size: 11.5px; }
+.rp-list li { display: flex; gap: 8px; }
+.rp-date { flex-shrink: 0; min-width: 52px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--rp-red); }
+.rp-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.rp-table th { text-align: left; font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rp-muted); padding: 0 6px 4px 0; }
+.rp-table td { padding: 4px 6px 4px 0; border-top: 1px solid var(--rp-line); vertical-align: top; }
+.rp-table tr { break-inside: avoid; }
+.rp-cat td { padding-top: 7px; font-size: 9.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; border-top: none; }
+.rp-flag { color: var(--rp-red); font-weight: 700; }
+.rp-comment { margin-top: 1px; font-size: 10px; color: var(--rp-muted); font-style: italic; }
+.rp-status { display: inline-block; padding: 1px 6px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.rp-st-done { background: #d1fae5; color: #065f46; }
+.rp-st-partial { background: #fdf3e2; color: #9a5b00; }
+.rp-st-skipped, .rp-st-missed { background: #fdeceb; color: #b3141b; }
+.rp-st-pending { background: var(--rp-soft); color: var(--rp-muted); }
+
+/* mensaje del entrenador */
+.rp-note-input {
+  width: 100%; resize: vertical; border: 1.5px dashed #c9c5bc; background: #fbfaf7; padding: 8px 10px;
+  font: inherit; font-size: 12px; color: var(--rp-ink); outline: none;
+}
+.rp-note-input:focus { border-color: var(--rp-red); }
+.rp-note-text { display: none; white-space: pre-wrap; font-size: 12.5px; border-left: 3px solid var(--rp-red); padding: 2px 0 2px 10px; }
+.rp-note-sign { display: none; margin-top: 4px; padding-left: 13px; font-size: 11px; font-weight: 700; }
+
+.rp-foot {
+  display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  margin: 7mm 11mm 0; padding-top: 6px; border-top: 2px solid var(--rp-ink);
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rp-muted);
+}
+
+/* ---------------- celular: la hoja se acomoda en una columna */
+@media screen and (max-width: 640px) {
+  .rp-sheet { font-size: 13px; margin: 0 -16px; width: auto; max-width: none; }
+  .rp-head { grid-template-columns: 1fr; grid-template-areas: "brand" "kicker" "month" "athlete"; padding: 18px 16px 22px; }
+  .rp-head-athlete { text-align: left; margin-top: 12px; }
+  .rp-head-month { font-size: 40px; }
+  .rp-head-watermark { right: 8px; }
+  .rp-kpis { grid-template-columns: 1fr 1fr; padding: 16px 16px 0; }
+  .rp-section { padding: 18px 16px 0; }
+  .rp-grid2 { grid-template-columns: 1fr; }
+  .rp-grid2 > .rp-section + .rp-section, .rp-grid2 > .rp-section:first-child { padding-left: 16px; padding-right: 16px; }
+  .rp-lifts { grid-template-columns: 1fr; }
+  .rp-inprogress, .rp-foot { margin-left: 16px; margin-right: 16px; }
+}
+
+/* ---------------- PDF */
+@media print {
+  @page { size: A4; margin: 10mm 0 8mm; }
+  @page :first { margin-top: 0; }
+  html, body { background: #fff !important; }
+  body::before, body::after { display: none !important; }
+  .rp-page { margin: 0; }
+  .rp-sheet { max-width: none; width: 210mm; box-shadow: none; padding-bottom: 8mm; }
+  .rp-note-input { display: none; }
+  .rp-note-text, .rp-note-sign { display: block; }
+  .rp-empty-print { display: none; }
+  .rise > * > * { animation: none !important; }
+}
