@@ -254,7 +254,7 @@ input, select, textarea, button { font: inherit; }
   overflow: hidden;
   background: #0b0b0b;
   pointer-events: none;
-  animation: splash-out 0.5s cubic-bezier(0.7, 0, 0.3, 1) 1.55s forwards;
+  animation: splash-out 0.5s cubic-bezier(0.7, 0, 0.3, 1) 2.5s forwards;
 }
 .splash-glow {
   position: absolute;
@@ -270,7 +270,7 @@ input, select, textarea, button { font: inherit; }
   height: 132px;
   border-radius: 9999px;
   box-shadow: 0 0 0 4px rgb(255 255 255 / 0.06), 0 20px 60px -10px rgb(216 18 27 / 0.6);
-  animation: splash-logo 0.85s cubic-bezier(0.2, 0.9, 0.25, 1.25) both;
+  animation: splash-logo 1s cubic-bezier(0.2, 0.9, 0.25, 1.25) both;
 }
 .splash-name {
   margin-top: 18px;
@@ -283,7 +283,7 @@ input, select, textarea, button { font: inherit; }
   line-height: 1;
   letter-spacing: 0.01em;
   text-transform: uppercase;
-  animation: splash-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.45s both;
+  animation: splash-rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) 0.55s both;
 }
 .splash-name span { color: #ff3b3f; }
 /* barra de carga corta debajo del nombre */
@@ -295,7 +295,7 @@ input, select, textarea, button { font: inherit; }
   transform: skewX(-30deg);
   overflow: hidden;
   position: relative;
-  animation: splash-fade 0.3s ease-out 0.5s both;
+  animation: splash-fade 0.3s ease-out 0.65s both;
 }
 .splash-bar::after {
   content: "";
@@ -303,7 +303,7 @@ input, select, textarea, button { font: inherit; }
   inset: 0;
   background: #ff3b3f;
   transform-origin: left;
-  animation: splash-load 0.95s cubic-bezier(0.6, 0, 0.2, 1) 0.55s both;
+  animation: splash-load 1.75s cubic-bezier(0.5, 0, 0.3, 1) 0.7s both;
 }
 /* las dos rayas rojas de la marca cruzan la pantalla en diagonal */
 .splash-slash {

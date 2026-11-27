@@ -1,6 +1,6 @@
 /**
  * Pantalla de entrada: el logo de Fitness Approach entra girando como una pelota,
- * cruzan las dos rayas rojas de la marca y la pantalla se va en diagonal (~2 s).
+ * cruzan las dos rayas rojas de la marca y la pantalla se va en diagonal (~3 s).
  *
  * Es solo CSS (no espera a que cargue JavaScript) y sale una vez por sesión:
  * el script de abajo agrega un <style> que lo oculta si ya se vio en esta pestaña
