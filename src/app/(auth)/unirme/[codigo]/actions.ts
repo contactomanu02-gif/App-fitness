@@ -81,6 +81,7 @@ export async function registerAthlete(code: string, _: JoinState, form: FormData
       start_date: String(form.get(`comp_start_${i}`) ?? ""),
       end_date: String(form.get(`comp_end_${i}`) ?? ""),
       location: String(form.get(`comp_loc_${i}`) ?? "").trim().slice(0, 120),
+      importance: Math.min(5, Math.max(1, Number(form.get(`comp_imp_${i}`)) || 3)),
     }))
     .filter((c) => form.get("has_competitions") === "si" && (c.title || c.start_date));
   const badComp = competitions.find((c) => !c.title || !/^\d{4}-\d{2}-\d{2}$/.test(c.start_date) || (c.end_date && c.end_date < c.start_date));

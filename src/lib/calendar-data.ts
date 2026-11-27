@@ -19,7 +19,7 @@ export async function loadCalendar(supabase: SupabaseClient<Database>, athleteId
       .order("created_at"),
     supabase
       .from("calendar_events")
-      .select("id, kind, title, start_date, end_date, location, notes, created_by")
+      .select("id, kind, title, start_date, end_date, location, notes, importance, created_by")
       .eq("athlete_id", athleteId)
       .lte("start_date", to)
       .gte("end_date", from)
@@ -44,6 +44,7 @@ export async function loadCalendar(supabase: SupabaseClient<Database>, athleteId
     end_date: e.end_date,
     location: e.location,
     notes: e.notes,
+    importance: e.importance,
     editable: viewer === null || e.created_by === viewer,
   }));
   return { sessions, events };

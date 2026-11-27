@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Stars } from "@/components/stars";
 import { ChevronRight, Trophy } from "lucide-react";
 import { requireStaff } from "@/lib/session";
 import { Badge, Card, CardHeader, EmptyState } from "@/components/ui/card";
@@ -55,7 +56,7 @@ export default async function Page() {
       .order("date", { ascending: false }),
     supabase
       .from("calendar_events")
-      .select("id, title, start_date, location, athlete_id, athletes!inner(first_name, last_name, status)")
+      .select("id, title, start_date, location, importance, athlete_id, athletes!inner(first_name, last_name, status)")
       .eq("org_id", org.id)
       .eq("kind", "torneo")
       .eq("athletes.status", "active")
@@ -133,7 +134,7 @@ export default async function Page() {
                   const days = Math.round((new Date(`${c.start_date}T12:00:00Z`).getTime() - new Date(`${today}T12:00:00Z`).getTime()) / 864e5);
                   return (
                     <li key={c.id}>
-                      <Link href={`/panel/alumnos/${c.athlete_id}`} className="flex items-center gap-3 py-2.5 hover:opacity-80">
+                      <Link href={`/panel/alumnos/${c.athlete_id}/competencias`} className="flex items-center gap-3 py-2.5 hover:opacity-80">
                         <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-center leading-none ${days <= 14 ? "bg-accent text-accent-fg" : "bg-muted"}`}>
                           <span>
                             <b className="block text-base">{Math.max(0, days)}</b>
@@ -141,7 +142,10 @@ export default async function Page() {
                           </span>
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate font-medium">{c.title}</span>
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="truncate font-medium">{c.title}</span>
+                            <Stars value={c.importance} size={13} />
+                          </span>
                           <span className="block truncate text-sm text-muted-fg">
                             {fullName(c.athletes)} · {shortDate(c.start_date)}
                             {c.location ? ` · ${c.location}` : ""}

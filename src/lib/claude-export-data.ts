@@ -8,6 +8,7 @@ import { asymmetry, formatResult, isLimited, sidesOf } from "@/lib/assessments";
 import { addDays, shortDate, todayISO } from "@/lib/dates";
 import { ageFrom } from "@/lib/utils";
 import type { ExportInput } from "@/lib/claude-bridge";
+import { PHASES, buildPlan } from "@/lib/peaking";
 
 type DB = SupabaseClient<Database>;
 
@@ -62,10 +63,10 @@ export async function loadExport(supabase: DB, orgId: string, athleteId: string 
     loadTests(supabase, orgId, { includeArchived: true }),
     supabase
       .from("calendar_events")
-      .select("title, start_date, end_date, location")
+      .select("id, title, start_date, end_date, location, importance")
       .eq("athlete_id", athleteId)
       .eq("kind", "torneo")
-      .gte("end_date", today)
+      .gte("end_date", addDays(today, -21))
       .lte("start_date", addDays(today, 183))
       .order("start_date"),
   ]);
@@ -138,12 +139,22 @@ export async function loadExport(supabase: DB, orgId: string, athleteId: string 
         .map((i) => ({ body_area: i.body_area, severity: labelOf(SEVERITIES, i.severity) ?? i.severity, status: i.status, description: i.description, limitations: i.limitations })),
       assessment,
       recent,
-      competitions: (comps ?? []).map((c) => ({
+      plan: (comps ?? []).length
+        ? buildPlan(today, comps ?? [], 12).weeks.map((w, i) => ({
+            week: i + 1,
+            from: shortDate(w.start),
+            phase: PHASES[w.phase].label,
+            pct: w.pct,
+            comps: w.comps.map((c) => `${c.title} (${c.importance ?? 3}/5)`),
+          }))
+        : undefined,
+      competitions: (comps ?? []).filter((c) => c.end_date >= today).map((c) => ({
         title: c.title,
         start: shortDate(c.start_date),
         end: shortDate(c.end_date),
         weeksAway: Math.max(0, Math.round((new Date(`${c.start_date}T12:00:00Z`).getTime() - new Date(`${today}T12:00:00Z`).getTime()) / (7 * 864e5))),
         location: c.location,
+        importance: c.importance ?? 3,
       })),
     },
   };

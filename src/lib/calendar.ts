@@ -20,8 +20,10 @@ export const eventSchema = z
     end_date: z.preprocess((v) => (v === "" ? undefined : v), isoDate("Elegí la fecha de fin").optional()),
     location: optText(120),
     notes: optText(1000),
+    importance: z.preprocess((v) => (v === "" || v === null || v === undefined ? undefined : Number(v)), z.number().int().min(1).max(5).optional()),
   })
-  .transform((e) => ({ ...e, end_date: e.end_date ?? e.start_date }))
+  // Solo los torneos llevan importancia (si no la eligieron, 3 de 5).
+  .transform((e) => ({ ...e, end_date: e.end_date ?? e.start_date, importance: e.kind === "torneo" ? (e.importance ?? 3) : null }))
   .refine((e) => e.end_date >= e.start_date, { message: "La fecha de fin no puede ser anterior al inicio", path: ["end_date"] })
   .refine((e) => (new Date(e.end_date).getTime() - new Date(e.start_date).getTime()) / 86400000 <= 60, {
     message: "Un evento puede durar hasta 60 días",

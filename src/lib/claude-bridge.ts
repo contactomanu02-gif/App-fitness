@@ -181,7 +181,9 @@ export type ExportInput = {
     injuries: { body_area: string; severity: string; status: string; description: string | null; limitations: string | null }[];
     assessment: { date: string; notes: string | null; lines: string[] } | null;
     recent: { done: number; planned: number; avgRpe: number | null; pains: string[]; comments: string[]; loads: string[] } | null;
-    competitions?: { title: string; start: string; end: string; weeksAway: number; location: string | null }[];
+    competitions?: { title: string; start: string; end: string; weeksAway: number; location: string | null; importance?: number }[];
+    /** Plan semana por semana que ya revisó el entrenador (fase y % según la importancia de cada torneo). */
+    plan?: { week: number; from: string; phase: string; pct: number; comps: string[] }[];
   };
   library: { category: string; names: string[] }[];
 };
@@ -241,8 +243,13 @@ export function buildExport(input: ExportInput, request?: string) {
     L.push("## Calendario competitivo (próximos 6 meses)");
     if (!a.competitions?.length) L.push("- No tiene competencias cargadas. Si te parece importante saberlo, preguntame antes de armar la planificación.");
     for (const c of a.competitions ?? [])
-      L.push(`- ${c.title}: ${c.start}${c.end !== c.start ? ` al ${c.end}` : ""} (en ${c.weeksAway} ${c.weeksAway === 1 ? "semana" : "semanas"})${c.location ? `, ${c.location}` : ""}`);
+      L.push(`- ${c.title}: ${c.start}${c.end !== c.start ? ` al ${c.end}` : ""} (en ${c.weeksAway} ${c.weeksAway === 1 ? "semana" : "semanas"})${c.location ? `, ${c.location}` : ""}${c.importance ? ` — importancia ${c.importance}/5` : ""}`);
     L.push("");
+    if (a.plan?.length) {
+      L.push("## Plan por semanas hacia las competencias (respetá la fase y el % de cada semana)");
+      for (const w of a.plan) L.push(`- Semana ${w.week} (desde ${w.from}): ${w.phase}, ${w.pct}%${w.comps.length ? `. Torneo: ${w.comps.join(", ")}` : ""}`);
+      L.push("");
+    }
     if (a.assessment) {
       L.push(`## Última evaluación física (${a.assessment.date})`);
       for (const l of a.assessment.lines) L.push(`- ${l}`);
@@ -262,9 +269,17 @@ export function buildExport(input: ExportInput, request?: string) {
   for (const g of input.library) L.push(`- ${g.category}: ${g.names.join("; ")}`);
   L.push("");
   L.push("## Planificá según el calendario competitivo");
-  L.push("- Ordená los bloques hacia atrás desde la competencia más importante: carga y fuerza lejos de la fecha, potencia y velocidad al acercarse, y bajá el volumen la semana de la competencia para que llegue fresco.");
+  L.push("- Cada competencia tiene una importancia de 1 a 5. Las de 4 y 5 se preparan: fuerza lejos de la fecha, potencia al acercarse, descarga la semana previa, semana de torneo con sesiones cortas y activación el día antes, y una semana más liviana después.");
+  L.push("- Las de 3: mantener la semana del torneo, sin descarga previa. Las de 1 y 2 son de rodaje: entrena normal y solo afloja el día anterior; no sacrifiques carga por ellas.");
+  L.push("- Mirá el calendario completo: ordená los bloques hacia atrás desde la competencia más importante.");
   L.push("- La semana de competencia: sesiones cortas de mantenimiento y activación, nada que deje fatiga. Después de competir, una semana más liviana antes de volver a cargar.");
   L.push("- Si hay varias competencias seguidas, priorizá mantener y no intentes picos en todas. Decime qué semanas quedan pegadas a una competencia.");
+  L.push("");
+  L.push("## Reglas de mis rutinas");
+  L.push("- Toda sesión empieza con un bloque de zona media (abdominales y espinales).");
+  L.push("- Entrada en calor sin caminatas: sentadillas sin peso, estocadas laterales y frontales sin peso, y 30 abdominales + 20 espinales por 3 vueltas.");
+  L.push("- Bloques siempre de 3 o 4 ejercicios. Sin gemelos. Mucho ejercicio básico combinado con máquinas y poleas.");
+  L.push("- Nombres de ejercicios como en el gimnasio; decí «pelota», nunca «balón».");
   L.push("");
   L.push("## Cómo responder");
   L.push("1. Primero explicame en pocas líneas por qué elegiste cada cosa (esto queda entre nosotros).");

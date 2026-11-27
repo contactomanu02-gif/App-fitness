@@ -116,4 +116,30 @@ describe("asignación y calendario", () => {
     const r = await a.client.rpc("assign_workout", { p_workout: loose, p_athletes: [foreign.id], p_start: "2026-12-01", p_weekdays: [1], p_weeks: 1 });
     expect(r.error).not.toBeNull();
   });
+  it("torneos: importancia de 1 a 5", async () => {
+    const ok = await a.client.from("calendar_events").insert({ org_id: a.orgId, athlete_id: ath.id, kind: "torneo", title: "Abierto", start_date: "2027-02-06", end_date: "2027-02-07", importance: 5 }).select("importance").single();
+    expect(ok.data?.importance).toBe(5);
+    const bad = await a.client.from("calendar_events").insert({ org_id: a.orgId, athlete_id: ath.id, kind: "torneo", title: "Mal", start_date: "2027-02-06", end_date: "2027-02-06", importance: 6 });
+    expect(bad.error).not.toBeNull();
+  });
+
+  it("plan hacia competencias: aplica el % de cada semana a las sesiones pendientes", async () => {
+    const p = await newAthlete(a);
+    // lunes 4/1 y jueves 7/1, más lunes 11/1
+    await a.client.rpc("assign_workout", { p_workout: loose, p_athletes: [p.id], p_start: "2027-01-04", p_weekdays: [1, 4], p_weeks: 2 });
+    const { data: n, error } = await a.client.rpc("apply_week_intensities", { p_athlete: p.id, p_weeks: [{ start: "2027-01-04", pct: 65 }] });
+    expect(error).toBeNull();
+    expect(n).toBe(2);
+    const { data: rows } = await a.client.from("scheduled_workouts").select("date, workouts(intensity_pct)").eq("athlete_id", p.id).order("date");
+    expect(rows!.map((r) => [r.date, (r.workouts as unknown as { intensity_pct: number | null }).intensity_pct])).toEqual([
+      ["2027-01-04", 65],
+      ["2027-01-07", 65],
+      ["2027-01-11", null],
+      ["2027-01-14", null],
+    ]);
+    // Ni otro entrenador ni el alumno pueden aplicarlo
+    expect((await b.client.rpc("apply_week_intensities", { p_athlete: p.id, p_weeks: [{ start: "2027-01-11", pct: 50 }] })).error).not.toBeNull();
+    expect((await p.client!.rpc("apply_week_intensities", { p_athlete: p.id, p_weeks: [{ start: "2027-01-11", pct: 50 }] })).error).not.toBeNull();
+    expect((await a.client.rpc("apply_week_intensities", { p_athlete: p.id, p_weeks: [{ start: "2027-01-11", pct: 500 }] })).error).not.toBeNull();
+  });
 });
