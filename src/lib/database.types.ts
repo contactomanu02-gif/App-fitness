@@ -793,6 +793,64 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"tpi_results": {
+                  Row: {
+                    "id": string,"note": string | null,"org_id": string,"rating": string,"screen_id": string,"side": string,"test_key": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id"?: string,"note"?: string | null,"org_id": string,"rating": string,"screen_id": string,"side"?: string,"test_key": string
+                  }
+                  Update: {
+                    "id"?: string,"note"?: string | null,"org_id"?: string,"rating"?: string,"screen_id"?: string,"side"?: string,"test_key"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "tpi_results_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "tpi_results_screen_id_fkey"
+      columns: ["screen_id"]
+isOneToOne: false
+      referencedRelation: "tpi_screens"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"tpi_screens": {
+                  Row: {
+                    "athlete_id": string,"created_at": string,"created_by": string | null,"date": string,"id": string,"notes": string | null,"org_id": string,"report_name": string | null,"report_path": string | null,"report_type": string | null,"updated_at": string,"workout_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "athlete_id": string,"created_at"?: string,"created_by"?: string | null,"date"?: string,"id"?: string,"notes"?: string | null,"org_id": string,"report_name"?: string | null,"report_path"?: string | null,"report_type"?: string | null,"updated_at"?: string,"workout_id"?: string | null
+                  }
+                  Update: {
+                    "athlete_id"?: string,"created_at"?: string,"created_by"?: string | null,"date"?: string,"id"?: string,"notes"?: string | null,"org_id"?: string,"report_name"?: string | null,"report_path"?: string | null,"report_type"?: string | null,"updated_at"?: string,"workout_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "tpi_screens_athlete_id_fkey"
+      columns: ["athlete_id"]
+isOneToOne: false
+      referencedRelation: "athletes"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "tpi_screens_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "tpi_screens_workout_id_fkey"
+      columns: ["workout_id"]
+isOneToOne: false
+      referencedRelation: "workouts"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"workout_items": {
                   Row: {
                     "exercise_id": string,"group_label": string | null,"id": string,"load": string | null,"notes": string | null,"org_id": string,"reps": string | null,"rest_sec": number | null,"rpe": number | null,"sets": number | null,"sort_order": number,"tempo": string | null,"workout_id": string
@@ -1007,6 +1065,9 @@ isOneToOne: false
                            },
 "save_push_subscription":
 { Args: { "p_auth": string,"p_endpoint": string,"p_p256dh": string,"p_ua": string }; Returns: undefined
+                           },
+"save_tpi_screen":
+{ Args: { "p_athlete": string,"p_date": string,"p_notes": string,"p_report_name": string,"p_report_path": string,"p_report_type": string,"p_results": Json,"p_screen": string }; Returns: string
                            },
 "save_workout":
 { Args: { "p_data": Json,"p_workout": string }; Returns: undefined
