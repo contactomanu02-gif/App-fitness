@@ -36,12 +36,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
 
   return (
     <div>
-      <div className="flex items-end justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl">Rutinas</h1>
           <p className="text-sm text-muted-fg">Plantillas para armar una vez y asignar muchas veces.</p>
         </div>
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
           <Link href="/panel/claude" className={buttonVariants({ variant: "outline" })}>
             <Sparkles size={16} /> <span>Armar con Claude</span>
           </Link>
@@ -49,7 +49,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
             <ClipboardPaste size={16} /> <span>Pegar rutina</span>
           </Link>
           {!sessions ? (
-            <Link href="/panel/rutinas/nueva" className={buttonVariants()}>
+            <Link href="/panel/rutinas/nueva" className={buttonVariants({ className: "col-span-2 sm:col-auto" })}>
               <Plus size={18} /> <span>Nueva planificación</span>
             </Link>
           ) : null}

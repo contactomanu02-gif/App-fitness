@@ -12,17 +12,17 @@ import { AlertsList } from "@/components/alerts-list";
 export const metadata = { title: "Inicio" };
 
 const STAT_TONES = {
-  info: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300",
-  success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  warn: "border-amber-500/40 bg-amber-500/12 text-amber-700 dark:text-amber-300",
-  danger: "border-red-600/30 bg-red-600/10 text-red-700 dark:text-red-300",
+  info: "border-info/25 bg-info-soft text-info",
+  success: "border-success/25 bg-success-soft text-success",
+  warn: "border-warn/30 bg-warn-soft text-warn",
+  danger: "border-danger/25 bg-danger-soft text-danger",
 } as const;
 
 function Stat({ label, value, sub, href, tone }: { label: string; value: number | string; sub?: string; href?: string; tone: keyof typeof STAT_TONES }) {
   const body = (
-    <div className={`h-full rounded-2xl border p-4 transition hover:brightness-95 ${STAT_TONES[tone]}`}>
-      <p className="text-sm font-medium">{label}</p>
-      <p className="mt-1 font-display text-4xl font-bold text-fg tabular-nums">{value}</p>
+    <div className={`h-full rounded-2xl border p-3 shadow-card transition hover:brightness-95 sm:p-4 ${STAT_TONES[tone]}`}>
+      <p className="text-[13px] leading-tight font-medium sm:text-sm">{label}</p>
+      <p className="mt-1 font-display text-3xl leading-none font-bold text-fg tabular-nums sm:text-4xl">{value}</p>
       {sub ? <p className="text-xs opacity-80">{sub}</p> : null}
     </div>
   );

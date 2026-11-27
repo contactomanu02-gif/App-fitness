@@ -175,7 +175,7 @@ export function MonthCalendar({
       <section className="mt-5" aria-label="Día elegido">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-semibold first-letter:uppercase">{longDate(selected)}</h3>
-          <div className="flex gap-2">
+          <div className="flex max-w-full min-w-0 gap-2">
             {onSaveEvent ? (
               <Button variant="outline" size="sm" onClick={() => setEventForm({ event: null, date: selected })}>
                 <Plus size={15} /> Evento
@@ -270,7 +270,7 @@ function DayCell({
     <div
       ref={setNodeRef}
       className={cn(
-        "relative min-h-16 border-r border-border p-1 last:border-r-0 md:min-h-28 md:p-1.5",
+        "relative min-h-12 border-r border-border p-1 last:border-r-0 md:min-h-28 md:p-1.5",
         dayTone(sessions, events),
         !inMonth && "opacity-45",
         selected && "ring-2 ring-accent ring-inset",
@@ -348,8 +348,8 @@ function AddSessionPicker({ date, templates, onAdd }: { date: string; templates:
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   return (
-    <div className="flex items-center gap-2">
-      <Select value={value} onChange={(e) => setValue(e.target.value)} aria-label="Sesión para agendar" className="h-9 w-52 text-sm">
+    <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
+      <Select value={value} onChange={(e) => setValue(e.target.value)} aria-label="Sesión para agendar" className="h-9 w-full min-w-0 text-sm sm:w-52">
         <option value="">Agendar sesión…</option>
         {templates.map((t) => (
           <option key={t.id} value={t.id}>{t.name}</option>

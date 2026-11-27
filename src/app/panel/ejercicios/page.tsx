@@ -88,7 +88,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
       </div>
 
       {exercises?.length ? (
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {exercises.map((e) => {
             const thumb = [...e.exercise_media].sort((a, b) => a.sort_order - b.sort_order)[0]?.storage_path;
             const url = thumb ? urlFor.get(thumb) : null;

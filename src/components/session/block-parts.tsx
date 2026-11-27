@@ -7,7 +7,7 @@ import { blockHowTo, toneOf } from "@/lib/blocks";
 export function BlockSection({ n, letter, title, rounds, count, done, children }: { n: number; letter: string; title: string; rounds: number; count: number; done?: boolean; children: ReactNode }) {
   const t = toneOf(n);
   return (
-    <section className={cn("overflow-hidden rounded-2xl border", t.ring)} aria-label={`Bloque ${letter}: ${title}`}>
+    <section className={cn("overflow-hidden rounded-2xl border bg-card shadow-card", t.ring)} aria-label={`Bloque ${letter}: ${title}`}>
       <header className={cn("flex items-center gap-3 px-4 py-3", t.soft)}>
         <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-xl font-display text-xl font-bold", t.solid)}>{letter}</span>
         <div className="min-w-0 flex-1">
