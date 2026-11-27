@@ -5,11 +5,15 @@ name: Leer planificaciones
 
 on:
   workflow_dispatch:
+    inputs:
+      clave:
+        description: "Clave pública age de Claude (opcional)"
+        required: false
 
 env:
   SUPABASE_PROJECT_ID: jixprysxcuyzpvreohgi
   SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-  CLAVE_PUBLICA: age1pl2lk295nykuus9ltc45hjlmsxuq2ywdrqr7zr3dsehjatzanp8sp76usa
+  CLAVE_PUBLICA: ${{ inputs.clave || 'age1pl2lk295nykuus9ltc45hjlmsxuq2ywdrqr7zr3dsehjatzanp8sp76usa' }}
 
 permissions:
   contents: write
@@ -30,7 +34,10 @@ jobs:
                   select bl.id, bl.name, bl.goal, bl.weeks, bl.sort_order,
                     (select coalesce(json_agg(w order by w.week_index, w.day_index, w.sort_order), '[]') from (
                       select wo.id, wo.name, wo.goal, wo.week_index, wo.day_index, wo.sort_order, wo.est_duration_min, wo.intensity_pct, wo.notes,
-                        (select count(*) from public.workout_items wi where wi.workout_id = wo.id) as ejercicios
+                        (select count(*) from public.workout_items wi where wi.workout_id = wo.id) as ejercicios,
+                        (select s.status from public.scheduled_workouts s where s.workout_id = wo.id) as estado,
+                        (select coalesce(json_agg(json_build_object('g', wi.group_label, 'e', ex.name, 's', wi.sets, 'r', wi.reps, 'n', wi.notes) order by wi.sort_order), '[]')
+                          from public.workout_items wi join public.exercises ex on ex.id = wi.exercise_id where wi.workout_id = wo.id) as items
                       from public.workouts wo where wo.block_id = bl.id) w) as sesiones
                   from public.program_blocks bl where bl.program_id = pr.id) b) as bloques
               from public.programs pr) p),
