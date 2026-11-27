@@ -19,8 +19,8 @@ const TONES: BlockTone[] = [
 export const toneOf = (n: number) => TONES[n % TONES.length];
 
 const KIND: Record<string, string> = {
-  movilidad: "Entrada en calor",
-  activacion: "Entrada en calor",
+  movilidad: "Movilidad",
+  activacion: "Activación",
   potencia: "Potencia",
   velocidad: "Velocidad",
   fuerza: "Fuerza",
@@ -28,6 +28,8 @@ const KIND: Record<string, string> = {
   estabilidad: "Estabilidad",
   resistencia: "Resistencia",
 };
+
+const MAIN = new Set(["Fuerza", "Potencia", "Velocidad", "Resistencia"]);
 
 export type Block<T> = { key: string; letter: string; title: string; rounds: number; items: { item: T; index: number }[] };
 
@@ -38,14 +40,24 @@ export function splitBlocks<T extends { group_label: string | null; sets: number
     if (last && item.group_label && last.items[0].item.group_label === item.group_label) last.items.push({ item, index });
     else blocks.push({ key: `${index}`, letter: item.group_label ?? "", title: "", rounds: 0, items: [{ item, index }] });
   });
-  return blocks.map((b, n) => {
+  // Nombre del bloque según el tipo de ejercicios que más tiene. Un bloque con
+  // movilidad o activación antes del trabajo principal es la entrada en calor
+  // (aunque tenga sentadillas o estocadas sin peso).
+  const tops = blocks.map((b) => {
     const count = new Map<string, number>();
-    b.items.forEach(({ item }) => item.category && count.set(item.category, (count.get(item.category) ?? 0) + 1));
-    const top = [...count.entries()].sort((a, c) => c[1] - a[1])[0]?.[0];
+    b.items.forEach(({ item }) => {
+      const label = item.category && KIND[item.category];
+      if (label) count.set(label, (count.get(label) ?? 0) + 1);
+    });
+    return [...count.entries()].sort((a, c) => c[1] - a[1])[0]?.[0];
+  });
+  return blocks.map((b, n) => {
+    const warm = b.items.some(({ item }) => item.category === "movilidad" || item.category === "activacion");
+    const mainLater = tops.slice(n + 1).some((t) => t && MAIN.has(t));
     return {
       ...b,
       letter: b.letter || String(n + 1),
-      title: (top && KIND[top]) || "Ejercicios",
+      title: warm && mainLater && tops[n] !== "Zona media" ? "Entrada en calor" : tops[n] || "Ejercicios",
       rounds: Math.max(1, ...b.items.map(({ item }) => item.sets ?? 1)),
     };
   });
