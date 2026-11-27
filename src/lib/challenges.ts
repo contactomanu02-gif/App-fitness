@@ -108,17 +108,6 @@ const HABITOS: ChallengeTemplate[] = [
     points: 100,
     steps: [{ text: "Dormir 8 horas o más", times: 15 }],
   },
-  {
-    key: "tu-deporte",
-    title: "Más horas de tu deporte",
-    description: "Lo que entrenás en el gimnasio se aprovecha jugando. Sumá práctica fuera del gimnasio.",
-    icon: "target",
-    points: 150,
-    steps: [
-      { text: "Practicar o jugar tu deporte 1 hora", times: 6 },
-      { text: "Practicar o jugar tu deporte 2 horas", times: 3 },
-    ],
-  },
 ];
 
 export const CHALLENGE_TEMPLATES: ChallengeTemplate[] = [...CARDIO, ...HABITOS];
