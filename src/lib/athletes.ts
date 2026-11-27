@@ -147,3 +147,9 @@ export const injurySchema = z.object({
   started_on: z.preprocess(empty, z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida").nullable()),
   limitations: optText(2000),
 });
+
+/** Golf primero, después alfabético, y al final "Otro deporte" y "Preparación física general". */
+export function sortSports<T extends { slug: string; name: string }>(sports: T[]): T[] {
+  const rank = (s: T) => (s.slug === "golf" ? 0 : s.slug === "otro" ? 2 : s.slug === "general" ? 3 : 1);
+  return [...sports].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, "es"));
+}

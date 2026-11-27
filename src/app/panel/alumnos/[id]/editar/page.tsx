@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { requireStaff } from "@/lib/session";
 import { AthleteForm } from "@/components/athletes/athlete-form";
+import { sortSports } from "@/lib/athletes";
 import { saveAthlete } from "../../actions";
 import { fullName } from "@/lib/utils";
 
@@ -13,7 +14,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const { supabase } = await requireStaff();
   const [{ data: athlete }, { data: sports }] = await Promise.all([
     supabase.from("athletes").select("*, athlete_sport_profiles(sport_id, values)").eq("id", id).maybeSingle(),
-    supabase.from("sports").select("id, name, sport_fields(key, label, field_type, unit, options, sort_order)").order("name"),
+    supabase.from("sports").select("id, name, slug, sport_fields(key, label, field_type, unit, options, sort_order)").order("name"),
   ]);
   if (!athlete) notFound();
   const values = athlete.athlete_sport_profiles.find((p) => p.sport_id === athlete.sport_id)?.values;
@@ -25,7 +26,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <h1 className="mt-2 mb-5 text-3xl">Editar ficha</h1>
       <AthleteForm
         action={saveAthlete.bind(null, id)}
-        sports={sports ?? []}
+        sports={sortSports(sports ?? [])}
         athlete={athlete}
         sportValues={(values as Record<string, unknown>) ?? {}}
         submitLabel="Guardar cambios"
