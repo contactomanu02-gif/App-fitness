@@ -140,6 +140,7 @@ input, select, textarea, button { font: inherit; }
 .hero-brand {
   background-color: #0b0b0b;
   background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
     radial-gradient(22rem 14rem at 105% -10%, rgb(255 59 63 / 0.45), transparent 60%),
     radial-gradient(18rem 12rem at -10% 120%, rgb(216 18 27 / 0.22), transparent 65%),
     linear-gradient(58deg, transparent 0 calc(100% - 70px), rgb(255 59 63 / 0.9) calc(100% - 70px) calc(100% - 66px), transparent calc(100% - 66px) calc(100% - 54px), rgb(255 255 255 / 0.25) calc(100% - 54px) calc(100% - 53px), transparent calc(100% - 53px));
@@ -157,7 +158,76 @@ input, select, textarea, button { font: inherit; }
     line-height: 0.98;
   }
 }
-.font-display { font-stretch: 62%; }
+.font-display { font-stretch: 62%; font-style: italic; }
+
+/* Etiqueta chica con la raya roja de la marca adelante */
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.kicker::before {
+  content: "";
+  width: 14px;
+  height: 3px;
+  background: var(--accent);
+  transform: skewX(-30deg);
+}
+
+/* Título de sección dentro de tarjetas (mismo estilo que CardHeader) */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-stretch: 62%;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.section-title::before {
+  content: "";
+  width: 5px;
+  height: 1rem;
+  flex-shrink: 0;
+  background: var(--accent);
+  transform: skewX(-20deg);
+}
+
+/* Texto gigante calado de fondo (marca de agua) */
+.watermark {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  font-family: var(--font-display);
+  font-stretch: 62%;
+  font-style: italic;
+  font-weight: 900;
+  line-height: 0.8;
+  text-transform: uppercase;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgb(255 255 255 / 0.09);
+}
+
+/* Entrada en escalera: cada bloque de la pantalla sube y aparece, uno detrás de otro */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.rise > * > * { animation: rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.rise > * > :nth-child(2) { animation-delay: 60ms; }
+.rise > * > :nth-child(3) { animation-delay: 120ms; }
+.rise > * > :nth-child(4) { animation-delay: 180ms; }
+.rise > * > :nth-child(5) { animation-delay: 240ms; }
+.rise > * > :nth-child(6) { animation-delay: 300ms; }
+.rise > * > :nth-child(n + 7) { animation-delay: 340ms; }
+@media (prefers-reduced-motion: reduce) { .rise > * > * { animation: none; } }
 .font-condensed { font-stretch: 78%; }
 .tabular-nums { font-variant-numeric: tabular-nums; }
 

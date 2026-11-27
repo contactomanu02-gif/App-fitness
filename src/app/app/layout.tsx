@@ -34,7 +34,7 @@ export default async function AthleteLayout({ children }: { children: React.Reac
           </div>
           <ThemeToggle className="text-white/70 hover:bg-white/10 hover:text-white" />
         </header>
-        <main className="mx-auto max-w-xl px-4 pt-3 pb-28 md:pt-8">{children}</main>
+        <main className="rise mx-auto max-w-xl px-4 pt-3 pb-28 md:pt-8">{children}</main>
       </div>
       <BottomNav items={items} />
     </div>

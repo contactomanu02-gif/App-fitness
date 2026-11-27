@@ -72,7 +72,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
   return (
     <div className="space-y-4">
       <div className="pt-2">
-        <p className="text-sm text-muted-fg">{greeting}</p>
+        <p className="kicker text-muted-fg">{greeting}</p>
         <h1 className="text-4xl">{athlete.first_name}</h1>
       </div>
       {bienvenida ? (
@@ -86,7 +86,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
         todays.map((t) => (
           <Link key={t.id} href={`/app/sesion/${t.id}`} className="block">
             <Card className="notch-lg relative overflow-hidden border-transparent hero-brand p-5 text-white transition-opacity hover:opacity-95">
-              <p className="relative text-xs font-semibold tracking-[0.14em] text-[#ff3b3f] uppercase">Entrenamiento de hoy</p>
+              <span aria-hidden className="watermark -right-2 -bottom-3 text-[150px]">Hoy</span>
+              <p className="kicker relative text-[#ff3b3f]">Entrenamiento de hoy</p>
               <p className="relative mt-1 font-display text-[34px] leading-none font-extrabold italic uppercase">{t.workouts?.name}</p>
               <p className="relative mt-1 text-sm text-white/70">
                 {t.workouts?.workout_items.length} ejercicios
@@ -121,17 +122,19 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
       )}
 
       <Card className="p-5">
-        <p className="font-semibold">Tu semana</p>
-        <div className="mt-3 grid grid-cols-7 gap-1.5 text-center">
+        <h2 className="section-title">Tu semana</h2>
+        <div className="mt-3 grid grid-cols-7 gap-1.5 px-1 text-center">
           {week.map((d) => (
             <div
               key={d.v}
-              className={`rounded-xl py-2 ${d.today ? "bg-[#0b0b0b] text-white ring-2 ring-accent dark:bg-white dark:text-black" : d.done ? "bg-success-soft text-success" : d.sessions.length ? "bg-accent-soft text-accent" : "bg-muted"}`}
+              className={`relative -skew-x-[8deg] rounded-md py-2 ${d.today ? "bg-[#0b0b0b] text-white shadow-[inset_0_-3px_0_var(--accent)] dark:bg-white dark:text-black" : d.done ? "bg-success-soft text-success" : d.sessions.length ? "bg-accent-soft text-accent" : "bg-muted"}`}
               aria-label={`${d.label} ${d.day}${d.sessions.length ? `, ${d.sessions.map((x) => x.workouts?.name).join(", ")}` : ""}`}
             >
-              <p className={`text-[11px] ${d.today || d.sessions.length ? "opacity-80" : "text-muted-fg"}`}>{d.label}</p>
-              <p className="text-sm font-semibold">{d.day}</p>
+              <div className="skew-x-[8deg]">
+              <p className={`text-[10px] font-semibold tracking-wider uppercase ${d.today || d.sessions.length ? "opacity-80" : "text-muted-fg"}`}>{d.label}</p>
+              <p className="font-display text-xl leading-tight font-bold">{d.day}</p>
               <span className={`mx-auto mt-1 block h-1.5 w-1.5 rounded-full ${d.done ? "bg-success" : d.sessions.length ? "bg-accent" : "bg-transparent"}`} />
+              </div>
             </div>
           ))}
         </div>
@@ -194,7 +197,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
       {injuries?.length ? (
         <Card className="p-5">
           <div className="flex items-center justify-between">
-            <p className="font-semibold">Molestias registradas</p>
+            <h2 className="section-title">Molestias registradas</h2>
             <Link href="/app/perfil" className="text-sm text-accent">Ver</Link>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -219,7 +222,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold tracking-wide text-accent uppercase">{daysToComp <= 0 ? "Estás compitiendo" : "Próxima competencia"}</p>
+              <p className="kicker text-accent">{daysToComp <= 0 ? "Estás compitiendo" : "Próxima competencia"}</p>
               <p className="truncate font-semibold">{nextComp.title}</p>
               <p className="text-sm text-muted-fg">
                 {longDate(nextComp.start_date)}

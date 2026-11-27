@@ -60,7 +60,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
             </Link>
           </div>
         </header>
-        <main className="mx-auto max-w-5xl px-4 pt-5 pb-28 md:px-8 md:pt-8 md:pb-12">{children}</main>
+        <main className="rise mx-auto max-w-5xl px-4 pt-5 pb-28 md:px-8 md:pt-8 md:pb-12">{children}</main>
       </div>
       <BottomNav items={items} />
     </div>

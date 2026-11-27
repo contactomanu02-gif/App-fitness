@@ -81,8 +81,11 @@ export default async function Page() {
 
   return (
     <div>
-      <h1 className="text-3xl">{greeting}{first ? `, ${first}` : ""}</h1>
-      <p className="text-sm text-muted-fg">Resumen de tus alumnos.</p>
+      <div>
+        <p className="kicker text-muted-fg">Panel del entrenador</p>
+        <h1 className="mt-1 text-4xl">{greeting}{first ? `, ${first}` : ""}</h1>
+        <p className="text-sm text-muted-fg">Resumen de tus alumnos.</p>
+      </div>
 
       {!list.length ? (
         <Card className="mt-6">

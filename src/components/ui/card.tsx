@@ -8,7 +8,7 @@ export function CardHeader({ title, action, subtitle }: { title: string; subtitl
   return (
     <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
       <div className="min-w-0">
-        <h2 className="flex items-center gap-2 font-display text-[19px] leading-tight font-bold tracking-[0.02em] uppercase">
+        <h2 className="flex items-center gap-2 font-display text-[19px] not-italic leading-tight font-bold tracking-[0.02em] uppercase">
           <span aria-hidden className="h-4 w-[5px] shrink-0 -skew-x-[20deg] bg-accent" />
           {title}
         </h2>
