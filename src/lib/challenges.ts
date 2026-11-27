@@ -77,18 +77,6 @@ const CARDIO: ChallengeTemplate[] = [
     ],
   },
   {
-    key: "pasos",
-    title: "Sumá pasos",
-    description: "Fuera del gimnasio también se entrena. Contá los pasos con el celular o el reloj.",
-    icon: "walk",
-    points: 120,
-    steps: [
-      { text: "Llegar a 8.000 pasos en el día", times: 8 },
-      { text: "Llegar a 10.000 pasos en el día", times: 6 },
-      { text: "Llegar a 12.000 pasos en el día", times: 3 },
-    ],
-  },
-  {
     key: "soga",
     title: "Saltá la soga",
     description: "Coordinación, pies rápidos y corazón. Si no tenés soga, hacé el gesto sin ella.",
@@ -100,46 +88,10 @@ const CARDIO: ChallengeTemplate[] = [
       { text: "10 min de soga en total (cortado como puedas)", times: 3 },
     ],
   },
-  {
-    key: "pileta",
-    title: "Al agua",
-    description: "Nadar suma resistencia sin impacto. Cualquier estilo vale.",
-    icon: "swim",
-    points: 150,
-    steps: [
-      { text: "Nadar 15 min", times: 3 },
-      { text: "Nadar 25 min", times: 3 },
-      { text: "Nadar 30 min con 4 cambios de ritmo", times: 2 },
-    ],
-  },
-  {
-    key: "escaleras",
-    title: "Por la escalera",
-    description: "Dejá el ascensor: piernas y pulmones en cada piso.",
-    icon: "heart",
-    points: 120,
-    steps: [
-      { text: "Subir 5 pisos por escalera", times: 6 },
-      { text: "Subir 10 pisos por escalera", times: 4 },
-      { text: "Subir 15 pisos en total (puede ser en tandas)", times: 3 },
-    ],
-  },
 ];
 
-/** Hábitos, movilidad y zona media fuera de la rutina. */
+/** Hábitos fuera del gimnasio (nada que ya esté en las rutinas: ni zona media, ni movilidad, ni elongación). */
 const HABITOS: ChallengeTemplate[] = [
-  {
-    key: "plancha",
-    title: "Plancha de acero",
-    description: "Un minuto por día que se nota en la zona media.",
-    icon: "flame",
-    points: 100,
-    steps: [
-      { text: "Plancha frontal 1 min", times: 5 },
-      { text: "Plancha frontal 1 min 30 s", times: 5 },
-      { text: "Plancha frontal 2 min + 30 s de cada lado", times: 5 },
-    ],
-  },
   {
     key: "agua",
     title: "Bien hidratado",
@@ -157,49 +109,14 @@ const HABITOS: ChallengeTemplate[] = [
     steps: [{ text: "Dormir 8 horas o más", times: 15 }],
   },
   {
-    key: "movilidad",
-    title: "5 minutos de movilidad",
-    description: "Cadera, columna y hombros al levantarte o antes de dormir.",
-    icon: "leaf",
-    points: 100,
-    steps: [
-      { text: "5 min de movilidad de cadera y columna", times: 10 },
-      { text: "10 min de movilidad completa (cadera, columna y hombros)", times: 5 },
-    ],
-  },
-  {
-    key: "respiracion",
-    title: "Respirá",
-    description: "Respiración lenta: 4 segundos inhalando, 6 exhalando. Ayuda a bajar el estrés y a recuperar.",
-    icon: "wind",
-    points: 80,
-    steps: [{ text: "5 min de respiración lenta", times: 12 }],
-  },
-  {
-    key: "estiramiento",
-    title: "Estirá después",
-    description: "Al terminar el día o después de jugar, 10 minutos de elongación.",
-    icon: "leaf",
-    points: 100,
-    steps: [{ text: "10 min de elongación de piernas y espalda", times: 12 }],
-  },
-  {
-    key: "sin-pantallas",
-    title: "Desconectá",
-    description: "Nada de celular la última media hora antes de dormir.",
-    icon: "sun",
-    points: 80,
-    steps: [{ text: "30 min sin pantallas antes de dormir", times: 12 }],
-  },
-  {
-    key: "abdominales",
-    title: "Zona media todos los días",
-    description: "Un bloque corto en casa, fuera de la rutina del gimnasio.",
+    key: "tu-deporte",
+    title: "Más horas de tu deporte",
+    description: "Lo que entrenás en el gimnasio se aprovecha jugando. Sumá práctica fuera del gimnasio.",
     icon: "target",
-    points: 100,
+    points: 150,
     steps: [
-      { text: "30 abdominales + 20 espinales", times: 8 },
-      { text: "50 abdominales + 30 espinales", times: 6 },
+      { text: "Practicar o jugar tu deporte 1 hora", times: 6 },
+      { text: "Practicar o jugar tu deporte 2 horas", times: 3 },
     ],
   },
 ];
