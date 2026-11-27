@@ -32,8 +32,10 @@ describe("desafíos", () => {
     expect(new Set(nov.map((t) => t.key)).size).toBe(4);
     expect(nov.map((t) => t.key)).not.toEqual(dic.map((t) => t.key));
     expect(new Set(CHALLENGE_TEMPLATES.map((t) => t.key)).size).toBe(CHALLENGE_TEMPLATES.length);
-    // Ningún texto con "balón" ni caminatas en la entrada en calor: son actividades externas
+    // Ningún texto con "balón"
     expect(CHALLENGE_TEMPLATES.every((t) => !/bal[oó]n/i.test(JSON.stringify(t)))).toBe(true);
+    // Nada que ya esté en las rutinas
+    expect(CHALLENGE_TEMPLATES.filter((t) => /abdominal|espinal|plancha|movilidad|elongaci|respiraci/i.test(JSON.stringify(t))).map((t) => t.key)).toEqual([]);
   });
 });
 
