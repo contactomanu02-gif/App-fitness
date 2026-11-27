@@ -65,6 +65,8 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/prueba" && cd "$RUNNER_TEMP/prueba"
           supabase init --force > /dev/null
+          # Mismas versiones de Auth/Storage que producción (las deja «supabase link»).
+          cp -r "$GITHUB_WORKSPACE/supabase/.temp" supabase/ && ls supabase/.temp
           supabase start -x studio,imgproxy,edge-runtime,logflare,vector,realtime,postgres-meta,supavisor
           db="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
           "$GITHUB_WORKSPACE/scripts/respaldo/restaurar.sh" "$RUNNER_TEMP/r" "$db"
