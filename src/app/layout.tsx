@@ -1,13 +1,13 @@
 import { NavProgress } from "@/components/nav-progress";
 import type { Metadata, Viewport } from "next";
-import { Barlow_Condensed, Geist, Geist_Mono } from "next/font/google";
+import { Archivo, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 import "./globals.css";
 
-const sans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+// Archivo: una sola familia variable (ancho 62–125) para texto, títulos condensados y números
+const sans = Archivo({ variable: "--font-body", subsets: ["latin"], axes: ["wdth"], style: ["normal", "italic"] });
 const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-const display = Barlow_Condensed({ variable: "--font-display-face", subsets: ["latin"], weight: ["600", "700"] });
 
 export const metadata: Metadata = {
   title: { default: "Fitness Approach", template: "%s · Fitness Approach" },
@@ -27,7 +27,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es-AR" suppressHydrationWarning>
-      <body className={`${sans.variable} ${mono.variable} ${display.variable} min-h-dvh font-sans antialiased`}>
+      <body className={`${sans.variable} ${mono.variable} min-h-dvh font-sans antialiased`}>
         <ThemeProvider>{children}</ThemeProvider>
         <NavProgress />
         <ServiceWorkerRegister />
