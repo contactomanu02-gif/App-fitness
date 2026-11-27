@@ -1,11 +1,19 @@
-# Respaldo diario de la base de datos (cifrado). Se guarda 30 días en la pestaña Actions.
-# Para restaurar: descargar el archivo, descifrar con la frase BACKUP_PASSPHRASE y cargarlo con psql.
+# Copia de seguridad diaria de la app: base de datos completa + fotos (Storage).
+# - Todo sale en un solo archivo CIFRADO con la frase BACKUP_PASSPHRASE (el repositorio es público).
+# - Se guarda en la pestaña Actions: 30 días las diarias, 90 días la del día 1 de cada mes.
+# - Cada día se PRUEBA: la copia se restaura en una base de Supabase vacía dentro de GitHub
+#   y se comprueba que tenga exactamente las mismas filas y archivos que la original.
+# Cómo restaurar: ver RESPALDO.md.
 name: Respaldo diario
 
 on:
   schedule:
     - cron: "17 7 * * *" # 4:17 en Argentina
   workflow_dispatch:
+
+concurrency:
+  group: respaldo
+  cancel-in-progress: false
 
 env:
   SUPABASE_PROJECT_ID: jixprysxcuyzpvreohgi
@@ -16,25 +24,87 @@ env:
 jobs:
   respaldo:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Revisar secretos
-        run: |
-          if [ -z "$BACKUP_PASSPHRASE" ]; then echo "::error::Falta el secreto BACKUP_PASSPHRASE."; exit 1; fi
       - uses: supabase/setup-cli@v1
         with:
           version: 3.4.0
-      - run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
-      - name: Exportar
+      - name: Preparar
         run: |
-          supabase db dump --remote -f roles.sql --role-only
-          supabase db dump --remote -f schema.sql
-          supabase db dump --remote -f data.sql --data-only --use-copy
-          tar czf respaldo.tgz roles.sql schema.sql data.sql
-          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" --symmetric --cipher-algo AES256 -o "respaldo-$(date +%F).tgz.gpg" respaldo.tgz
-          rm -f roles.sql schema.sql data.sql respaldo.tgz
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client >/dev/null
+          cat > "$RUNNER_TEMP/sql.sh" <<'SH'
+          contar_remoto() {
+            jq -n --rawfile q scripts/respaldo/contar.sql '{query: $q}' > "$RUNNER_TEMP/body.json"
+            curl -sS -f -X POST "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/database/query" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+              --data @"$RUNNER_TEMP/body.json" | jq -c '.[0].filas'
+          }
+          SH
+          supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Exportar base de datos y fotos
+        run: |
+          source "$RUNNER_TEMP/sql.sh"
+          mkdir -p "$RUNNER_TEMP/r" && out="$RUNNER_TEMP/r"
+          contar_remoto > "$RUNNER_TEMP/antes.json"
+          supabase db dump --remote -f "$out/roles.sql" --role-only
+          supabase db dump --remote -f "$out/schema.sql"
+          supabase db dump --remote -f "$out/data.sql" --data-only --use-copy
+          keys=$(supabase projects api-keys --project-ref "$SUPABASE_PROJECT_ID" --reveal -o json 2>/dev/null || supabase projects api-keys --project-ref "$SUPABASE_PROJECT_ID" -o json)
+          service=$(echo "$keys" | jq -r '.[] | select(.name=="service_role") | .api_key')
+          echo "::add-mask::$service"
+          SUPABASE_URL="https://$SUPABASE_PROJECT_ID.supabase.co" SERVICE_KEY="$service" node scripts/respaldo/storage-bajar.mjs "$out/storage"
+          contar_remoto > "$RUNNER_TEMP/despues.json"
+          jq -n --arg fecha "$(date -u +%FT%TZ)" --slurpfile filas "$RUNNER_TEMP/despues.json" \
+            --slurpfile idx "$out/storage/indice.json" \
+            '{fecha: $fecha, proyecto: env.SUPABASE_PROJECT_ID, filas: $filas[0], archivos: ($idx[0].archivos | length)}' > "$out/resumen.json"
+          du -sh "$out"/*
+
+      - name: Probar la copia restaurándola en una base vacía
+        run: |
+          mkdir -p "$RUNNER_TEMP/prueba" && cd "$RUNNER_TEMP/prueba"
+          supabase init --force > /dev/null
+          supabase start -x studio,imgproxy,edge-runtime,logflare,vector,realtime,postgres-meta,supavisor
+          db="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          "$GITHUB_WORKSPACE/scripts/respaldo/restaurar.sh" "$RUNNER_TEMP/r" "$db"
+          eval "$(supabase status -o env | grep -E '^(API_URL|SERVICE_ROLE_KEY)=')"
+          SUPABASE_URL="$API_URL" SERVICE_KEY="$SERVICE_ROLE_KEY" node "$GITHUB_WORKSPACE/scripts/respaldo/storage-subir.mjs" "$RUNNER_TEMP/r/storage"
+          psql -tA -f "$GITHUB_WORKSPACE/scripts/respaldo/contar.sql" "$db" | jq -c . > "$RUNNER_TEMP/restaurada.json"
+          cd "$RUNNER_TEMP"
+          echo "Filas por tabla (original → restaurada):"
+          jq -r -n --slurpfile a despues.json --slurpfile b restaurada.json \
+            '($b[0] | map({(.t): .n}) | add) as $r | $a[0][] | "  \(.t): \(.n) → \($r[.t] // "FALTA")"'
+          if ! jq -e -n --slurpfile a antes.json --slurpfile d despues.json --slurpfile b restaurada.json \
+               '$b[0] == $d[0] or $b[0] == $a[0]' > /dev/null; then
+            echo "::error::La copia restaurada no coincide con la base original."
+            exit 1
+          fi
+          esperados=$(jq '.archivos | length' r/storage/indice.json)
+          echo "Archivos de fotos: $esperados"
+          echo "✅ La copia se restauró completa."
+
+      - name: Cifrar
+        if: env.BACKUP_PASSPHRASE != ''
+        id: cifrar
+        run: |
+          cd "$RUNNER_TEMP"
+          nombre="respaldo-$(date +%F)"
+          tar czf respaldo.tgz -C r .
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" --symmetric --cipher-algo AES256 \
+            -o "$GITHUB_WORKSPACE/$nombre.tgz.gpg" respaldo.tgz
+          rm -rf r respaldo.tgz
+          echo "nombre=$nombre" >> "$GITHUB_OUTPUT"
+          if [ "$(date +%d)" = "01" ]; then echo "dias=90" >> "$GITHUB_OUTPUT"; else echo "dias=30" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/upload-artifact@v4
+        if: env.BACKUP_PASSPHRASE != ''
         with:
-          name: respaldo-${{ github.run_id }}
-          path: respaldo-*.tgz.gpg
-          retention-days: 30
+          name: ${{ steps.cifrar.outputs.nombre }}
+          path: ${{ steps.cifrar.outputs.nombre }}.tgz.gpg
+          retention-days: ${{ steps.cifrar.outputs.dias }}
+          if-no-files-found: error
+      - name: Falta la frase de la copia
+        if: env.BACKUP_PASSPHRASE == ''
+        run: |
+          echo "::error::La copia se armó y se probó, pero NO se guardó porque falta el secreto BACKUP_PASSPHRASE (Settings > Secrets and variables > Actions)."
+          exit 1
