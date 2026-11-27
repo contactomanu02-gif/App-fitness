@@ -30,7 +30,7 @@ export default async function Page({
   const { id } = await params;
   const { cerrada } = await searchParams;
   const { supabase, athlete } = await requireAthlete();
-  const data = await loadAthleteSession(supabase, id, athlete.id);
+  const data = await loadAthleteSession(supabase, id, athlete.id, athlete.org_id);
   if (!data) notFound();
   const { s, w, items, photoOf } = data;
   const labels = displayLabels(items.map((i) => i.group_label));

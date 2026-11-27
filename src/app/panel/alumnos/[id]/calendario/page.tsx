@@ -17,14 +17,14 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const { supabase, org } = await requireStaff();
   const today = todayISO();
   const month = isValidMonth(sp.mes) ? sp.mes : monthOf(today);
-  const { data: athlete } = await supabase.from("athletes").select("id, first_name, last_name").eq("id", id).eq("org_id", org.id).maybeSingle();
-  if (!athlete) notFound();
 
   const grid = monthGrid(month);
-  const [{ sessions, events }, { data: templates }] = await Promise.all([
+  const [{ data: athlete }, { sessions, events }, { data: templates }] = await Promise.all([
+    supabase.from("athletes").select("id, first_name, last_name").eq("id", id).eq("org_id", org.id).maybeSingle(),
     loadCalendar(supabase, id, grid[0][0], grid.at(-1)![6], null),
     supabase.from("workouts").select("id, name").eq("org_id", org.id).is("program_id", null).is("athlete_id", null).order("name"),
   ]);
+  if (!athlete) notFound();
 
   async function onMove(sid: string, date: string) {
     "use server";

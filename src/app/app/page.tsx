@@ -12,11 +12,6 @@ export const metadata = { title: "Hoy" };
 export default async function Page({ searchParams }: { searchParams: Promise<{ bienvenida?: string }> }) {
   const { bienvenida } = await searchParams;
   const { athlete, supabase } = await requireAthlete();
-  const { data: injuries } = await supabase
-    .from("injuries")
-    .select("id, body_area, status")
-    .eq("athlete_id", athlete.id)
-    .neq("status", "resuelta");
   const hour = Number(new Intl.DateTimeFormat("es-AR", { hour: "numeric", hour12: false, timeZone: "America/Argentina/Buenos_Aires" }).format(new Date()));
   const greeting = hour < 13 ? "Buen día" : hour < 20 ? "Buenas tardes" : "Buenas noches";
   const coach = athlete.organizations?.name ?? "tu entrenador";
@@ -24,7 +19,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
   const today = todayISO();
   const monday = mondayOf(today);
   const sunday = addDays(monday, 6);
-  const [{ data: upcoming }, { data: weekEvents }, { data: nextComp }] = await Promise.all([
+  const [{ data: injuries }, { data: upcoming }, { data: weekEvents }, { data: nextComp }] = await Promise.all([
+    supabase.from("injuries").select("id, body_area, status").eq("athlete_id", athlete.id).neq("status", "resuelta"),
     supabase
       .from("scheduled_workouts")
       .select("id, date, status, workouts(name, est_duration_min, intensity_pct, workout_items(id))")

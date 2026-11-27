@@ -1,0 +1,79 @@
+# Prueba de punta a punta en la app publicada: un alumno se registra con el enlace del
+# entrenador, una vez con cada deporte nuevo, y recorre su app. Después se revisa en la base
+# que todo quedó guardado y se BORRAN las cuentas de prueba (pase lo que pase).
+# El repositorio es público: el log no muestra el código del entrenador ni datos personales.
+name: Probar registro
+
+on:
+  workflow_dispatch:
+
+env:
+  SUPABASE_PROJECT_ID: jixprysxcuyzpvreohgi
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  SITE_URL: ${{ vars.SITE_URL || 'https://app.fitness-approach-app.workers.dev' }}
+
+jobs:
+  probar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Instalar dependencias y navegador
+        run: |
+          pnpm install --frozen-lockfile
+          npx playwright install --with-deps chromium > /dev/null
+      - name: Preparar consultas a la base
+        run: |
+          cat > sql.sh <<'SH'
+          sql() {
+            jq -n --arg q "$1" '{query: $q}' > /tmp/body.json
+            curl -sS -f -X POST "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/database/query" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @/tmp/body.json
+          }
+          SH
+      - name: Código del entrenador
+        run: |
+          . ./sql.sh
+          code=$(sql "select o.join_code from public.organizations o where o.id = (select org_id from public.programs group by org_id order by count(*) desc limit 1)" | jq -r '.[0].join_code')
+          [ -n "$code" ] && [ "$code" != "null" ] || { echo "::error::No encontré el código del entrenador"; exit 1; }
+          echo "::add-mask::$code"
+          echo "JOIN_CODE=$code" >> "$GITHUB_ENV"
+      - name: Diagnóstico de velocidad
+        run: |
+          keys=$(curl -s "https://$SUPABASE_PROJECT_ID.supabase.co/auth/v1/.well-known/jwks.json" | jq '.keys | length')
+          echo "Claves de firma asimétricas en Supabase: $keys (si es 0, cada página consulta a Supabase para validar la sesión)"
+          for p in / /ingresar /acceso/alumno; do
+            curl -s -o /dev/null -w "$p → %{http_code} en %{time_total}s (primer byte %{time_starttransfer}s)\n" "$SITE_URL$p"
+          done
+      - name: Registrar alumnos de prueba en la app publicada
+        env:
+          BASE_URL: ${{ env.SITE_URL }}
+          RUN_ID: ${{ github.run_id }}
+        run: npx playwright test --config e2e-prod/playwright.config.ts
+      - name: Revisar lo guardado en la base
+        run: |
+          . ./sql.sh
+          sql "select s.slug as deporte, a.level as nivel, a.height_cm is not null and a.weight_kg is not null as medidas,
+                 (select string_agg(k, ', ' order by k) from jsonb_object_keys(p.values) k) as datos_del_deporte,
+                 (select count(*) from public.calendar_events c where c.athlete_id = a.id and c.kind = 'torneo') as competencias,
+                 (select count(*) from public.memberships m where m.user_id = a.user_id and m.org_id = a.org_id and m.role = 'athlete') as vinculado
+               from public.athletes a
+               join public.sports s on s.id = a.sport_id
+               left join public.athlete_sport_profiles p on p.athlete_id = a.id and p.sport_id = a.sport_id
+               where a.email like 'prueba-registro-${{ github.run_id }}-%@example.com' order by 1" | jq -c '.[]' | tee filas.txt
+          [ "$(wc -l < filas.txt)" = "5" ] || { echo "::error::Faltan alumnos registrados"; exit 1; }
+          if grep -q '"vinculado":0' filas.txt; then echo "::error::Un alumno quedó sin vincular"; exit 1; fi
+      - name: Borrar los datos de prueba
+        if: always()
+        run: |
+          . ./sql.sh
+          sql "with a as (delete from public.athletes where email like 'prueba-registro-%@example.com' returning 1),
+                    u as (delete from auth.users where email like 'prueba-registro-%@example.com' returning 1)
+               select (select count(*) from a) as alumnos_borrados, (select count(*) from u) as cuentas_borradas"
+          echo
+          sql "select (select count(*) from public.athletes where email like 'prueba-registro-%') + (select count(*) from auth.users where email like 'prueba-registro-%') as quedan" | jq -e '.[0].quedan == 0'
