@@ -46,7 +46,7 @@ export function LiftsForm({
           );
         })}
       </div>
-      <p className="text-xs text-muted-fg">Poné el peso más alto que moviste bien este mes y con cuántas repeticiones. Si no hacés alguno, dejalo vacío.</p>
+      <p className="text-xs text-muted-fg">Poné el peso más alto que moviste bien este mes y con cuántas repeticiones. Con estos pesos se calculan los kilos de cada entrenamiento. Si no hacés alguno, dejalo vacío.</p>
       <FormError message={state?.error} />
       {state?.ok ? <p role="status" className="text-sm font-medium text-success">¡Guardado!</p> : null}
       <Button type="submit" variant="brand" className="w-full" disabled={pending}>
