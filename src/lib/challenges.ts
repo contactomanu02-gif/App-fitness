@@ -77,18 +77,6 @@ const CARDIO: ChallengeTemplate[] = [
     ],
   },
   {
-    key: "pasos",
-    title: "Sumá pasos",
-    description: "Fuera del gimnasio también se entrena. Contá los pasos con el celular o el reloj.",
-    icon: "walk",
-    points: 120,
-    steps: [
-      { text: "Llegar a 8.000 pasos en el día", times: 8 },
-      { text: "Llegar a 10.000 pasos en el día", times: 6 },
-      { text: "Llegar a 12.000 pasos en el día", times: 3 },
-    ],
-  },
-  {
     key: "soga",
     title: "Saltá la soga",
     description: "Coordinación, pies rápidos y corazón. Si no tenés soga, hacé el gesto sin ella.",
@@ -98,30 +86,6 @@ const CARDIO: ChallengeTemplate[] = [
       { text: "5 x 1 min de soga con 1 min de pausa", times: 4 },
       { text: "6 x 1 min 30 s de soga con 1 min de pausa", times: 3 },
       { text: "10 min de soga en total (cortado como puedas)", times: 3 },
-    ],
-  },
-  {
-    key: "pileta",
-    title: "Al agua",
-    description: "Nadar suma resistencia sin impacto. Cualquier estilo vale.",
-    icon: "swim",
-    points: 150,
-    steps: [
-      { text: "Nadar 15 min", times: 3 },
-      { text: "Nadar 25 min", times: 3 },
-      { text: "Nadar 30 min con 4 cambios de ritmo", times: 2 },
-    ],
-  },
-  {
-    key: "escaleras",
-    title: "Por la escalera",
-    description: "Dejá el ascensor: piernas y pulmones en cada piso.",
-    icon: "heart",
-    points: 120,
-    steps: [
-      { text: "Subir 5 pisos por escalera", times: 6 },
-      { text: "Subir 10 pisos por escalera", times: 4 },
-      { text: "Subir 15 pisos en total (puede ser en tandas)", times: 3 },
     ],
   },
 ];
