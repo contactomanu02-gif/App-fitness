@@ -282,7 +282,7 @@ export function JoinWizard({ code, orgName, sports, loggedInEmail }: { code: str
               </>
             ) : null}
           </fieldset>
-          <Field label="¿Qué querés lograr?" htmlFor="goals" hint="Por ejemplo: pegarle más largo, sacarme el dolor de espalda, jugar más torneos.">
+          <Field label="¿Qué querés lograr?" htmlFor="goals" hint="Por ejemplo: rendir más en mi deporte, sacarme el dolor de espalda, llegar mejor a las competencias.">
             <Textarea id="goals" name="goals" required maxLength={2000} />
           </Field>
           {sport?.fields
