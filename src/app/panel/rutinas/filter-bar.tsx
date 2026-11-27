@@ -26,11 +26,11 @@ export function RoutineFilterBar({ tab, filters }: { tab?: string; filters: Rout
       ref={form}
       onSubmit={(e) => (e.preventDefault(), apply())}
       className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-[minmax(180px,1fr)_repeat(5,auto)_auto]"
-      aria-label="Buscar rutinas"
+      aria-label="Filtros de rutinas"
     >
       <div className="relative col-span-2 sm:col-span-3 lg:col-span-1">
         <Search size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-fg" />
-        <Input name="q" defaultValue={filters.q} placeholder="Buscar por nombre" className="pl-9" aria-label="Buscar por nombre" />
+        <Input name="q" defaultValue={filters.q} placeholder="Buscar por nombre" className="pl-9" aria-label="Buscar rutina" />
       </div>
       {TAG_GROUPS.map((g) => (
         <Select key={g.key} name={g.key} defaultValue={selected(g.key)} onChange={apply} aria-label={g.label}>
