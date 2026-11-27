@@ -31,7 +31,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
     <div>
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl">Alumnos</h1>
+          <h1 className="text-[40px]">Alumnos</h1>
           <p className="text-sm text-muted-fg">{athletes?.length ?? 0} {status === "active" ? "activos" : "archivados"}</p>
         </div>
         <Link href="/panel/alumnos/nuevo" className={buttonVariants()}>

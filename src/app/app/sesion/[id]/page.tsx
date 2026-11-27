@@ -53,10 +53,10 @@ export default async function Page({
         <ChevronLeft size={16} /> Calendario
       </Link>
       <div>
-        <p className="text-sm text-muted-fg first-letter:uppercase">
+        <p className="kicker text-muted-fg">
           {s.date === today ? "Hoy" : longDate(s.date)}
         </p>
-        <h1 className="text-3xl">{w.name}</h1>
+        <h1 className="mt-1 text-[40px]">{w.name}</h1>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {w.intensity_pct ? (
             <Badge tone="accent">Intensidad {w.intensity_pct}%</Badge>
@@ -82,7 +82,7 @@ export default async function Page({
       {open ? (
         <a
           href="#cerrar"
-          className="flex items-center justify-between gap-3 rounded-2xl bg-[#0b0b0b] px-4 py-3 text-sm text-white"
+          className="notch hero-brand flex items-center justify-between gap-3 rounded-2xl px-4 py-3 text-sm text-white"
         >
           <span>
             Hacé los ejercicios a tu ritmo. <b>Cuando termines, marcalo al final.</b>
@@ -133,12 +133,12 @@ export default async function Page({
                 return (
                   <Card key={it.id} className="overflow-hidden" data-testid="ejercicio">
                     <div className="flex gap-3 p-4">
-                      <span className={`grid h-8 min-w-9 shrink-0 place-items-center rounded-lg px-1.5 text-sm font-bold ${toneOf(n).soft} ${toneOf(n).text}`}>
+                      <span className={`grid h-9 min-w-10 shrink-0 -skew-x-[8deg] place-items-center rounded-md px-1.5 font-display text-lg font-extrabold ${toneOf(n).soft} ${toneOf(n).text}`}>
                         {labels[i] || i + 1}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold">{ex?.name}</p>
-                        <p className="mt-0.5 text-sm text-accent">
+                        <p className="text-[17px] leading-snug font-semibold">{ex?.name}</p>
+                        <p className="mt-1 font-display text-[22px] leading-none font-bold text-accent">
                           {prescription({
                             ...it,
                             rpe: it.rpe === null ? null : Number(it.rpe),
@@ -179,7 +179,7 @@ export default async function Page({
                     {ex &&
                     (ex.video_url || ex.instructions || ex.coaching_cues) ? (
                       <details className="border-t border-border px-4 py-3">
-                        <summary className="cursor-pointer text-sm font-medium text-accent">
+                        <summary className="cursor-pointer font-condensed text-[13px] font-bold tracking-[0.08em] text-accent uppercase">
                           Cómo se hace
                         </summary>
                         <div className="mt-3 space-y-3 text-sm">
@@ -211,9 +211,9 @@ export default async function Page({
       {open ? (
         <section id="cerrar" className="scroll-mt-20 overflow-hidden rounded-2xl border-2 border-success/40 bg-success-soft">
           <div className="flex items-center gap-3 bg-emerald-600 px-4 py-3 text-white">
-            <CircleCheckBig size={24} />
+            <CircleCheckBig size={26} />
             <div>
-              <h2 className="font-display text-xl font-bold uppercase">¿Hiciste el entrenamiento?</h2>
+              <h2 className="font-display text-[26px] leading-none font-extrabold uppercase">¿Hiciste el entrenamiento?</h2>
               <p className="text-xs text-white/85">Marcalo acá así tu entrenador sabe si entrenaste.</p>
             </div>
           </div>

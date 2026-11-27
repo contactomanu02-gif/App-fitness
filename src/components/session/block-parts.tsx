@@ -9,9 +9,10 @@ export function BlockSection({ n, letter, title, rounds, count, done, children }
   return (
     <section className={cn("overflow-hidden rounded-2xl border bg-card shadow-card", t.ring)} aria-label={`Bloque ${letter}: ${title}`}>
       <header className={cn("flex items-center gap-3 px-4 py-3", t.soft)}>
-        <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-xl font-display text-xl font-bold", t.solid)}>{letter}</span>
+        <span className={cn("notch grid h-12 w-12 shrink-0 place-items-center rounded-md font-display text-[30px] font-black", t.solid)}>{letter}</span>
         <div className="min-w-0 flex-1">
-          <p className={cn("font-display text-lg leading-tight font-bold tracking-wide uppercase", t.text)}>
+          <p className="text-[10px] font-bold tracking-[0.18em] text-muted-fg uppercase">Bloque {letter}</p>
+          <p className={cn("font-display text-[24px] leading-none font-extrabold uppercase", t.text)}>
             {title}
             {done ? " · ¡Listo!" : ""}
           </p>
@@ -32,7 +33,7 @@ export function BlockPause({ next, nextN }: { next: string; nextN: number }) {
   return (
     <div className="flex items-center gap-3 py-1" role="separator" aria-label={`Pausa antes del bloque ${next}`}>
       <span className="h-px flex-1 border-t-2 border-dashed border-border" />
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-fg">
+      <span className="inline-flex -skew-x-[8deg] items-center gap-1.5 rounded-[3px] border border-border bg-card px-3 py-1.5 text-xs text-muted-fg shadow-card">
         <Coffee size={14} /> Pausa · tomá agua y prepará el <b className={t.text}>bloque {next}</b>
       </span>
       <span className="h-px flex-1 border-t-2 border-dashed border-border" />

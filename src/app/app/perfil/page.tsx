@@ -33,7 +33,10 @@ export default async function Page() {
 
   return (
     <div className="space-y-4 pt-2">
-      <h1 className="text-3xl">{fullName(a)}</h1>
+      <div>
+        <p className="kicker text-muted-fg">Tu perfil</p>
+        <h1 className="mt-1 text-[40px]">{fullName(a)}</h1>
+      </div>
       <Card>
         <CardHeader title="Mi ficha" subtitle="La carga tu entrenador. Si algo está mal, avisale." />
         <dl className="divide-y divide-border px-5 pb-3">

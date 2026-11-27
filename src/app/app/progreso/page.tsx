@@ -17,7 +17,7 @@ export default async function Page() {
   return (
     <div className="space-y-4">
       <div className="pt-2">
-        <p className="text-sm text-muted-fg">Tu evolución</p>
+        <p className="kicker text-muted-fg">Tu evolución</p>
         <h1 className="text-4xl">Progreso</h1>
       </div>
       <ScoreHero p={p} />

@@ -36,7 +36,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <ChevronLeft size={16} /> {fullName(a)}
       </Link>
       <div>
-        <h1 className="text-3xl">Progreso</h1>
+        <h1 className="text-[40px]">Progreso</h1>
         <p className="text-sm text-muted-fg">Lo mismo que ve {a.first_name} en su app, más el historial de pesos para que lo corrijas o completes.</p>
       </div>
       <ScoreHero p={p} name={a.first_name} />

@@ -143,7 +143,7 @@ export function MonthCalendar({
         <Link href={`${basePath}?mes=${shiftMonth(month, -1)}`} className={buttonVariants({ variant: "ghost", size: "icon" })} aria-label="Mes anterior">
           <ChevronLeft size={18} />
         </Link>
-        <h2 className="text-lg font-semibold">{monthLabel(month)}</h2>
+        <h2 className="font-display text-[26px] leading-none font-extrabold uppercase">{monthLabel(month)}</h2>
         <Link href={`${basePath}?mes=${shiftMonth(month, 1)}`} className={buttonVariants({ variant: "ghost", size: "icon" })} aria-label="Mes siguiente">
           <ChevronRight size={18} />
         </Link>
@@ -174,7 +174,7 @@ export function MonthCalendar({
 
       <section className="mt-5" aria-label="Día elegido">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="font-semibold first-letter:uppercase">{longDate(selected)}</h3>
+          <h3 className="section-title first-letter:uppercase">{longDate(selected)}</h3>
           <div className="flex max-w-full min-w-0 gap-2">
             {onSaveEvent ? (
               <Button variant="outline" size="sm" onClick={() => setEventForm({ event: null, date: selected })}>
