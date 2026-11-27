@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { getSession, homeFor } from "@/lib/session";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ThemeChooser } from "@/components/theme";
+import { PushToggle } from "@/components/push-toggle";
 import { ProfileForm, PasswordForm } from "./forms";
 
 export const metadata = { title: "Mi cuenta" };
@@ -21,6 +22,18 @@ export default async function Page() {
         <Card>
           <CardHeader title="Datos" subtitle={s.user.email} />
           <div className="px-5 pb-5"><ProfileForm fullName={s.profile?.full_name ?? ""} /></div>
+        </Card>
+        <Card>
+          <CardHeader title="Avisos en el celular" />
+          <div className="px-5 pb-5">
+            <PushToggle
+              description={
+                s.staffOrg
+                  ? "Te avisamos cuando un alumno termina o no hace una sesión, reporta una molestia, cambia un ejercicio o carga sus pesos."
+                  : "Te avisamos los días que tenés entrenamiento."
+              }
+            />
+          </div>
         </Card>
         <Card>
           <CardHeader title="Apariencia" />

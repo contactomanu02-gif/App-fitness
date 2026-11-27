@@ -8,6 +8,7 @@ import { Avatar, Badge, Card, CardHeader } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { ConfirmAction } from "@/components/confirm-action";
 import { InvitePanel } from "@/components/athletes/invite-panel";
+import { ResetLinkPanel } from "@/components/athletes/reset-link-panel";
 import { InjuryForm } from "@/components/athletes/injury-form";
 import { InjuryList } from "@/components/athletes/injury-list";
 import { DAYS, LEVELS, labelOf } from "@/lib/athletes";
@@ -15,6 +16,7 @@ import { emailConfigured } from "@/lib/email";
 import { ageFrom, formatDate, fullName, initials } from "@/lib/utils";
 import {
   addInjury,
+  createResetLink,
   deleteAthlete,
   deleteInjury,
   inviteAthlete,
@@ -254,6 +256,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                   <p className="text-sm text-muted-fg">
                     Ya entra con <span className="font-medium text-fg">{a.email}</span>.
                   </p>
+                  <ResetLinkPanel action={createResetLink.bind(null, id)} firstName={a.first_name} />
                   <ConfirmAction
                     label="Desvincular cuenta"
                     question="Va a perder el acceso. ¿Seguro?"

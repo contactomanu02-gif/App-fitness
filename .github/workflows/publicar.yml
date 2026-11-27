@@ -100,7 +100,14 @@ jobs:
         run: |
           curl -sf -X PATCH "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/config/auth" \
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
-            -d "{\"site_url\": \"$SITE_URL\", \"uri_allow_list\": \"$SITE_URL/**\"}" > /dev/null
+            -d "{\"site_url\": \"$SITE_URL\", \"uri_allow_list\": \"$SITE_URL/**\", \"mailer_otp_exp\": 86400}" > /dev/null
+      - name: Dirección de la app para los avisos diarios
+        if: steps.cf.outputs.ready == 'true' && env.SITE_URL != ''
+        run: |
+          q=$(jq -n --arg u "$SITE_URL" '{query: ("update public.app_secrets set value = " + ($u | @json | sub("^\"";"'"'"'") | sub("\"$";"'"'"'")) + " where key = '"'"'site_url'"'"';")}')
+          curl -sf -X POST "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" -d "$q" > /dev/null \
+            || echo "::warning::No se pudo actualizar la dirección de los avisos."
       - name: Comprobar que la app responde
         if: steps.cf.outputs.ready == 'true'
         run: |

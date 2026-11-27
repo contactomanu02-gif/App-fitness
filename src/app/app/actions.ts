@@ -2,6 +2,9 @@
 import { revalidatePath } from "next/cache";
 import { requireAthlete } from "@/lib/session";
 import { injurySchema } from "@/lib/athletes";
+import { pushToStaff } from "@/lib/push";
+import { finishMessage, injuryMessage, liftsMessage, swapMessage } from "@/lib/push-messages";
+import { fullName } from "@/lib/utils";
 
 export async function reportInjury(_: { error?: string; ok?: number } | undefined, form: FormData) {
   const { supabase, athlete, user } = await requireAthlete();
@@ -11,6 +14,7 @@ export async function reportInjury(_: { error?: string; ok?: number } | undefine
     .from("injuries")
     .insert({ ...parsed.data, athlete_id: athlete.id, org_id: athlete.org_id, created_by: user.id });
   if (error) return { error: "No pudimos guardar el aviso. Probá de nuevo." };
+  await pushToStaff(athlete.org_id, injuryMessage({ athleteName: fullName(athlete), athleteId: athlete.id, area: parsed.data.body_area }));
   revalidatePath("/app", "layout");
   return { ok: Date.now() };
 }
@@ -82,7 +86,23 @@ export async function finishSession(scheduledId: string, _: FinishState, form: F
     p_pain_level: f.pain_level as number,
   });
   if (error) return { error: "No pudimos guardar. Probá de nuevo." };
-  if (f.pain) await notifyPain(scheduledId, athlete.org_id);
+  const { data: sw } = await supabase.from("scheduled_workouts").select("workouts(name)").eq("id", scheduledId).maybeSingle();
+  await Promise.all([
+    f.pain ? notifyPain(scheduledId, athlete.org_id) : null,
+    pushToStaff(
+      athlete.org_id,
+      finishMessage({
+        athleteName: fullName(athlete),
+        athleteId: athlete.id,
+        workout: sw?.workouts?.name ?? "la sesión",
+        status: f.status,
+        rpe: f.rpe,
+        pain: f.pain,
+        painArea: f.pain_area,
+        comment: f.comment ?? "",
+      }),
+    ),
+  ]);
   revalidatePath("/app", "layout");
   redirect(`/app/sesion/${scheduledId}?cerrada=1`);
 }
@@ -138,7 +158,7 @@ export async function getAlternatives(exerciseId: string, q: string): Promise<Al
 }
 
 export async function reportExercise(scheduledId: string, itemId: string, reason: string, replacementId: string | null, note: string) {
-  const { supabase } = await requireAthlete();
+  const { supabase, athlete } = await requireAthlete();
   const { error } = await supabase.rpc("report_exercise", {
     p_scheduled: scheduledId,
     p_item: itemId,
@@ -147,6 +167,15 @@ export async function reportExercise(scheduledId: string, itemId: string, reason
     p_note: note.slice(0, 300),
   });
   if (error) return { error: "No pudimos guardar el cambio. Probá de nuevo." };
+  const { data: alert } = await createAdminClient()
+    .from("alerts")
+    .select("message")
+    .eq("athlete_id", athlete.id)
+    .in("kind", ["swap", "missing"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  await pushToStaff(athlete.org_id, swapMessage({ athleteName: fullName(athlete), athleteId: athlete.id, replaced: Boolean(replacementId), detail: alert?.message ?? "" }));
   revalidatePath("/app", "layout");
   return {};
 }
@@ -172,6 +201,7 @@ export async function saveMyLifts(_: LiftsState, form: FormData): Promise<LiftsS
   if ("error" in parsed) return { error: parsed.error };
   const { error } = await supabase.rpc("save_my_lifts", { p_athlete: athlete.id, p_month: monthStart(todayISO()), p_items: parsed.items });
   if (error) return { error: "No pudimos guardar tus pesos. Probá de nuevo." };
+  await pushToStaff(athlete.org_id, liftsMessage({ athleteName: fullName(athlete), athleteId: athlete.id }));
   revalidatePath("/app", "layout");
   return { ok: Date.now() };
 }

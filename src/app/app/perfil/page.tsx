@@ -2,6 +2,7 @@ import { requireAthlete } from "@/lib/session";
 import { Card, CardHeader } from "@/components/ui/card";
 import { InjuryForm } from "@/components/athletes/injury-form";
 import { InjuryList } from "@/components/athletes/injury-list";
+import { PushToggle } from "@/components/push-toggle";
 import { DAYS, LEVELS, labelOf } from "@/lib/athletes";
 import { ageFrom, fullName } from "@/lib/utils";
 import { reportInjury } from "../actions";
@@ -58,6 +59,13 @@ export default async function Page() {
             <p className="mt-1 text-sm whitespace-pre-line">{a.goals}</p>
           </div>
         ) : null}
+      </Card>
+
+      <Card id="avisos">
+        <CardHeader title="Avisos en el celular" />
+        <div className="px-5 pb-5">
+          <PushToggle description="Te avisamos los días que tenés entrenamiento." />
+        </div>
       </Card>
 
       <Card id="molestias">

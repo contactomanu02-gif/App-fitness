@@ -55,6 +55,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"app_secrets": {
+                  Row: {
+                    "created_at": string,"key": string,"value": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"key": string,"value": string
+                  }
+                  Update: {
+                    "created_at"?: string,"key"?: string,"value"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"assessment_results": {
                   Row: {
                     "assessment_id": string,"id": string,"note": string | null,"org_id": string,"passed": boolean | null,"side": string,"test_id": string,"value": number | null
@@ -643,6 +657,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"push_subscriptions": {
+                  Row: {
+                    "auth": string,"created_at": string,"endpoint": string,"id": string,"p256dh": string,"user_agent": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "auth": string,"created_at"?: string,"endpoint": string,"id"?: string,"p256dh": string,"user_agent"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "auth"?: string,"created_at"?: string,"endpoint"?: string,"id"?: string,"p256dh"?: string,"user_agent"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"scheduled_workouts": {
                   Row: {
                     "athlete_id": string,"comment": string | null,"completed_at": string | null,"created_at": string,"date": string,"duration_min": number | null,"id": string,"org_id": string,"pain": boolean,"pain_area": string | null,"pain_level": number | null,"program_id": string | null,"session_rpe": number | null,"started_at": string | null,"status": string,"updated_at": string,"workout_id": string
@@ -974,6 +1002,9 @@ isOneToOne: false
 "save_my_lifts":
 { Args: { "p_athlete": string,"p_items": Json,"p_month": string }; Returns: undefined
                            },
+"save_push_subscription":
+{ Args: { "p_auth": string,"p_endpoint": string,"p_p256dh": string,"p_ua": string }; Returns: undefined
+                           },
 "save_workout":
 { Args: { "p_data": Json,"p_workout": string }; Returns: undefined
                            },
@@ -991,6 +1022,9 @@ isOneToOne: false
                            },
 "storage_org":
 { Args: { "p_name": string }; Returns: string
+                           },
+"trigger_daily_push":
+{ Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "undo_challenge":
 { Args: { "p_challenge": string }; Returns: undefined

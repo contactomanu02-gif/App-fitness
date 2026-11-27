@@ -12,6 +12,7 @@ import { loadProgress } from "@/components/progress/progress-view";
 import { ScoreRing } from "@/components/progress/score-ring";
 import { LiftsForm } from "@/components/progress/lifts-form";
 import { ChallengeCard } from "@/components/progress/challenge-card";
+import { PushToggle } from "@/components/push-toggle";
 import { saveMyLifts } from "./actions";
 
 export const metadata = { title: "Hoy" };
@@ -120,6 +121,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
           </div>
         </Card>
       )}
+
+      <PushToggle compact description="Activalos y te avisamos los días que tenés entrenamiento." />
 
       <Card className="p-5">
         <h2 className="section-title">Tu semana</h2>

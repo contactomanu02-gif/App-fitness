@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { z } from "@/lib/zod";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext, siteUrl } from "@/lib/utils";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { emailConfigured, recoveryLink, resetEmail, sendEmail } from "@/lib/email";
 
 export type FormState = { error?: string; notice?: string; fields?: Record<string, string> } | undefined;
 
@@ -59,12 +61,30 @@ export async function signUpCoach(_: FormState, form: FormData): Promise<FormSta
 export async function requestPasswordReset(_: FormState, form: FormData): Promise<FormState> {
   const email = emailSchema.safeParse(form.get("email"));
   if (!email.success) return { error: email.error.issues[0].message };
-  const supabase = await createClient();
-  await supabase.auth.resetPasswordForEmail(email.data, {
-    redirectTo: `${siteUrl()}/auth/confirm?next=/actualizar-clave`,
-  });
+  if (emailConfigured()) {
+    // Con email propio configurado: el enlace sale por Resend (los emails de Supabase gratis no llegan a cualquiera).
+    const { data } = await createAdminClient().auth.admin.generateLink({ type: "recovery", email: email.data });
+    const hash = data?.properties?.hashed_token;
+    if (hash) await sendEmail({ to: email.data, ...resetEmail({ link: recoveryLink(hash) }) });
+  } else {
+    const supabase = await createClient();
+    await supabase.auth.resetPasswordForEmail(email.data, {
+      redirectTo: `${siteUrl()}/auth/confirm?next=/actualizar-clave`,
+    });
+  }
   // Misma respuesta exista o no la cuenta, para no revelar qué emails están registrados.
-  return { notice: "Si el email está registrado, te llega un enlace para crear una contraseña nueva." };
+  return {
+    notice: "Si el email está registrado, te llega un enlace para crear una contraseña nueva. Si en unos minutos no te llegó, pedile a tu entrenador que te mande uno por WhatsApp.",
+  };
+}
+
+/** Usa el enlace de contraseña nueva (al tocar el botón, no al abrir la página). */
+export async function openRecoveryLink(form: FormData) {
+  const t = String(form.get("t") ?? "");
+  const supabase = await createClient();
+  const { error } = t ? await supabase.auth.verifyOtp({ type: "recovery", token_hash: t }) : { error: true };
+  if (error) redirect(`/nueva-clave?t=${encodeURIComponent(t)}&error=1`);
+  redirect("/actualizar-clave");
 }
 
 export async function updatePassword(_: FormState, form: FormData): Promise<FormState> {

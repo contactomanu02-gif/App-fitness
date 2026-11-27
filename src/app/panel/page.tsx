@@ -8,6 +8,7 @@ import { formatDate, fullName } from "@/lib/utils";
 import { addDays, mondayOf, shortDate, todayISO } from "@/lib/dates";
 import { adherence, lowAdherence } from "@/lib/adherence";
 import { AlertsList } from "@/components/alerts-list";
+import { PushToggle } from "@/components/push-toggle";
 
 export const metadata = { title: "Inicio" };
 
@@ -85,6 +86,10 @@ export default async function Page() {
         <p className="kicker text-muted-fg">Panel del entrenador</p>
         <h1 className="mt-1 text-4xl">{greeting}{first ? `, ${first}` : ""}</h1>
         <p className="text-sm text-muted-fg">Resumen de tus alumnos.</p>
+      </div>
+
+      <div className="mt-6 max-w-xl empty:hidden">
+        <PushToggle compact description="Activalos y te avisamos en el celular cuando un alumno termina o no hace una sesión, reporta una molestia, cambia un ejercicio o carga sus pesos." />
       </div>
 
       {!list.length ? (

@@ -1,4 +1,5 @@
 import "server-only";
+import { siteUrl } from "@/lib/utils";
 
 /** Envía un email con Resend. Devuelve false si no está configurado o falla. */
 export async function sendEmail(opts: { to: string; subject: string; html: string; text: string }) {
@@ -40,5 +41,20 @@ export function painEmail(p: { message: string; link: string }) {
   const html = `<div style="font-family:system-ui,sans-serif;max-width:480px;margin:auto;padding:24px;color:#0c110e">
   <p style="font-size:16px"><strong>${esc(p.message)}</strong></p>
   <p style="margin:24px 0"><a href="${esc(p.link)}" style="background:#111111;color:#fff;padding:12px 20px;border-radius:12px;text-decoration:none;font-weight:600">Ver la ficha del alumno</a></p></div>`;
+  return { subject, text, html };
+}
+
+/** Enlace de contraseña nueva. Abre una página con un botón (la vista previa de WhatsApp no lo gasta). */
+export function recoveryLink(hashedToken: string) {
+  return `${siteUrl()}/nueva-clave?t=${encodeURIComponent(hashedToken)}`;
+}
+
+export function resetEmail(p: { link: string }) {
+  const subject = "Creá tu contraseña nueva";
+  const text = `Para crear una contraseña nueva, abrí este enlace:\n${p.link}\n\nVence en 24 horas. Si no lo pediste, ignorá este email.`;
+  const html = `<div style="font-family:system-ui,sans-serif;max-width:480px;margin:auto;padding:24px;color:#0c110e">
+  <p>Para crear una contraseña nueva, tocá el botón:</p>
+  <p style="margin:28px 0"><a href="${esc(p.link)}" style="background:#111111;color:#fff;padding:12px 20px;border-radius:12px;text-decoration:none;font-weight:600">Crear contraseña nueva</a></p>
+  <p style="color:#5d6761;font-size:13px">Vence en 24 horas. Si no lo pediste, ignorá este email.</p></div>`;
   return { subject, text, html };
 }
