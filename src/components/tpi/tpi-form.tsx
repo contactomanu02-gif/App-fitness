@@ -102,7 +102,8 @@ export function TpiForm({
           const found = parseReportText(await pdfText(file));
           const keys = Object.keys(found).filter((k) => !ratings[k]);
           if (keys.length) {
-            setRatings((r) => ({ ...r, ...Object.fromEntries(keys.map((k) => [k, found[k]!])) }));
+            setRatings((r) => ({ ...r, ...Object.fromEntries(keys.map((k) => [k, found[k]!.rating])) }));
+            setSides((s) => ({ ...s, ...Object.fromEntries(keys.map((k) => [k, found[k]!.side])) }));
             setFromPdf(new Set(keys));
             setReadMsg(`Leí ${keys.length} de ${TPI_TESTS.length} pruebas del PDF (marcadas «del PDF»). Revisalas y corregí lo que haga falta antes de guardar.`);
           } else {
