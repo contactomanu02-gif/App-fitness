@@ -158,3 +158,33 @@ export async function clearMySwap(swapId: string) {
   revalidatePath("/app", "layout");
   return {};
 }
+
+// ---------- Progreso: control mensual de pesos y desafíos ----------
+
+import { monthStart, parseLiftForm } from "@/lib/progress";
+import { todayISO } from "@/lib/dates";
+
+export type LiftsState = { error?: string; ok?: number } | undefined;
+
+export async function saveMyLifts(_: LiftsState, form: FormData): Promise<LiftsState> {
+  const { supabase, athlete } = await requireAthlete();
+  const parsed = parseLiftForm(Object.fromEntries(form));
+  if ("error" in parsed) return { error: parsed.error };
+  const { error } = await supabase.rpc("save_my_lifts", { p_athlete: athlete.id, p_month: monthStart(todayISO()), p_items: parsed.items });
+  if (error) return { error: "No pudimos guardar tus pesos. Probá de nuevo." };
+  revalidatePath("/app", "layout");
+  return { ok: Date.now() };
+}
+
+export async function logChallenge(challengeId: string) {
+  const { supabase } = await requireAthlete();
+  const { error } = await supabase.rpc("log_challenge", { p_challenge: challengeId, p_day: todayISO() });
+  revalidatePath("/app", "layout");
+  return error ? { error: "No se pudo marcar. Revisá tu conexión." } : {};
+}
+
+export async function undoChallenge(challengeId: string) {
+  const { supabase } = await requireAthlete();
+  await supabase.rpc("undo_challenge", { p_challenge: challengeId });
+  revalidatePath("/app", "layout");
+}

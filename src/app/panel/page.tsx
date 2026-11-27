@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronRight, Trophy } from "lucide-react";
 import { requireStaff } from "@/lib/session";
 import { Badge, Card, CardHeader, EmptyState } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
@@ -104,6 +105,17 @@ export default async function Page() {
             <Stat label="Sin registrar (7 días)" value={pending.length} tone="warn" />
             <Stat label="Lesiones activas" value={injuries?.length ?? 0} tone="danger" />
           </div>
+
+          <Link href="/panel/desafios" className="mt-4 block">
+            <Card className="flex items-center gap-4 p-4 transition hover:border-accent">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent"><Trophy size={20} aria-hidden /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">Desafíos del mes</span>
+                <span className="block text-sm text-muted-fg">Cinta, trote, hábitos: lo que tus alumnos hacen fuera de la rutina. Editalos y mirá cómo van.</span>
+              </span>
+              <ChevronRight size={18} className="text-muted-fg" aria-hidden />
+            </Card>
+          </Link>
 
           <Card className="mt-4">
             <CardHeader title="Calendario competitivo" subtitle="Competencias de tus alumnos en los próximos 90 días: planificá en base a ellas." />

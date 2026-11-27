@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Users, UsersRound, CircleUser, CalendarDays, Dumbbell, ClipboardList } from "lucide-react";
+import { Home, Users, UsersRound, CircleUser, CalendarDays, Dumbbell, ClipboardList, ChartNoAxesColumn } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const icons = { home: Home, users: Users, groups: UsersRound, user: CircleUser, calendar: CalendarDays, dumbbell: Dumbbell, clipboard: ClipboardList } as const;
+const icons = { home: Home, users: Users, groups: UsersRound, user: CircleUser, calendar: CalendarDays, dumbbell: Dumbbell, clipboard: ClipboardList, chart: ChartNoAxesColumn } as const;
 export type NavItem = { href: string; label: string; icon: keyof typeof icons; exact?: boolean };
 
 function isActive(path: string, item: NavItem) {
