@@ -179,7 +179,7 @@ export default async function Page({
                     {ex &&
                     (ex.video_url || ex.instructions || ex.coaching_cues) ? (
                       <details className="border-t border-border px-4 py-3">
-                        <summary className="cursor-pointer font-condensed text-[13px] font-bold tracking-[0.08em] text-accent uppercase">
+                        <summary className="w-fit cursor-pointer font-condensed text-[13px] font-bold tracking-[0.08em] text-accent uppercase">
                           Cómo se hace
                         </summary>
                         <div className="mt-3 space-y-3 text-sm">

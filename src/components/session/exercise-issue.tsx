@@ -77,11 +77,12 @@ export function ExerciseIssue({ scheduledId, itemId, exerciseId, exerciseName }:
 
   if (!open)
     return (
-      <div className="border-t border-border px-4 py-2.5">
-        <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5 font-condensed text-[13px] font-bold tracking-[0.06em] text-violet uppercase">
-          <Replace size={15} /> ¿No podés hacerlo? Cambialo
+      // Va en la misma línea que «Cómo se hace» (si está cerrado), chiquito y gris, para no molestar
+      <div className="pointer-events-none relative flex flex-col items-end px-3 pb-2 [details:not([open])+&]:-mt-[38px] [details:not([open])+&]:pb-0">
+        <button type="button" onClick={() => setOpen(true)} className="pointer-events-auto inline-flex h-[30px] items-center gap-1 rounded px-1 text-[11.5px] text-muted-fg/80 hover:text-fg">
+          <Replace size={12} aria-hidden /> ¿No podés hacerlo?
         </button>
-        {done ? <p className="mt-1 text-xs text-success">{done}</p> : null}
+        {done ? <p className="text-xs text-success">{done}</p> : null}
       </div>
     );
 
