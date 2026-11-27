@@ -20,8 +20,8 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   const name = profile?.full_name ?? "";
   const [first, ...rest] = name.split(" ");
   return (
-    <div className="min-h-dvh md:grid md:grid-cols-[240px_1fr]">
-      <aside className="sticky top-0 hidden h-dvh self-start flex-col border-r border-white/10 bg-[#0b0b0b] px-3 py-5 text-white md:flex">
+    <div className="min-h-dvh md:grid md:grid-cols-[240px_1fr] print:block">
+      <aside className="sticky top-0 hidden print:hidden h-dvh self-start flex-col border-r border-white/10 bg-[#0b0b0b] px-3 py-5 text-white md:flex">
         <Link href="/panel" className="mb-6 block rounded-xl px-2 py-1 hover:opacity-90" title={org.name}>
           <BrandMark subtitle="Panel del entrenador" />
         </Link>
@@ -48,7 +48,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b-2 border-accent bg-[#0b0b0b] px-4 text-white pt-[env(safe-area-inset-top)] md:hidden">
+        <header className="sticky top-0 z-20 print:hidden flex items-center justify-between border-b-2 border-accent bg-[#0b0b0b] px-4 text-white pt-[env(safe-area-inset-top)] md:hidden">
           <Link href="/panel" className="flex min-w-0 items-center gap-2 py-2">
             <Logo size={32} />
             <span className="truncate font-display text-base font-bold tracking-wide uppercase">{BRAND_NAME}</span>
@@ -60,7 +60,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
             </Link>
           </div>
         </header>
-        <main className="rise mx-auto max-w-5xl px-4 pt-5 pb-28 md:px-8 md:pt-8 md:pb-12">{children}</main>
+        <main className="rise mx-auto max-w-5xl px-4 pt-5 pb-28 md:px-8 md:pt-8 md:pb-12 print:max-w-none print:p-0">{children}</main>
       </div>
       <BottomNav items={items} />
     </div>

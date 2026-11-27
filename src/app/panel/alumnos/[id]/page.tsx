@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarDays, ChevronLeft, ClipboardCheck, LineChart as LineChartIcon, Pencil, Sparkles, Trophy } from "lucide-react";
+import { CalendarDays, ChevronLeft, ClipboardCheck, FileDown, LineChart as LineChartIcon, Pencil, Sparkles, Trophy } from "lucide-react";
 import { shortDate, todayISO } from "@/lib/dates";
 import { PROGRAM_STATUS } from "@/lib/programs";
 import { requireStaff } from "@/lib/session";
@@ -106,6 +106,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </Link>
           <Link href={`/panel/alumnos/${id}/progreso`} className={buttonVariants({ variant: "outline", size: "sm" })}>
             <Trophy size={15} /> Progreso
+          </Link>
+          <Link href={`/panel/alumnos/${id}/informe`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <FileDown size={15} /> Informe PDF
           </Link>
           <Link href={`/panel/alumnos/${id}/evaluaciones`} className={buttonVariants({ variant: "outline", size: "sm" })}>
             <ClipboardCheck size={15} /> Evaluación
