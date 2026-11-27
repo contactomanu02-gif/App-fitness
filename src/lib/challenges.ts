@@ -90,20 +90,8 @@ const CARDIO: ChallengeTemplate[] = [
   },
 ];
 
-/** Hábitos, movilidad y zona media fuera de la rutina. */
+/** Hábitos fuera del gimnasio (nada que ya esté en las rutinas: ni zona media, ni movilidad, ni elongación). */
 const HABITOS: ChallengeTemplate[] = [
-  {
-    key: "plancha",
-    title: "Plancha de acero",
-    description: "Un minuto por día que se nota en la zona media.",
-    icon: "flame",
-    points: 100,
-    steps: [
-      { text: "Plancha frontal 1 min", times: 5 },
-      { text: "Plancha frontal 1 min 30 s", times: 5 },
-      { text: "Plancha frontal 2 min + 30 s de cada lado", times: 5 },
-    ],
-  },
   {
     key: "agua",
     title: "Bien hidratado",
@@ -121,33 +109,6 @@ const HABITOS: ChallengeTemplate[] = [
     steps: [{ text: "Dormir 8 horas o más", times: 15 }],
   },
   {
-    key: "movilidad",
-    title: "5 minutos de movilidad",
-    description: "Cadera, columna y hombros al levantarte o antes de dormir.",
-    icon: "leaf",
-    points: 100,
-    steps: [
-      { text: "5 min de movilidad de cadera y columna", times: 10 },
-      { text: "10 min de movilidad completa (cadera, columna y hombros)", times: 5 },
-    ],
-  },
-  {
-    key: "respiracion",
-    title: "Respirá",
-    description: "Respiración lenta: 4 segundos inhalando, 6 exhalando. Ayuda a bajar el estrés y a recuperar.",
-    icon: "wind",
-    points: 80,
-    steps: [{ text: "5 min de respiración lenta", times: 12 }],
-  },
-  {
-    key: "estiramiento",
-    title: "Estirá después",
-    description: "Al terminar el día o después de jugar, 10 minutos de elongación.",
-    icon: "leaf",
-    points: 100,
-    steps: [{ text: "10 min de elongación de piernas y espalda", times: 12 }],
-  },
-  {
     key: "sin-pantallas",
     title: "Desconectá",
     description: "Nada de celular la última media hora antes de dormir.",
@@ -156,14 +117,30 @@ const HABITOS: ChallengeTemplate[] = [
     steps: [{ text: "30 min sin pantallas antes de dormir", times: 12 }],
   },
   {
-    key: "abdominales",
-    title: "Zona media todos los días",
-    description: "Un bloque corto en casa, fuera de la rutina del gimnasio.",
-    icon: "target",
+    key: "colores",
+    title: "Comé colores",
+    description: "Frutas y verduras en tus comidas: energía y recuperación.",
+    icon: "leaf",
     points: 100,
+    steps: [{ text: "Fruta o verdura en almuerzo y cena", times: 20 }],
+  },
+  {
+    key: "sin-gaseosas",
+    title: "Sin gaseosas",
+    description: "Agua en lugar de gaseosas y jugos azucarados.",
+    icon: "water",
+    points: 100,
+    steps: [{ text: "Un día entero sin gaseosas ni jugos con azúcar", times: 20 }],
+  },
+  {
+    key: "tu-deporte",
+    title: "Más horas de tu deporte",
+    description: "Lo que entrenás en el gimnasio se aprovecha jugando. Sumá práctica fuera del gimnasio.",
+    icon: "target",
+    points: 150,
     steps: [
-      { text: "30 abdominales + 20 espinales", times: 8 },
-      { text: "50 abdominales + 30 espinales", times: 6 },
+      { text: "Practicar o jugar tu deporte 1 hora", times: 6 },
+      { text: "Practicar o jugar tu deporte 2 horas", times: 3 },
     ],
   },
 ];
