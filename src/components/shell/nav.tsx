@@ -42,7 +42,7 @@ export function BottomNav({ items }: { items: NavItem[] }) {
   const path = usePathname();
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-[#0b0b0b]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-[#0b0b0b]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden print:hidden"
       aria-label="Navegación principal"
     >
       <div className="mx-auto grid max-w-md" style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}>
