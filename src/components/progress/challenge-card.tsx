@@ -30,15 +30,15 @@ export function ChallengeCard({ id, title, description, icon, points, steps, don
   const step = steps[p.stepIndex];
 
   return (
-    <li className={cn("rounded-2xl border border-border bg-card p-4", p.finished && "border-success/40")}>
+    <li className={cn("rounded-2xl border border-border bg-card p-4 shadow-card", p.finished && "border-success/40")}>
       <div className="flex items-start gap-3">
         <span className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-xl", p.finished ? "bg-success text-white" : tone.chip)}>
           {p.finished ? <Trophy size={20} aria-hidden /> : <ChallengeIcon icon={icon} />}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="font-semibold leading-tight">{title}</p>
-            <span className="shrink-0 text-xs font-semibold text-muted-fg tabular-nums">{points} pts</span>
+            <p className="font-display text-[22px] leading-[1.05] font-bold uppercase">{title}</p>
+            <span className="shrink-0 rotate-3 rounded-[3px] bg-accent-soft px-1.5 py-0.5 font-condensed text-[11px] font-bold tracking-wider text-accent uppercase tabular-nums">+{points} pts</span>
           </div>
           {p.finished ? (
             <p className="mt-0.5 text-sm font-medium text-success">¡Desafío cumplido!</p>
