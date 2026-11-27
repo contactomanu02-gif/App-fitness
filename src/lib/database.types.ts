@@ -245,6 +245,78 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"challenge_logs": {
+                  Row: {
+                    "athlete_id": string,"challenge_id": string,"created_at": string,"done_on": string,"id": string,"org_id": string,"step": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "athlete_id": string,"challenge_id": string,"created_at"?: string,"done_on": string,"id"?: string,"org_id": string,"step": number
+                  }
+                  Update: {
+                    "athlete_id"?: string,"challenge_id"?: string,"created_at"?: string,"done_on"?: string,"id"?: string,"org_id"?: string,"step"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "challenge_logs_athlete_id_fkey"
+      columns: ["athlete_id"]
+isOneToOne: false
+      referencedRelation: "athletes"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "challenge_logs_challenge_id_fkey"
+      columns: ["challenge_id"]
+isOneToOne: false
+      referencedRelation: "challenges"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "challenge_logs_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"challenge_months": {
+                  Row: {
+                    "created_at": string,"month": string,"org_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"month": string,"org_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"month"?: string,"org_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "challenge_months_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"challenges": {
+                  Row: {
+                    "created_at": string,"description": string | null,"icon": string,"id": string,"month": string,"org_id": string,"points": number,"sort_order": number,"steps": NonNullable<Json>,"template_key": string | null,"title": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"description"?: string | null,"icon"?: string,"id"?: string,"month": string,"org_id": string,"points"?: number,"sort_order"?: number,"steps": NonNullable<Json>,"template_key"?: string | null,"title": string
+                  }
+                  Update: {
+                    "created_at"?: string,"description"?: string | null,"icon"?: string,"id"?: string,"month"?: string,"org_id"?: string,"points"?: number,"sort_order"?: number,"steps"?: NonNullable<Json>,"template_key"?: string | null,"title"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "challenges_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"exercise_media": {
                   Row: {
                     "created_at": string,"exercise_id": string,"id": string,"org_id": string,"sort_order": number,"storage_path": string
@@ -433,6 +505,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     },{
       foreignKeyName: "invitations_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"lift_records": {
+                  Row: {
+                    "athlete_id": string,"created_at": string,"created_by": string | null,"id": string,"lift": string,"month": string,"org_id": string,"reps": number,"updated_at": string,"weight_kg": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "athlete_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"lift": string,"month": string,"org_id": string,"reps": number,"updated_at"?: string,"weight_kg": number
+                  }
+                  Update: {
+                    "athlete_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"lift"?: string,"month"?: string,"org_id"?: string,"reps"?: number,"updated_at"?: string,"weight_kg"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "lift_records_athlete_id_fkey"
+      columns: ["athlete_id"]
+isOneToOne: false
+      referencedRelation: "athletes"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "lift_records_org_id_fkey"
       columns: ["org_id"]
 isOneToOne: false
       referencedRelation: "organizations"
@@ -755,6 +853,9 @@ isOneToOne: false
 "athlete_org":
 { Args: { "p_athlete": string }; Returns: string
                            },
+"challenge_total":
+{ Args: { "p_steps": Json }; Returns: number
+                           },
 "clear_my_swap":
 { Args: { "p_swap": string }; Returns: undefined
                            },
@@ -820,6 +921,9 @@ isOneToOne: false
 "join_with_code":
 { Args: { "p_code": string,"p_competitions"?: Json,"p_data": Json,"p_injuries"?: Json,"p_sport_values"?: Json }; Returns: string
                            },
+"log_challenge":
+{ Args: { "p_challenge": string,"p_day": string }; Returns: number
+                           },
 "log_set":
 { Args: { "p_done": boolean,"p_item": string,"p_load": number,"p_reps": number,"p_scheduled": string,"p_set": number }; Returns: undefined
                            },
@@ -867,6 +971,9 @@ isOneToOne: false
 "save_assessment":
 { Args: { "p_assessment": string,"p_athlete": string,"p_date": string,"p_notes": string,"p_results": Json }; Returns: string
                            },
+"save_my_lifts":
+{ Args: { "p_athlete": string,"p_items": Json,"p_month": string }; Returns: undefined
+                           },
 "save_workout":
 { Args: { "p_data": Json,"p_workout": string }; Returns: undefined
                            },
@@ -884,6 +991,9 @@ isOneToOne: false
                            },
 "storage_org":
 { Args: { "p_name": string }; Returns: string
+                           },
+"undo_challenge":
+{ Args: { "p_challenge": string }; Returns: undefined
                            },
 "unlink_athlete":
 { Args: { "p_athlete": string }; Returns: undefined

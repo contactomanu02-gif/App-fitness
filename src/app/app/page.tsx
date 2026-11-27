@@ -1,11 +1,18 @@
 import Link from "next/link";
-import { Dumbbell, Trophy } from "lucide-react";
+import { ChevronRight, Dumbbell, Trophy } from "lucide-react";
 import { requireAthlete } from "@/lib/session";
 import { Badge, Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { DAYS, labelOf } from "@/lib/athletes";
 import { addDays, longDate, mondayOf, todayISO } from "@/lib/dates";
 import { EVENT_KINDS, SCHEDULE_STATUS } from "@/lib/calendar";
+import { levelOf, monthStart } from "@/lib/progress";
+import { ensureMonthChallenges, monthChallenges } from "@/lib/progress-data";
+import { loadProgress } from "@/components/progress/progress-view";
+import { ScoreRing } from "@/components/progress/score-ring";
+import { LiftsForm } from "@/components/progress/lifts-form";
+import { ChallengeCard } from "@/components/progress/challenge-card";
+import { saveMyLifts } from "./actions";
 
 export const metadata = { title: "Hoy" };
 
@@ -19,7 +26,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
   const today = todayISO();
   const monday = mondayOf(today);
   const sunday = addDays(monday, 6);
-  const [{ data: injuries }, { data: upcoming }, { data: weekEvents }, { data: nextComp }] = await Promise.all([
+  const thisMonth = monthStart(today);
+  await ensureMonthChallenges(athlete.org_id, thisMonth);
+  const [progress, challenges, { data: injuries }, { data: upcoming }, { data: weekEvents }, { data: nextComp }] = await Promise.all([
+    loadProgress(supabase, athlete),
+    monthChallenges(supabase, athlete.org_id, athlete.id, thisMonth),
     supabase.from("injuries").select("id, body_area, status").eq("athlete_id", athlete.id).neq("status", "resuelta"),
     supabase
       .from("scheduled_workouts")
@@ -45,6 +56,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
       .limit(1)
       .maybeSingle(),
   ]);
+  const liftsDone = progress.liftRows.some((l) => l.month === thisMonth);
+  const previousLifts = Object.fromEntries(progress.liftRows.map((l) => [l.lift, { kg: l.weight_kg, reps: l.reps }]));
+  const level = levelOf(progress.current.score);
+  const monthLabel = new Intl.DateTimeFormat("es-AR", { month: "long", timeZone: "UTC" }).format(new Date(`${thisMonth}T12:00:00Z`));
   const daysToComp = nextComp ? Math.round((new Date(`${nextComp.start_date}T12:00:00Z`).getTime() - new Date(`${today}T12:00:00Z`).getTime()) / 864e5) : null;
   const todays = (upcoming ?? []).filter((u) => u.date === today);
   const next = (upcoming ?? []).find((u) => u.date > today && u.status === "planned");
@@ -132,6 +147,49 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
         ) : null}
         <Link href="/app/calendario" className="mt-3 inline-block text-sm text-accent">Ver calendario completo</Link>
       </Card>
+
+      <Link href="/app/progreso" className="block">
+        <Card className="flex items-center gap-4 border-transparent bg-[#0b0b0b] p-4 text-white transition-opacity hover:opacity-95">
+          <ScoreRing score={progress.current.score} size={76} stroke={8} tone={level.tone} />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold tracking-[0.14em] text-[#ff3b3f] uppercase">Tu progreso</p>
+            <p className="font-display text-2xl font-bold uppercase leading-tight">{level.label}</p>
+            <p className="text-sm text-white/70">
+              {progress.streak ? `Racha de ${progress.streak} ${progress.streak === 1 ? "semana" : "semanas"} · ` : ""}
+              {progress.badges.filter((b) => b.got).length} logros
+            </p>
+          </div>
+          <ChevronRight className="text-white/60" aria-hidden />
+        </Card>
+      </Link>
+
+      {!liftsDone ? (
+        <Card className="border-accent/40 p-5">
+          <p className="text-xs font-semibold tracking-[0.14em] text-accent uppercase">Control de {monthLabel}</p>
+          <p className="mt-1 font-semibold">¿Cuánto estás levantando en los básicos?</p>
+          <p className="mb-3 text-sm text-muted-fg">Una vez por mes te lo preguntamos para ver cómo mejora tu fuerza.</p>
+          <LiftsForm action={saveMyLifts} previous={previousLifts} />
+        </Card>
+      ) : null}
+
+      {challenges.length ? (
+        <section id="desafios" className="scroll-mt-20">
+          <div className="mb-2 flex items-end justify-between px-1">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.14em] text-accent uppercase">Desafíos de {monthLabel}</p>
+              <p className="text-sm text-muted-fg">Fuera de la rutina. Marcá cada vez que lo hagas.</p>
+            </div>
+            <span className="text-sm font-semibold tabular-nums">
+              {challenges.filter((c) => c.done > 0 && c.done >= c.steps.reduce((a, x) => a + Math.max(1, x.times), 0)).length}/{challenges.length}
+            </span>
+          </div>
+          <ul className="space-y-3">
+            {challenges.map((c, i) => (
+              <ChallengeCard key={c.id} {...c} index={i} doneToday={c.lastDay === today} />
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {injuries?.length ? (
         <Card className="p-5">

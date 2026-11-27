@@ -1,15 +1,15 @@
 "use client";
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { AlertTriangle, CircleSlash, Flame, Check, Replace, PackageX } from "lucide-react";
+import { AlertTriangle, CircleSlash, Flame, Check, Replace, PackageX, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { markAlertRead, markAllAlertsRead } from "@/app/panel/agenda-actions";
 
 type Alert = { id: string; kind: string; message: string; athlete_id: string; when: string };
-const ICON = { pain: AlertTriangle, skipped: CircleSlash, rpe_high: Flame, swap: Replace, missing: PackageX } as const;
-const TONE: Record<string, string> = { pain: "bg-danger-soft text-danger", skipped: "bg-warn-soft text-warn", rpe_high: "bg-warn-soft text-warn", swap: "bg-violet-soft text-violet", missing: "bg-violet-soft text-violet" };
-const LABEL: Record<string, string> = { pain: "Dolor", skipped: "No realizada", rpe_high: "Esfuerzo muy alto", swap: "Cambió un ejercicio", missing: "No pudo hacer un ejercicio" };
+const ICON = { pain: AlertTriangle, skipped: CircleSlash, rpe_high: Flame, swap: Replace, missing: PackageX, lifts: Dumbbell } as const;
+const TONE: Record<string, string> = { pain: "bg-danger-soft text-danger", skipped: "bg-warn-soft text-warn", rpe_high: "bg-warn-soft text-warn", swap: "bg-violet-soft text-violet", missing: "bg-violet-soft text-violet", lifts: "bg-success-soft text-success" };
+const LABEL: Record<string, string> = { pain: "Dolor", skipped: "No realizada", rpe_high: "Esfuerzo muy alto", swap: "Cambió un ejercicio", missing: "No pudo hacer un ejercicio", lifts: "Pesos del mes" };
 
 export function AlertsList({ alerts }: { alerts: Alert[] }) {
   const [pending, start] = useTransition();
@@ -25,7 +25,7 @@ export function AlertsList({ alerts }: { alerts: Alert[] }) {
               <div className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-xl", TONE[a.kind])} aria-hidden>
                 <Icon size={17} />
               </div>
-              <Link href={`/panel/alumnos/${a.athlete_id}/seguimiento`} className="min-w-0 flex-1 hover:underline">
+              <Link href={`/panel/alumnos/${a.athlete_id}/${a.kind === "lifts" ? "progreso" : "seguimiento"}`} className="min-w-0 flex-1 hover:underline">
                 <p className="text-xs font-medium text-muted-fg">{LABEL[a.kind]} · {a.when}</p>
                 <p className="text-sm">{a.message}</p>
               </Link>
