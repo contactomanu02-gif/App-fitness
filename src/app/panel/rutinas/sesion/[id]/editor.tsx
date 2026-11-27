@@ -41,6 +41,7 @@ import { labelOf } from "@/lib/athletes";
 import { displayLabels, groupLabels } from "@/lib/programs";
 import { cn } from "@/lib/utils";
 import { saveWorkout } from "../../actions";
+import { TagPicker } from "@/components/tag-picker";
 
 export type EditorExercise = {
   id: string;
@@ -69,6 +70,7 @@ export type EditorWorkout = {
   est_duration_min: number | null;
   intensity_pct: number | null;
   focus: string[];
+  tags: string[] | null;
   notes: string | null;
   items: DbItem[];
 };
@@ -120,6 +122,7 @@ export function WorkoutEditor({
   const [duration, setDuration] = useState(s(workout.est_duration_min ?? 60));
   const [intensity, setIntensity] = useState(s(workout.intensity_pct));
   const [focus, setFocus] = useState<string[]>(workout.focus);
+  const [tags, setTags] = useState<string[]>(workout.tags ?? []);
   const [notes, setNotes] = useState(s(workout.notes));
   const [items, setItems] = useState<Item[]>(() => fromDb(workout.items));
   const [dirty, setDirty] = useState(false);
@@ -206,7 +209,7 @@ export function WorkoutEditor({
           rpe: i.rpe,
           notes: i.notes,
         })),
-      });
+      }, workout.tags ? tags : undefined);
       if (res.error) setError(res.error);
       else {
         setDirty(false);
@@ -308,6 +311,17 @@ export function WorkoutEditor({
               })}
             </div>
           </div>
+          {workout.tags ? (
+            <details className="group">
+              <summary className="cursor-pointer text-sm font-medium">
+                Etiquetas{" "}
+                <span className="font-normal text-muted-fg">{tags.length ? tags.length : "para encontrarla en Rutinas"}</span>
+              </summary>
+              <div className="mt-2">
+                <TagPicker value={tags} onChange={(t) => (setTags(t), touch())} />
+              </div>
+            </details>
+          ) : null}
         </div>
       </div>
 

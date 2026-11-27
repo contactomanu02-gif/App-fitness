@@ -9,6 +9,7 @@ import { WEEKDAYS, PROGRAM_STATUS } from "@/lib/programs";
 import { labelOf } from "@/lib/athletes";
 import { fullName } from "@/lib/utils";
 import { ProgramForm } from "../program-form";
+import { tagLabel } from "@/lib/routine-tags";
 import { AddBlockButton, AddSessionMenu, AssignedControls, BlockHeader, CopyWeekForm, ProgramActions, WeekIntensity } from "./parts";
 
 export const metadata = { title: "Planificación" };
@@ -21,7 +22,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     supabase
       .from("programs")
       .select(
-        "id, name, goal, description, status, athlete_id, start_date, athletes(first_name, last_name), program_blocks(id, name, goal, weeks, sort_order, created_at), workouts(id, name, block_id, week_index, day_index, sort_order, est_duration_min, intensity_pct, workout_items(id))",
+        "id, name, goal, description, tags, status, athlete_id, start_date, athletes(first_name, last_name), program_blocks(id, name, goal, weeks, sort_order, created_at), workouts(id, name, block_id, week_index, day_index, sort_order, est_duration_min, intensity_pct, workout_items(id))",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -58,6 +59,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
             )}
             {program.athlete_id ? <Badge>{labelOf(PROGRAM_STATUS, program.status)}</Badge> : null}
             <Badge>{total === 1 ? "1 sesión" : `${total} sesiones`}</Badge>
+            {program.tags.map((t) => (
+              <Badge key={t}>{tagLabel(t)}</Badge>
+            ))}
           </div>
           {program.goal ? <p className="mt-2 text-sm text-muted-fg">{program.goal}</p> : null}
         </div>
@@ -78,7 +82,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       {program.athlete_id ? <AssignedControls programId={program.id} status={program.status} startDate={program.start_date} /> : null}
 
       <details className="group mt-4">
-        <summary className="cursor-pointer text-sm font-medium text-accent">Editar nombre, objetivo y notas</summary>
+        <summary className="cursor-pointer text-sm font-medium text-accent">Editar nombre, objetivo, etiquetas y notas</summary>
         <Card className="mt-3 max-w-2xl p-5">
           <ProgramForm program={program} />
         </Card>
