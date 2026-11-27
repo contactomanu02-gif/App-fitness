@@ -8,8 +8,8 @@ export function CardHeader({ title, action, subtitle }: { title: string; subtitl
   return (
     <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
       <div className="min-w-0">
-        <h2 className="flex items-center gap-2 text-[15px] font-semibold">
-          <span aria-hidden className="h-4 w-1 rounded-full bg-accent" />
+        <h2 className="flex items-center gap-2 font-display text-[19px] leading-tight font-bold tracking-[0.02em] uppercase">
+          <span aria-hidden className="h-4 w-[5px] shrink-0 -skew-x-[20deg] bg-accent" />
           {title}
         </h2>
         {subtitle ? <p className="mt-0.5 text-sm text-muted-fg">{subtitle}</p> : null}
@@ -35,7 +35,7 @@ export function Badge({
   } as const;
   return (
     <span
-      className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap", tones[tone], className)}
+      className={cn("inline-flex items-center gap-1 rounded-[3px] px-1.5 py-0.5 text-[11px] font-semibold tracking-[0.04em] uppercase whitespace-nowrap", tones[tone], className)}
       {...props}
     />
   );
@@ -43,7 +43,7 @@ export function Badge({
 
 export function Avatar({ text, className }: { text: string; className?: string }) {
   return (
-    <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-sm font-semibold text-accent", className)}>
+    <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-md bg-accent-soft font-display text-[15px] font-bold text-accent", className)}>
       {text}
     </div>
   );

@@ -2,6 +2,14 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Formas propias: esquinas firmes, poco redondeadas (estilo tarjeta de score) */
+@theme {
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.375rem;
+  --radius-2xl: 0.5rem;
+  --radius-3xl: 0.75rem;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-fg: var(--fg);
@@ -25,18 +33,18 @@
   --color-violet: var(--violet);
   --color-violet-soft: var(--violet-soft);
   --shadow-card: var(--card-shadow);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-display-face), var(--font-geist-sans), ui-sans-serif, sans-serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-body), ui-sans-serif, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 :root {
-  --bg: #f4f4f4;
+  --bg: #eeede8;
   --fg: #0b0b0b;
   --card: #ffffff;
-  --muted: #ececec;
-  --muted-fg: #5f5f5f;
-  --border: #e2e2e2;
+  --muted: #e6e4de;
+  --muted-fg: #5c5a55;
+  --border: #d9d6cf;
   --accent: #d8121b;
   --accent-fg: #ffffff;
   --accent-soft: #fdeceb;
@@ -54,21 +62,20 @@
   --violet-soft: #ede9fe;
   --card-shadow: 0 1px 2px rgb(11 11 11 / 0.04), 0 10px 28px -14px rgb(11 11 11 / 0.18);
   /* Fondo de marca: brillo rojo arriba, sombra suave abajo y trama de puntos */
-  --bg-glow-1: rgb(216 18 27 / 0.18);
-  --bg-glow-2: rgb(216 18 27 / 0.08);
-  --bg-glow-3: rgb(11 11 11 / 0.09);
-  --bg-dots: rgb(11 11 11 / 0.07);
-  --bg-stripe: rgb(216 18 27 / 0.07);
+  --bg-glow-1: rgb(216 18 27 / 0.16);
+  --bg-glow-3: rgb(11 11 11 / 0.06);
+  --bg-contour: rgb(11 11 11 / 0.11);
+  --bg-slash: rgb(216 18 27 / 0.85);
   color-scheme: light;
 }
 
 .dark {
-  --bg: #080808;
-  --fg: #f2f2f2;
-  --card: #121212;
-  --muted: #1c1c1c;
-  --muted-fg: #9a9a9a;
-  --border: #262626;
+  --bg: #0a0a0a;
+  --fg: #f2f1ee;
+  --card: #141414;
+  --muted: #1e1e1e;
+  --muted-fg: #9d9a94;
+  --border: #2b2b2b;
   --accent: #ff3b3f;
   --accent-fg: #ffffff;
   --accent-soft: #2b1213;
@@ -85,11 +92,10 @@
   --violet: #c4b5fd;
   --violet-soft: #221a3a;
   --card-shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 30px -16px rgb(0 0 0 / 0.8);
-  --bg-glow-1: rgb(255 59 63 / 0.22);
-  --bg-glow-2: rgb(216 18 27 / 0.12);
-  --bg-glow-3: rgb(255 255 255 / 0.04);
-  --bg-dots: rgb(255 255 255 / 0.06);
-  --bg-stripe: rgb(255 59 63 / 0.10);
+  --bg-glow-1: rgb(255 59 63 / 0.20);
+  --bg-glow-3: rgb(255 255 255 / 0.03);
+  --bg-contour: rgb(255 255 255 / 0.07);
+  --bg-slash: rgb(255 59 63 / 0.9);
   color-scheme: dark;
 }
 
@@ -106,7 +112,8 @@ body {
   text-size-adjust: 100%;
 }
 
-/* Fondo con diseño: queda fijo detrás de todo (no se mueve al hacer scroll) */
+/* Fondo propio: curvas de nivel de una cancha (como un plano de green),
+   brillo rojo arriba y dos líneas de "approach" en diagonal. Queda fijo. */
 body::before,
 body::after {
   content: "";
@@ -117,20 +124,14 @@ body::after {
 }
 body::before {
   background:
-    radial-gradient(60rem 34rem at 100% -6%, var(--bg-glow-1), transparent 62%),
-    radial-gradient(40rem 30rem at -12% 38%, var(--bg-glow-2), transparent 65%),
-    radial-gradient(56rem 36rem at 50% 118%, var(--bg-glow-3), transparent 70%),
-    /* franjas diagonales finas, como las líneas de una cancha */
-    repeating-linear-gradient(-58deg, transparent 0 46px, var(--bg-stripe) 46px 47px, transparent 47px 120px);
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgb(0 0 0 / 0.55) 45%, rgb(0 0 0 / 0.85) 100%);
-  mask-image: linear-gradient(180deg, #000 0%, rgb(0 0 0 / 0.55) 45%, rgb(0 0 0 / 0.85) 100%);
+    linear-gradient(58deg, transparent 0 calc(100% - 78px), var(--bg-slash) calc(100% - 78px) calc(100% - 76px), transparent calc(100% - 76px) calc(100% - 62px), var(--bg-slash) calc(100% - 62px) calc(100% - 56px), transparent calc(100% - 56px)) top right / 190px 190px no-repeat,
+    radial-gradient(48rem 30rem at 100% -8%, var(--bg-glow-1), transparent 62%),
+    radial-gradient(56rem 36rem at 50% 118%, var(--bg-glow-3), transparent 70%);
 }
-/* trama de puntos (hoyuelos de pelota de golf) que se desvanece hacia abajo */
 body::after {
-  background-image: radial-gradient(var(--bg-dots) 1px, transparent 1.4px);
-  background-size: 18px 18px;
-  -webkit-mask-image: radial-gradient(120% 70% at 85% 0%, #000 0%, rgb(0 0 0 / 0.35) 45%, transparent 75%);
-  mask-image: radial-gradient(120% 70% at 85% 0%, #000 0%, rgb(0 0 0 / 0.35) 45%, transparent 75%);
+  background-color: var(--bg-contour);
+  -webkit-mask: url("/brand/contornos.svg") top center / max(100%, 900px) auto no-repeat;
+  mask: url("/brand/contornos.svg") top center / max(100%, 900px) auto no-repeat;
 }
 
 input, select, textarea, button { font: inherit; }
@@ -141,20 +142,28 @@ input, select, textarea, button { font: inherit; }
   background-image:
     radial-gradient(22rem 14rem at 105% -10%, rgb(255 59 63 / 0.45), transparent 60%),
     radial-gradient(18rem 12rem at -10% 120%, rgb(216 18 27 / 0.22), transparent 65%),
-    repeating-linear-gradient(-58deg, transparent 0 22px, rgb(255 255 255 / 0.035) 22px 23px);
-  box-shadow: 0 18px 40px -18px rgb(216 18 27 / 0.55), inset 0 0 0 1px rgb(255 255 255 / 0.06);
+    linear-gradient(58deg, transparent 0 calc(100% - 70px), rgb(255 59 63 / 0.9) calc(100% - 70px) calc(100% - 66px), transparent calc(100% - 66px) calc(100% - 54px), rgb(255 255 255 / 0.25) calc(100% - 54px) calc(100% - 53px), transparent calc(100% - 53px));
 }
 
-/* Títulos con la tipografía deportiva de la marca */
+/* Títulos: Archivo condensada, extra negrita e itálica (movimiento, deporte) */
 @layer base {
   h1 {
     font-family: var(--font-display);
-    font-weight: 700;
-    letter-spacing: 0.01em;
+    font-weight: 800;
+    font-stretch: 62%;
+    font-style: italic;
+    letter-spacing: 0.005em;
     text-transform: uppercase;
-    line-height: 1.05;
+    line-height: 0.98;
   }
 }
+.font-display { font-stretch: 62%; }
+.font-condensed { font-stretch: 78%; }
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* Corte en diagonal en la esquina inferior derecha: el sello de la marca en botones y tarjetas destacadas */
+.notch { clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%); }
+.notch-lg { clip-path: polygon(0 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%); }
 
 /* Barra de carga al cambiar de sección */
 @keyframes nav-progress {
