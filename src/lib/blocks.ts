@@ -28,40 +28,36 @@ const KIND: Record<string, string> = {
   estabilidad: "Estabilidad",
   resistencia: "Resistencia",
 };
-const WARMUP = new Set(["movilidad", "activacion"]);
+
+const MAIN = new Set(["Fuerza", "Potencia", "Velocidad", "Resistencia"]);
 
 export type Block<T> = { key: string; letter: string; title: string; rounds: number; items: { item: T; index: number }[] };
 
-type BlockItem = { group_label: string | null; sets: number | null; category?: string | null; load?: string | null };
-
-/**
- * Los dos primeros bloques (la sesión suele empezar con zona media) son «Entrada en calor»
- * si todo es movilidad, activación o ejercicios sin peso (sentadillas y estocadas sin carga).
- */
-function isWarmup(items: { item: BlockItem }[]) {
-  return items.every(({ item }) => (item.category && WARMUP.has(item.category)) || /sin peso/i.test(item.load ?? ""));
-}
-
-export function splitBlocks<T extends BlockItem>(items: T[]): Block<T>[] {
+export function splitBlocks<T extends { group_label: string | null; sets: number | null; category?: string | null }>(items: T[]): Block<T>[] {
   const blocks: Block<T>[] = [];
   items.forEach((item, index) => {
     const last = blocks.at(-1);
     if (last && item.group_label && last.items[0].item.group_label === item.group_label) last.items.push({ item, index });
     else blocks.push({ key: `${index}`, letter: item.group_label ?? "", title: "", rounds: 0, items: [{ item, index }] });
   });
-  return blocks.map((b, n) => {
+  // Nombre del bloque según el tipo de ejercicios que más tiene. Un bloque con
+  // movilidad o activación antes del trabajo principal es la entrada en calor
+  // (aunque tenga sentadillas o estocadas sin peso).
+  const tops = blocks.map((b) => {
     const count = new Map<string, number>();
     b.items.forEach(({ item }) => {
-      const kind = item.category ? KIND[item.category] : undefined;
-      if (kind) count.set(kind, (count.get(kind) ?? 0) + 1);
+      const label = item.category && KIND[item.category];
+      if (label) count.set(label, (count.get(label) ?? 0) + 1);
     });
-    // Si hay empate entre dos tipos (p. ej. sentadilla + salto), el nombre lleva los dos: «Fuerza y potencia».
-    const [first, second] = [...count.entries()].sort((a, c) => c[1] - a[1]);
-    const top = first && second && second[1] === first[1] ? `${first[0]} y ${second[0].toLowerCase()}` : first?.[0];
+    return [...count.entries()].sort((a, c) => c[1] - a[1])[0]?.[0];
+  });
+  return blocks.map((b, n) => {
+    const warm = b.items.some(({ item }) => item.category === "movilidad" || item.category === "activacion");
+    const mainLater = tops.slice(n + 1).some((t) => t && MAIN.has(t));
     return {
       ...b,
       letter: b.letter || String(n + 1),
-      title: n <= 1 && isWarmup(b.items) ? "Entrada en calor" : top || "Ejercicios",
+      title: warm && mainLater && tops[n] !== "Zona media" ? "Entrada en calor" : tops[n] || "Ejercicios",
       rounds: Math.max(1, ...b.items.map(({ item }) => item.sets ?? 1)),
     };
   });
