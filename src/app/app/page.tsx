@@ -70,7 +70,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
       {todays.length ? (
         todays.map((t) => (
           <Link key={t.id} href={`/app/sesion/${t.id}`} className="block">
-            <Card className="relative overflow-hidden border-transparent bg-[#0b0b0b] p-5 text-white transition-opacity hover:opacity-95">
+            <Card className="relative overflow-hidden border-transparent hero-brand p-5 text-white transition-opacity hover:opacity-95">
               <p className="relative text-xs font-semibold tracking-[0.14em] text-[#ff3b3f] uppercase">Entrenamiento de hoy</p>
               <p className="relative mt-1 font-display text-3xl font-bold uppercase">{t.workouts?.name}</p>
               <p className="relative mt-1 text-sm text-white/70">

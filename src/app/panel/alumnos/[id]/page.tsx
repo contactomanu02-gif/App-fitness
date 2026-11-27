@@ -93,7 +93,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             {[a.sports?.name, labelOf(LEVELS, a.level), age !== null ? `${age} años` : null].filter(Boolean).join(" · ") || "Ficha incompleta"}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="-mx-4 flex w-[calc(100%+2rem)] items-center gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&>*]:shrink-0">
           {archived ? <Badge>Archivado</Badge> : null}
           {a.user_id ? <Badge tone="accent">Con cuenta</Badge> : pendingInvite ? <Badge tone="warn">Invitado</Badge> : <Badge>Sin invitar</Badge>}
           <Link href={`/panel/alumnos/${id}/calendario`} className={buttonVariants({ size: "sm" })}>

@@ -1,20 +1,20 @@
 import { cn } from "@/lib/utils";
 
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("rounded-2xl border border-border bg-card", className)} {...props} />;
+  return <div className={cn("rounded-2xl border border-border bg-card shadow-card", className)} {...props} />;
 }
 
 export function CardHeader({ title, action, subtitle }: { title: string; subtitle?: string; action?: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
-      <div>
+      <div className="min-w-0">
         <h2 className="flex items-center gap-2 text-[15px] font-semibold">
           <span aria-hidden className="h-4 w-1 rounded-full bg-accent" />
           {title}
         </h2>
         {subtitle ? <p className="mt-0.5 text-sm text-muted-fg">{subtitle}</p> : null}
       </div>
-      {action}
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }

@@ -5,7 +5,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="flex min-h-dvh flex-col md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       {/* Panel de marca: arriba en el celular, a la izquierda en la compu */}
-      <section className="relative flex flex-col items-center justify-center overflow-hidden bg-[#0b0b0b] px-6 pt-[max(env(safe-area-inset-top),28px)] pb-10 text-white md:min-h-dvh md:pb-0">
+      <section className="relative flex flex-col items-center justify-center overflow-hidden hero-brand px-6 pt-[max(env(safe-area-inset-top),28px)] pb-10 text-white md:min-h-dvh md:pb-0">
         <div aria-hidden className="absolute inset-x-0 top-1/2 h-14 -translate-y-1/2 bg-white/[0.04] md:h-24" />
         <Logo size={168} priority className="relative h-28 w-28 md:h-64 md:w-64" />
         <p className="relative mt-5 hidden font-display text-4xl font-bold tracking-wide uppercase md:block">{BRAND_NAME}</p>
