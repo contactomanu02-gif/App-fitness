@@ -3,8 +3,9 @@ import { createProgram, updateProgram, type FormState } from "./actions";
 import { Field, FormError, FormNotice, Input, Textarea } from "@/components/ui/form";
 import { SubmitButton } from "@/components/submit-button";
 import { useFormAction } from "@/components/use-form-action";
+import { TagPicker } from "@/components/tag-picker";
 
-type Program = { id: string; name: string; goal: string | null; description: string | null };
+type Program = { id: string; name: string; goal: string | null; description: string | null; tags: string[] };
 
 export function ProgramForm({ program }: { program?: Program }) {
   const action = program ? (s: FormState, f: FormData) => updateProgram(program.id, s, f) : createProgram;
@@ -21,6 +22,9 @@ export function ProgramForm({ program }: { program?: Program }) {
       </Field>
       <Field label="Descripción o notas" htmlFor="description">
         <Textarea id="description" name="description" defaultValue={program?.description ?? ""} maxLength={2000} />
+      </Field>
+      <Field label="Etiquetas" htmlFor="tags" hint="Para encontrarla rápido en Rutinas.">
+        <TagPicker name="tags" defaultValue={program?.tags} />
       </Field>
       {!program ? (
         <Field label="Semanas del primer bloque" htmlFor="weeks" hint="Podés sumar más bloques después (por ejemplo: base, fuerza, potencia).">
