@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme";
 import { ServiceWorkerRegister } from "@/components/sw-register";
+import { Splash } from "@/components/brand/splash";
 import "./globals.css";
 
 // Archivo: una sola familia variable (ancho 62–125) para texto, títulos condensados y números
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es-AR" suppressHydrationWarning>
       <body className={`${sans.variable} ${mono.variable} min-h-dvh font-sans antialiased`}>
+        <Splash />
         <ThemeProvider>{children}</ThemeProvider>
         <NavProgress />
         <ServiceWorkerRegister />
