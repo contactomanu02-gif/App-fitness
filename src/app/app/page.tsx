@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Dumbbell, Trophy } from "lucide-react";
+import { CalendarClock, ChevronRight, Dumbbell, Flame, Trophy } from "lucide-react";
 import { requireAthlete } from "@/lib/session";
 import { Badge, Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
@@ -177,15 +177,50 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
 
       {challenges.length ? (
         <section id="desafios" className="scroll-mt-20">
-          <div className="mb-2 flex items-end justify-between px-1">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.14em] text-accent uppercase">Desafíos de {monthLabel}</p>
-              <p className="text-sm text-muted-fg">Fuera de la rutina. Marcá cada vez que lo hagas.</p>
-            </div>
-            <span className="text-sm font-semibold tabular-nums">
-              {challenges.filter((c) => c.done > 0 && c.done >= c.steps.reduce((a, x) => a + Math.max(1, x.times), 0)).length}/{challenges.length}
-            </span>
-          </div>
+          {(() => {
+            const total = challenges.length;
+            const won = challenges.filter((c) => c.done > 0 && c.done >= c.steps.reduce((a, x) => a + Math.max(1, x.times), 0)).length;
+            const [y, m] = thisMonth.split("-").map(Number);
+            const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+            const daysLeft = lastDay - Number(today.slice(8)) + 1;
+            const pts = challenges.reduce((a, c) => a + (c.done > 0 && c.done >= c.steps.reduce((t, x) => t + Math.max(1, x.times), 0) ? c.points : 0), 0);
+            const tagline = won === total ? "¡Los completaste todos! Sos una máquina." : won === 0 ? (daysLeft <= 7 ? "Quedan pocos días, pero todavía llegás. ¡Arrancá hoy!" : "Nuevo mes, nuevos desafíos. ¿Te animás?") : won >= total / 2 ? "Vas volando. ¡No aflojes ahora!" : "Buen arranque. Vamos por el próximo.";
+            return (
+              <div className="notch-lg hero-brand relative mb-3 overflow-hidden rounded-2xl p-5 text-white">
+                <span aria-hidden className="watermark -right-3 -bottom-4 text-[120px]">{monthLabel.slice(0, 3)}</span>
+                <div className="relative flex items-start justify-between gap-3">
+                  <p className="kicker text-[#ff3b3f]">Desafíos del mes</p>
+                  <span className="inline-flex shrink-0 -rotate-3 items-center gap-1 rounded-[3px] bg-accent px-2 py-1 font-condensed text-[11px] font-bold tracking-wider uppercase shadow-lg">
+                    <CalendarClock size={13} aria-hidden /> {daysLeft === 1 ? "Último día" : `Quedan ${daysLeft} días`}
+                  </span>
+                </div>
+                <h2 className="relative mt-2 font-display text-[44px] leading-[0.9] font-extrabold uppercase">
+                  Desafíos de<br />
+                  <span className="text-[#ff3b3f]">{monthLabel}</span>
+                </h2>
+                <p className="relative mt-2 text-sm text-white/75">{tagline}</p>
+                <div className="relative mt-4 flex items-center gap-3">
+                  <div className="flex gap-1.5" aria-label={`${won} de ${total} desafíos cumplidos`}>
+                    {challenges.map((c, i) => (
+                      <span
+                        key={c.id}
+                        className={`grid h-8 w-8 -skew-x-[8deg] place-items-center rounded-md ${i < won ? "bg-[#ff3b3f] text-white" : "bg-white/10 text-white/35"}`}
+                      >
+                        <Trophy size={15} className="skew-x-[8deg]" aria-hidden />
+                      </span>
+                    ))}
+                  </div>
+                  <span className="font-display text-2xl font-bold tabular-nums">
+                    {won}/{total}
+                  </span>
+                  <span className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-white/75 tabular-nums">
+                    <Flame size={14} className="text-[#ff3b3f]" aria-hidden /> {pts} pts
+                  </span>
+                </div>
+                <p className="relative mt-3 text-xs text-white/55">Fuera de la rutina. Marcá cada vez que lo hagas. Se renuevan el 1° de cada mes.</p>
+              </div>
+            );
+          })()}
           <ul className="space-y-3">
             {challenges.map((c, i) => (
               <ChallengeCard key={c.id} {...c} index={i} doneToday={c.lastDay === today} />
