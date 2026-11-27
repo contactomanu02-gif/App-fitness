@@ -109,14 +109,6 @@ const HABITOS: ChallengeTemplate[] = [
     steps: [{ text: "Dormir 8 horas o más", times: 15 }],
   },
   {
-    key: "sin-pantallas",
-    title: "Desconectá",
-    description: "Nada de celular la última media hora antes de dormir.",
-    icon: "sun",
-    points: 80,
-    steps: [{ text: "30 min sin pantallas antes de dormir", times: 12 }],
-  },
-  {
     key: "colores",
     title: "Comé colores",
     description: "Frutas y verduras en tus comidas: energía y recuperación.",
