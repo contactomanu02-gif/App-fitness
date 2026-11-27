@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Fitness Approach",
     short_name: "Fitness Approach",
     description: "Entrenamiento para deportistas, planificado según su calendario de competencias.",
-    start_url: "/",
+    start_url: "/abrir.html",
     display: "standalone",
     background_color: "#0b0b0b",
     theme_color: "#0b0b0b",

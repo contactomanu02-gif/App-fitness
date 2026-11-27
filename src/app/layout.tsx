@@ -11,7 +11,7 @@ const sans = Archivo({ variable: "--font-body", subsets: ["latin"], axes: ["wdth
 const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 const IOS_SPLASH: [number, number, number][] = [
-  [440, 956, 3], [402, 874, 3], [430, 932, 3], [393, 852, 3], [428, 926, 3], [390, 844, 3],
+  [440, 956, 3], [420, 912, 3], [402, 874, 3], [430, 932, 3], [393, 852, 3], [428, 926, 3], [390, 844, 3],
   [375, 812, 3], [414, 896, 3], [414, 896, 2], [375, 667, 2], [414, 736, 3],
 ];
 

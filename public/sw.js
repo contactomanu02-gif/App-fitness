@@ -1,9 +1,11 @@
 // Service worker: permite instalar la app, guarda en el celular los archivos que no cambian
 // (código, estilos y fuentes) para abrirla más rápido, y muestra una página simple sin conexión.
-const VERSION = "v4";
+const VERSION = "v5";
 const OFFLINE = "/offline.html";
+// Pantalla negra de arranque (manifest start_url): se sirve desde el celular, al instante.
+const START = "/abrir.html";
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll([OFFLINE, "/icons/icon-192.png"])));
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll([OFFLINE, START, "/icons/icon-192.png"])));
   self.skipWaiting();
 });
 self.addEventListener("activate", (e) =>
@@ -19,6 +21,10 @@ const isStatic = (url) => url.origin === self.location.origin && url.pathname.st
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.mode === "navigate") {
+    if (new URL(req.url).pathname === START) {
+      e.respondWith(caches.match(START).then((hit) => hit || fetch(req)));
+      return;
+    }
     e.respondWith(fetch(req).catch(() => caches.match(OFFLINE)));
     return;
   }
