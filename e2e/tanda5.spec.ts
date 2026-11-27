@@ -66,7 +66,12 @@ test("entrenar: marcar al final si entrenó, esfuerzo y dolor; el entrenador ve 
   await ap.locator("label").filter({ has: ap.getByLabel("Dolor 5") }).click();
   await ap.getByLabel("Comentario para tu entrenador (opcional)").fill("Agregué una serie de Pallof");
   await ap.getByRole("button", { name: "Guardar" }).click();
+  // Al guardar vuelve al inicio con un mensaje; desde ahí puede ver el resumen
   await expect(ap.getByText("¡Listo! Tu entrenador ya puede ver cómo te fue.")).toBeVisible();
+  await expect(ap).toHaveURL(/\/app\?listo=partial/);
+  await expect(ap.getByText("Esfuerzo 9/10")).toBeVisible();
+  await ap.getByRole("link", { name: /Ver el resumen/ }).click();
+  await ap.waitForURL(/\/app\/sesion\//);
   await expect(ap.getByText("Hice una parte")).toHaveCount(0);
   await expect(ap.getByText("Hecha en parte").first()).toBeVisible();
   await expect(ap.getByText(/Dolor en Lumbar \(5\/10\)/)).toBeVisible();

@@ -104,7 +104,8 @@ export async function finishSession(scheduledId: string, _: FinishState, form: F
     ),
   ]);
   revalidatePath("/app", "layout");
-  redirect(`/app/sesion/${scheduledId}?cerrada=1`);
+  // Vuelve al inicio con un mensaje de felicitación (o de aliento si no pudo)
+  redirect(`/app?listo=${f.status}&s=${scheduledId}`);
 }
 
 export async function reopenSession(scheduledId: string) {

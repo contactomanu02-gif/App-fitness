@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarClock, ChevronRight, Dumbbell, Flame, Trophy } from "lucide-react";
+import { CalendarClock, ChevronRight, Dumbbell, Flame, Trophy, X } from "lucide-react";
 import { requireAthlete } from "@/lib/session";
 import { Badge, Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
@@ -18,8 +18,8 @@ import { saveMyLifts } from "./actions";
 
 export const metadata = { title: "Hoy" };
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ bienvenida?: string }> }) {
-  const { bienvenida } = await searchParams;
+export default async function Page({ searchParams }: { searchParams: Promise<{ bienvenida?: string; listo?: string; s?: string }> }) {
+  const { bienvenida, listo, s: closedId } = await searchParams;
   const { athlete, supabase } = await requireAthlete();
   const hour = Number(new Intl.DateTimeFormat("es-AR", { hour: "numeric", hour12: false, timeZone: "America/Argentina/Buenos_Aires" }).format(new Date()));
   const greeting = hour < 13 ? "Buen día" : hour < 20 ? "Buenas tardes" : "Buenas noches";
@@ -77,6 +77,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
         <p className="kicker text-muted-fg">{greeting}</p>
         <h1 className="text-4xl">{athlete.first_name}</h1>
       </div>
+      {listo && closedId ? <SessionDone status={listo} scheduledId={closedId} name={athlete.first_name} /> : null}
       {bienvenida ? (
         <Card className="border-accent/40 bg-accent-soft p-4 text-sm">
           <p className="font-semibold">¡Listo, ya estás registrado!</p>
@@ -290,5 +291,43 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
         Avisar una molestia o dolor
       </Link>
     </div>
+  );
+}
+
+const DONE_COPY: Record<string, { kicker: string; title: string; text: string; mark: string }> = {
+  done: { kicker: "Entrenamiento completo", title: "¡Bien ahí", text: "Un entrenamiento más en la cuenta. Así se llega en forma a la competencia.", mark: "Hecho" },
+  partial: { kicker: "Entrenamiento registrado", title: "¡Algo es algo", text: "Hiciste una parte y eso también suma. La próxima vamos por todo.", mark: "Suma" },
+  skipped: { kicker: "Quedó avisado", title: "Gracias por avisar", text: "Hay días que no se puede. Tu entrenador lo tiene en cuenta para la próxima.", mark: "Ok" },
+};
+
+/** Mensaje al volver al inicio después de marcar el entrenamiento. */
+async function SessionDone({ status, scheduledId, name }: { status: string; scheduledId: string; name: string }) {
+  const copy = DONE_COPY[status] ?? DONE_COPY.done;
+  const { supabase } = await requireAthlete();
+  const { data: sw } = await supabase.from("scheduled_workouts").select("session_rpe, duration_min, workouts(name)").eq("id", scheduledId).maybeSingle();
+  const title = status === "skipped" ? `${copy.title}, ${name}` : `${copy.title}, ${name}!`;
+  return (
+    <Card role="status" className="notch-lg hero-brand relative overflow-hidden border-transparent p-5 text-white">
+      <span aria-hidden className="watermark -right-3 -bottom-4 text-[130px]">{copy.mark}</span>
+      <div className="relative flex items-start justify-between gap-3">
+        <p className="kicker text-[#ff3b3f]">{copy.kicker}</p>
+        <Link href="/app" aria-label="Cerrar mensaje" className="-mt-1 -mr-1 grid h-8 w-8 place-items-center rounded-md text-white/60 hover:bg-white/10 hover:text-white">
+          <X size={18} />
+        </Link>
+      </div>
+      <p className="relative mt-2 font-display text-[36px] leading-[0.95] font-extrabold uppercase">{title}</p>
+      <p className="relative mt-2 text-sm text-white/80">{copy.text}</p>
+      {sw ? (
+        <div className="relative mt-4 flex flex-wrap gap-2">
+          {sw.workouts?.name ? <span className="rounded-[3px] bg-white/10 px-2 py-1 font-condensed text-[12px] font-bold tracking-wider uppercase">{sw.workouts.name}</span> : null}
+          {sw.duration_min ? <span className="rounded-[3px] bg-white/10 px-2 py-1 font-condensed text-[12px] font-bold tracking-wider uppercase">{sw.duration_min} min</span> : null}
+          {sw.session_rpe ? <span className="rounded-[3px] bg-[#ff3b3f] px-2 py-1 font-condensed text-[12px] font-bold tracking-wider uppercase">Esfuerzo {sw.session_rpe}/10</span> : null}
+        </div>
+      ) : null}
+      <p className="relative mt-4 text-xs text-white/60">¡Listo! Tu entrenador ya puede ver cómo te fue.</p>
+      <Link href={`/app/sesion/${scheduledId}`} className="relative mt-2 inline-block font-condensed text-[13px] font-bold tracking-[0.08em] text-[#ff3b3f] uppercase">
+        Ver el resumen →
+      </Link>
+    </Card>
   );
 }
