@@ -1,5 +1,6 @@
 "use client";
 
+import { StarInput } from "@/components/stars";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { useFormAction } from "@/components/use-form-action";
@@ -271,6 +272,9 @@ export function JoinWizard({ code, orgName, sports, loggedInEmail }: { code: str
                     </Field>
                     <Field label="Lugar" htmlFor={`comp_loc_${i}`} className="col-span-2">
                       <Input id={`comp_loc_${i}`} name={`comp_loc_${i}`} placeholder="Opcional" maxLength={120} />
+                    </Field>
+                    <Field label="¿Qué tan importante es?" htmlFor={`comp_imp_${i}`} className="col-span-2">
+                      <StarInput id={`comp_imp_${i}`} name={`comp_imp_${i}`} />
                     </Field>
                   </div>
                 ))}

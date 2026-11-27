@@ -12,6 +12,7 @@ import { EVENT_KINDS, SCHEDULE_STATUS } from "@/lib/calendar";
 import { labelOf } from "@/lib/athletes";
 import { longDate, monthGrid, monthLabel, monthOf, shiftMonth } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { StarInput, Stars } from "@/components/stars";
 
 export type CalSession = { id: string; workoutId: string; date: string; name: string; status: string; program: string | null; items: number };
 export type CalEvent = {
@@ -22,6 +23,7 @@ export type CalEvent = {
   end_date: string;
   location: string | null;
   notes: string | null;
+  importance: number | null;
   editable: boolean;
 };
 type State = { error?: string; ok?: string } | undefined;
@@ -194,6 +196,7 @@ export function MonthCalendar({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{e.title}</p>
+                  {e.kind === "torneo" ? <Stars value={e.importance} size={15} className="mt-0.5" /> : null}
                   <p className="text-xs text-muted-fg">
                     {labelOf(EVENT_KINDS, e.kind)}
                     {e.start_date !== e.end_date ? ` · del ${e.start_date.slice(8)}/${e.start_date.slice(5, 7)} al ${e.end_date.slice(8)}/${e.end_date.slice(5, 7)}` : ""}
@@ -305,6 +308,7 @@ function DayCell({
       <div className="relative z-10 mt-1 hidden space-y-1 md:block">
         {events.map((e) => (
           <div key={e.id} className={cn("pointer-events-none truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium", EVENT_TONE[e.kind])}>
+            {e.kind === "torneo" ? <b className="mr-1" aria-label={`Importancia ${e.importance ?? 3} de 5`}>{e.importance ?? 3}★</b> : null}
             {e.title}
           </div>
         ))}
@@ -388,6 +392,7 @@ function EventDialog({
 }) {
   const { state, onSubmit, pending } = useFormAction((s: State, f: FormData) => onSave(event?.id ?? null, s, f));
   const [deleting, startDelete] = useTransition();
+  const [kind, setKind] = useState(event?.kind ?? "torneo");
   useEffect(() => {
     if (state?.ok) onClose();
   }, [state, onClose]);
@@ -404,7 +409,7 @@ function EventDialog({
           <FormError message={state?.error} />
           <div className="grid grid-cols-[130px_1fr] gap-2">
             <Field label="Tipo" htmlFor="ev-kind">
-              <Select id="ev-kind" name="kind" defaultValue={event?.kind ?? "torneo"}>
+              <Select id="ev-kind" name="kind" value={kind} onChange={(e) => setKind(e.target.value)}>
                 {EVENT_KINDS.map((k) => (
                   <option key={k.v} value={k.v}>{k.label}</option>
                 ))}
@@ -414,6 +419,11 @@ function EventDialog({
               <Input id="ev-title" name="title" defaultValue={event?.title} required maxLength={120} placeholder="Ej.: Abierto del club" />
             </Field>
           </div>
+          {kind === "torneo" ? (
+            <Field label="Importancia" htmlFor="ev-importance" hint="Cuanto más importante, más se baja la carga antes para llegar descansado.">
+              <StarInput id="ev-importance" defaultValue={event?.importance} />
+            </Field>
+          ) : null}
           <div className="grid grid-cols-2 gap-2">
             <Field label="Desde" htmlFor="ev-start">
               <Input id="ev-start" name="start_date" type="date" defaultValue={event?.start_date ?? date} required />

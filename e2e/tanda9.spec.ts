@@ -50,6 +50,7 @@ test("inicio con dos zonas y registro del alumno con el enlace del entrenador", 
   await page.getByLabel("Competencia").fill("Abierto del Norte");
   await page.getByLabel("Desde").fill(addDays(todayISO(), 20));
   await page.getByLabel("Lugar").fill("Tucumán");
+  await page.getByTestId("estrella-4").click();
   await page.getByLabel("¿Qué querés lograr?").fill("Pegarle más largo");
   await page.getByRole("button", { name: "Seguir" }).click();
 
@@ -63,6 +64,7 @@ test("inicio con dos zonas y registro del alumno con el enlace del entrenador", 
   await expect(page.getByText("¡Listo, ya estás registrado!")).toBeVisible();
   await expect(page.getByText("Próxima competencia")).toBeVisible();
   await expect(page.getByText("Abierto del Norte")).toBeVisible();
+  await expect(page.getByRole("img", { name: "Importancia 4 de 5" }).first()).toBeVisible();
 
   // El entrenador la ve con sus datos
   const ctx = await browser.newContext();

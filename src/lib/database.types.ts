@@ -221,14 +221,14 @@ isOneToOne: false
                   ]
                 },"calendar_events": {
                   Row: {
-                    "athlete_id": string,"created_at": string,"created_by": string | null,"end_date": string,"id": string,"kind": string,"location": string | null,"notes": string | null,"org_id": string,"start_date": string,"title": string
+                    "athlete_id": string,"created_at": string,"created_by": string | null,"end_date": string,"id": string,"importance": number | null,"kind": string,"location": string | null,"notes": string | null,"org_id": string,"start_date": string,"title": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "athlete_id": string,"created_at"?: string,"created_by"?: string | null,"end_date": string,"id"?: string,"kind": string,"location"?: string | null,"notes"?: string | null,"org_id": string,"start_date": string,"title": string
+                    "athlete_id": string,"created_at"?: string,"created_by"?: string | null,"end_date": string,"id"?: string,"importance"?: number | null,"kind": string,"location"?: string | null,"notes"?: string | null,"org_id": string,"start_date": string,"title": string
                   }
                   Update: {
-                    "athlete_id"?: string,"created_at"?: string,"created_by"?: string | null,"end_date"?: string,"id"?: string,"kind"?: string,"location"?: string | null,"notes"?: string | null,"org_id"?: string,"start_date"?: string,"title"?: string
+                    "athlete_id"?: string,"created_at"?: string,"created_by"?: string | null,"end_date"?: string,"id"?: string,"importance"?: number | null,"kind"?: string,"location"?: string | null,"notes"?: string | null,"org_id"?: string,"start_date"?: string,"title"?: string
                   }
                   Relationships: [
                     {
@@ -843,6 +843,9 @@ isOneToOne: false
           Functions: {
             "accept_invitation":
 { Args: { "p_token": string }; Returns: string
+                           },
+"apply_week_intensities":
+{ Args: { "p_athlete": string,"p_weeks": Json }; Returns: number
                            },
 "assign_program":
 { Args: { "p_athletes": (string)[],"p_program": string,"p_start": string }; Returns: number
