@@ -9,14 +9,14 @@ export async function loadAthleteSession(supabase: SupabaseClient<Database>, sch
     supabase
     .from("scheduled_workouts")
     .select(
-      "id, org_id, date, status, started_at, completed_at, duration_min, session_rpe, comment, pain, pain_area, pain_level, programs(name), workouts(name, goal, est_duration_min, intensity_pct, focus, notes, workout_items(id, sort_order, group_label, sets, reps, load, rest_sec, tempo, rpe, notes, exercises(id, name, category, coaching_cues, instructions, video_url, exercise_media(storage_path, sort_order)))), set_logs(workout_item_id, set_number, reps, load_kg)",
+      "id, org_id, date, status, started_at, completed_at, duration_min, session_rpe, comment, pain, pain_area, pain_level, programs(name), workouts(name, goal, est_duration_min, intensity_pct, focus, notes, workout_items(id, sort_order, group_label, sets, reps, load, rest_sec, tempo, rpe, notes, exercises(id, name, category, equipment, coaching_cues, instructions, video_url, exercise_media(storage_path, sort_order)))), set_logs(workout_item_id, set_number, reps, load_kg)",
     )
     .eq("id", scheduledId)
     .eq("athlete_id", athleteId)
     .maybeSingle(),
     supabase
       .from("exercise_swaps")
-      .select("id, reason, original_exercise_id, replacement:exercises!exercise_swaps_replacement_exercise_id_fkey(id, name, category, coaching_cues, instructions, video_url, exercise_media(storage_path, sort_order))")
+      .select("id, reason, original_exercise_id, replacement:exercises!exercise_swaps_replacement_exercise_id_fkey(id, name, category, equipment, coaching_cues, instructions, video_url, exercise_media(storage_path, sort_order))")
       .eq("athlete_id", athleteId),
     supabase.from("exercise_video_overrides").select("exercise_id, video_url").eq("org_id", orgId),
   ]);

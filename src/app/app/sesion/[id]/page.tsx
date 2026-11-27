@@ -9,7 +9,9 @@ import { Badge, Card } from "@/components/ui/card";
 import { VideoEmbed } from "@/components/exercises/video-embed";
 import { labelOf } from "@/lib/athletes";
 import { SCHEDULE_STATUS } from "@/lib/calendar";
-import { displayLabels, prescription } from "@/lib/programs";
+import { displayLabels, prescription, tracksLoad } from "@/lib/programs";
+import { latestMaxes, loadTip } from "@/lib/intensity";
+import { IntensityCard, LoadHint } from "@/components/session/intensity-guide";
 import { splitBlocks, toneOf } from "@/lib/blocks";
 import { BlockPause, BlockSection } from "@/components/session/block-parts";
 import { longDate, todayISO } from "@/lib/dates";
@@ -30,9 +32,23 @@ export default async function Page({
   const { id } = await params;
   const { cerrada } = await searchParams;
   const { supabase, athlete } = await requireAthlete();
-  const data = await loadAthleteSession(supabase, id, athlete.id, athlete.org_id);
+  const [data, { data: lifts }] = await Promise.all([
+    loadAthleteSession(supabase, id, athlete.id, athlete.org_id),
+    supabase.from("lift_records").select("month, lift, weight_kg, reps").eq("athlete_id", athlete.id),
+  ]);
   if (!data) notFound();
   const { s, w, items, photoOf } = data;
+  // Ayuda con el %: kilos sugeridos a partir de los pesos que el alumno carga cada mes.
+  const maxes = latestMaxes(lifts ?? []);
+  const withWeight = (it: (typeof items)[number]) => {
+    const ex = it.exercises;
+    if (!ex || !tracksLoad(ex.category, it.load)) return false;
+    const bodyOnly = ex.equipment.length > 0 && ex.equipment.every((e) => e === "Solo peso corporal");
+    return !bodyOnly && !/sin peso/i.test(ex.name);
+  };
+  const tipFor = (it: (typeof items)[number]) =>
+    w.intensity_pct && withWeight(it) ? loadTip({ pct: w.intensity_pct, reps: it.reps, name: it.exercises?.name, maxes }) : null;
+  const weighted = items.filter(withWeight);
   const labels = displayLabels(items.map((i) => i.group_label));
   const blocks = splitBlocks(
     items.map((it) => ({ ...it, category: it.exercises?.category ?? null })),
@@ -114,6 +130,9 @@ export default async function Page({
       {w.notes ? (
         <Card className="p-4 text-sm whitespace-pre-line">{w.notes}</Card>
       ) : null}
+      {w.intensity_pct && weighted.length ? (
+        <IntensityCard pct={w.intensity_pct} maxes={maxes} />
+      ) : null}
 
       <div className="space-y-3">
         {blocks.map((b, n) => (
@@ -130,6 +149,7 @@ export default async function Page({
                 const ex = it.exercises;
                 const url = photoOf(it);
                 const logs = logsFor(it.id);
+                const tip = tipFor(it);
                 return (
                   <Card key={it.id} className="overflow-hidden" data-testid="ejercicio">
                     <div className="flex gap-3 p-4">
@@ -149,6 +169,7 @@ export default async function Page({
                             Tempo {it.tempo}
                           </p>
                         ) : null}
+                        {tip ? <LoadHint tip={tip} fixedLoad={Boolean(it.load)} /> : null}
                         {it.notes ? (
                           <p className="mt-2 text-sm whitespace-pre-line">
                             {it.notes}

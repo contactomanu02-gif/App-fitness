@@ -24,7 +24,7 @@ export default async function Page() {
       <ProgressView
         p={p}
         liftsSlot={
-          <details className="rounded-xl border border-border p-3" open={!mine.length}>
+          <details id="pesos" className="scroll-mt-20 rounded-xl border border-border p-3" open={!mine.length}>
             <summary className="cursor-pointer text-sm font-semibold text-accent">{mine.length ? "Corregir mis pesos de este mes" : "Cargar mis pesos de este mes"}</summary>
             <div className="mt-3">
               <LiftsForm action={saveMyLifts} current={current} previous={previous} />
