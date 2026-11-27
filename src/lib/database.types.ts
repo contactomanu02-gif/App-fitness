@@ -209,14 +209,14 @@ isOneToOne: false
                   ]
                 },"athletes": {
                   Row: {
-                    "birth_date": string | null,"created_at": string,"email": string | null,"equipment": (string)[],"first_name": string,"goals": string | null,"height_cm": number | null,"id": string,"last_name": string,"level": string | null,"notes": string | null,"org_id": string,"phone": string | null,"self_registered": boolean,"sessions_per_week": number | null,"sex": string | null,"sport_id": string | null,"status": string,"training_days": (string)[],"updated_at": string,"user_id": string | null,"weight_kg": number | null
+                    "birth_date": string | null,"created_at": string,"email": string | null,"equipment": (string)[],"first_name": string,"goals": string | null,"height_cm": number | null,"id": string,"last_name": string,"level": string | null,"notes": string | null,"org_id": string,"phone": string | null,"photo_path": string | null,"self_registered": boolean,"sessions_per_week": number | null,"sex": string | null,"sport_id": string | null,"status": string,"training_days": (string)[],"updated_at": string,"user_id": string | null,"weight_kg": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "birth_date"?: string | null,"created_at"?: string,"email"?: string | null,"equipment"?: (string)[],"first_name": string,"goals"?: string | null,"height_cm"?: number | null,"id"?: string,"last_name"?: string,"level"?: string | null,"notes"?: string | null,"org_id": string,"phone"?: string | null,"self_registered"?: boolean,"sessions_per_week"?: number | null,"sex"?: string | null,"sport_id"?: string | null,"status"?: string,"training_days"?: (string)[],"updated_at"?: string,"user_id"?: string | null,"weight_kg"?: number | null
+                    "birth_date"?: string | null,"created_at"?: string,"email"?: string | null,"equipment"?: (string)[],"first_name": string,"goals"?: string | null,"height_cm"?: number | null,"id"?: string,"last_name"?: string,"level"?: string | null,"notes"?: string | null,"org_id": string,"phone"?: string | null,"photo_path"?: string | null,"self_registered"?: boolean,"sessions_per_week"?: number | null,"sex"?: string | null,"sport_id"?: string | null,"status"?: string,"training_days"?: (string)[],"updated_at"?: string,"user_id"?: string | null,"weight_kg"?: number | null
                   }
                   Update: {
-                    "birth_date"?: string | null,"created_at"?: string,"email"?: string | null,"equipment"?: (string)[],"first_name"?: string,"goals"?: string | null,"height_cm"?: number | null,"id"?: string,"last_name"?: string,"level"?: string | null,"notes"?: string | null,"org_id"?: string,"phone"?: string | null,"self_registered"?: boolean,"sessions_per_week"?: number | null,"sex"?: string | null,"sport_id"?: string | null,"status"?: string,"training_days"?: (string)[],"updated_at"?: string,"user_id"?: string | null,"weight_kg"?: number | null
+                    "birth_date"?: string | null,"created_at"?: string,"email"?: string | null,"equipment"?: (string)[],"first_name"?: string,"goals"?: string | null,"height_cm"?: number | null,"id"?: string,"last_name"?: string,"level"?: string | null,"notes"?: string | null,"org_id"?: string,"phone"?: string | null,"photo_path"?: string | null,"self_registered"?: boolean,"sessions_per_week"?: number | null,"sex"?: string | null,"sport_id"?: string | null,"status"?: string,"training_days"?: (string)[],"updated_at"?: string,"user_id"?: string | null,"weight_kg"?: number | null
                   }
                   Relationships: [
                     {
@@ -1078,11 +1078,20 @@ isOneToOne: false
 "schedule_program":
 { Args: { "p_program": string }; Returns: number
                            },
+"set_athlete_photo":
+{ Args: { "p_athlete": string,"p_path": string | null }; Returns: string
+                           },
 "set_week_intensity":
 { Args: { "p_block": string,"p_pct": number,"p_week": number }; Returns: number
                            },
 "start_session":
 { Args: { "p_scheduled": string }; Returns: undefined
+                           },
+"storage_athlete":
+{ Args: { "p_name": string }; Returns: string
+                           },
+"can_manage_athlete_photo":
+{ Args: { "p_name": string }; Returns: boolean
                            },
 "storage_org":
 { Args: { "p_name": string }; Returns: string

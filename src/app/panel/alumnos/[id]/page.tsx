@@ -4,7 +4,9 @@ import { CalendarDays, ChevronLeft, ClipboardCheck, FileDown, Flag, LineChart as
 import { shortDate, todayISO } from "@/lib/dates";
 import { PROGRAM_STATUS } from "@/lib/programs";
 import { requireStaff } from "@/lib/session";
-import { Avatar, Badge, Card, CardHeader } from "@/components/ui/card";
+import { photoUrls } from "@/lib/athlete-photo";
+import { PhotoPicker } from "@/components/athletes/photo-picker";
+import { Badge, Card, CardHeader } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { ConfirmAction } from "@/components/confirm-action";
 import { InvitePanel } from "@/components/athletes/invite-panel";
@@ -69,6 +71,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       .order("created_at", { ascending: false }),
   ]);
   if (!a) notFound();
+  const photos = await photoUrls(supabase, [a.photo_path]);
 
   const age = ageFrom(a.birth_date);
   const sportValues = (a.athlete_sport_profiles.find((p) => p.sport_id === a.sport_id)?.values ?? {}) as Record<string, unknown>;
@@ -88,7 +91,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       </Link>
 
       <div className="mt-3 flex flex-wrap items-center gap-4">
-        <Avatar text={initials(a.first_name, a.last_name)} className="h-14 w-14 text-lg" />
+        <PhotoPicker
+          orgId={a.org_id}
+          athleteId={a.id}
+          initials={initials(a.first_name, a.last_name)}
+          url={a.photo_path ? (photos.get(a.photo_path) ?? null) : null}
+          compact
+        />
         <div className="min-w-0 flex-1">
           <h1 className="text-[40px]">{fullName(a)}</h1>
           <p className="text-sm text-muted-fg">

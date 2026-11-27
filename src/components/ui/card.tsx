@@ -41,10 +41,15 @@ export function Badge({
   );
 }
 
-export function Avatar({ text, className }: { text: string; className?: string }) {
+export function Avatar({ text, src, className }: { text: string; src?: string | null; className?: string }) {
   return (
-    <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-md bg-accent-soft font-display text-[15px] font-bold text-accent", className)}>
-      {text}
+    <div className={cn("grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md bg-accent-soft font-display text-[15px] font-bold text-accent", className)}>
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+      ) : (
+        text
+      )}
     </div>
   );
 }

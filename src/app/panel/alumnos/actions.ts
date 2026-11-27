@@ -62,7 +62,9 @@ export async function setAthleteStatus(athleteId: string, status: "active" | "ar
 
 export async function deleteAthlete(athleteId: string) {
   const { supabase } = await requireStaff();
-  const { data: ath } = await supabase.from("athletes").select("user_id").eq("id", athleteId).single();
+  const { data: ath } = await supabase.from("athletes").select("user_id, photo_path").eq("id", athleteId).single();
+  // La foto se borra antes que la ficha (después ya no habría permiso para borrarla).
+  if (ath?.photo_path) await supabase.storage.from("athlete-photos").remove([ath.photo_path]);
   if (ath?.user_id) await supabase.rpc("unlink_athlete", { p_athlete: athleteId });
   await supabase.from("athletes").delete().eq("id", athleteId);
   revalidatePath("/panel", "layout");
