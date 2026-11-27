@@ -125,11 +125,16 @@ test("con sesión: entrenador y alumno: abrir desde el ícono con sesión, redir
   await open(p2, "/app/progreso");
   await expectCleanCache(p2);
 
-  // Sin conexión: se ve la pantalla «sin conexión» (no un error de Safari).
-  await ctx2.setOffline(true);
-  await p2.goto("/app/calendario").catch(() => {});
-  await expect(p2.locator("body")).toContainText(/conexi[oó]n/i);
-  await ctx2.setOffline(false);
+  // Sin conexión: se ve la pantalla «sin conexión» (no un error del navegador).
+  // Solo en Chromium: el modo sin conexión de Playwright en WebKit no corta la red del service
+  // worker, así que ahí no se puede simular. En iPhone igual se revisa arriba (expectCleanCache)
+  // que la página «sin conexión» guardada no venga de una redirección.
+  if (test.info().project.name !== "iphone") {
+    await ctx2.setOffline(true);
+    await p2.goto("/app/calendario").catch(() => {});
+    await expect(p2.locator("body")).toContainText(/conexi[oó]n/i);
+    await ctx2.setOffline(false);
+  }
   await open(p2, "/app");
   await ctx2.close();
 });
