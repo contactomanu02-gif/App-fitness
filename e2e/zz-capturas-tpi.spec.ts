@@ -8,7 +8,7 @@ test("capturas test TPI", async ({ browser }) => {
   test.setTimeout(120_000);
   const coach = await newCoach("capturas-tpi");
   const { data: ath } = await coach.client.from("athletes").insert({ org_id: coach.orgId, first_name: "Juan", last_name: "Pérez" }).select("id").single();
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2, locale: "es-AR" });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 1500 }, deviceScaleFactor: 2, locale: "es-AR" });
   await page.goto("http://localhost:3000/ingresar");
   await page.getByLabel("Email").fill(coach.email);
   await page.getByLabel("Contraseña").fill("clave-segura-123");
@@ -43,11 +43,14 @@ test("capturas test TPI", async ({ browser }) => {
   for (const n of ["Rotación de tronco sentado", "Puente con extensión de pierna", "Alcanzar, rodar y elevar", "Rotación cervical", "Rotación de antebrazo", "Bisagra de muñeca", "Flexión y extensión de muñeca"])
     await page.getByRole("group", { name: n, exact: true }).getByRole("button", { name: "Bien" }).click();
   await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(1500);
   await page.screenshot({ path: "/tmp/claude-0/shots/1-cargar-test.png" });
   await page.getByRole("button", { name: "Guardar test y ver propuesta" }).click();
   await page.waitForURL(/tpi\/[0-9a-f-]{36}$/);
-  await page.screenshot({ path: "/tmp/claude-0/shots/2-propuesta.png", fullPage: true });
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: "/tmp/claude-0/shots/2-propuesta.png" });
   await page.getByRole("button", { name: /Aprobar y crear la sesión/ }).click();
   await page.waitForURL(/importada=1/);
-  await page.screenshot({ path: "/tmp/claude-0/shots/3-sesion-creada.png", fullPage: true });
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: "/tmp/claude-0/shots/3-sesion-creada.png" });
 });
