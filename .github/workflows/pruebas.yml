@@ -1,0 +1,70 @@
+# Todas las pruebas de la app, con una base de datos de prueba (nunca la real).
+# Corre en cada pull request y ANTES de cada publicación: si algo falla, no se publica.
+# Incluye la prueba de la app instalada en iPhone (Safari/WebKit) y Android con el service
+# worker activo, sobre el mismo servidor que usa Cloudflare.
+name: Pruebas
+
+on:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  group: pruebas-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.4.0
+      - name: Instalar dependencias y navegadores (Chrome y Safari/WebKit)
+        run: |
+          pnpm install --frozen-lockfile
+          npx playwright install --with-deps chromium webkit > /dev/null
+      - name: Base de datos de prueba
+        run: |
+          supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta
+          eval "$(supabase status -o env)"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000"
+          } > .env.local
+      - name: Revisión de tipos y estilo
+        run: |
+          npx tsc --noEmit
+          pnpm lint
+      - name: Pruebas unitarias y de seguridad de la base
+        run: npx vitest run
+      - name: Construir
+        run: pnpm build
+      - name: Recorridos completos (escritorio y celular)
+        run: |
+          pnpm start > /tmp/next.log 2>&1 &
+          for i in $(seq 60); do curl -sf -o /dev/null http://localhost:3000/ingresar && break; sleep 1; done
+          npx playwright test --trace off
+          pkill -f next-server || true
+      - name: Versión para Cloudflare
+        run: |
+          npx opennextjs-cloudflare build
+          cp .env.local .dev.vars
+          echo "COACH_SIGNUP_ENABLED=true" >> .dev.vars
+      - name: App instalada en iPhone y Android (service worker + redirecciones)
+        run: |
+          npx wrangler dev --port 8787 --ip 127.0.0.1 > /tmp/wrangler.log 2>&1 &
+          for i in $(seq 90); do curl -sf -o /dev/null http://localhost:8787/ingresar && break; sleep 1; done
+          BASE_URL=http://localhost:8787 npx playwright test --config e2e-pwa/playwright.config.ts --trace off
+      - name: Registro del servidor (si algo falló)
+        if: failure()
+        run: tail -n 80 /tmp/wrangler.log /tmp/next.log 2>/dev/null || true

@@ -1,6 +1,8 @@
 # Publica la app cada vez que se guarda código en main (o a mano desde la pestaña Actions).
+# 0) Corre TODAS las pruebas (incluida la app instalada en iPhone). Si alguna falla, no se publica nada.
 # 1) Aplica los cambios de base de datos en Supabase.
 # 2) Si Cloudflare ya está configurado, construye y publica la app.
+# 3) Prueba la app publicada en iPhone/Android; si falla, vuelve sola a la versión anterior.
 name: Publicar
 
 on:
@@ -17,7 +19,11 @@ env:
   SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
 jobs:
+  pruebas:
+    uses: ./.github/workflows/pruebas.yml
+
   base-de-datos:
+    needs: pruebas
     runs-on: ubuntu-latest
     env:
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -86,15 +92,23 @@ jobs:
         env:
           NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL || 'https://app.fitness-approach-app.workers.dev' }}
         run: npx opennextjs-cloudflare build
+      - name: Versión publicada ahora (para volver atrás si hace falta)
+        if: steps.cf.outputs.ready == 'true'
+        run: |
+          prev=$(npx wrangler deployments status --json 2>/dev/null | jq -r '[.. | .version_id? // empty][0] // empty' || true)
+          echo "Versión anterior: ${prev:-ninguna}"
+          echo "PREV_VERSION=$prev" >> "$GITHUB_ENV"
       - name: Publicar en Cloudflare
         if: steps.cf.outputs.ready == 'true'
         run: |
-          npx wrangler deploy \
+          # Código y claves en una sola versión (así se puede volver atrás de una).
+          jq -n --arg s "$SERVICE_ROLE_KEY" --arg r "${{ secrets.RESEND_API_KEY }}" \
+            '{SUPABASE_SERVICE_ROLE_KEY: $s} + (if $r != "" then {RESEND_API_KEY: $r} else {} end)' > /tmp/secrets.json
+          npx wrangler deploy --secrets-file /tmp/secrets.json \
             --var NEXT_PUBLIC_SITE_URL:"${SITE_URL}" \
             --var COACH_SIGNUP_ENABLED:"${{ vars.COACH_SIGNUP_ENABLED || 'false' }}" \
             --var EMAIL_FROM:"${{ vars.EMAIL_FROM }}"
-          echo "$SERVICE_ROLE_KEY" | npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
-          if [ -n "${{ secrets.RESEND_API_KEY }}" ]; then echo "${{ secrets.RESEND_API_KEY }}" | npx wrangler secret put RESEND_API_KEY; fi
+          rm -f /tmp/secrets.json
       - name: Direcciones permitidas para los emails de acceso
         if: steps.cf.outputs.ready == 'true' && env.SITE_URL != ''
         run: |
@@ -112,8 +126,20 @@ jobs:
         if: steps.cf.outputs.ready == 'true'
         run: |
           sleep 5
-          for p in / /ingresar; do
+          for p in / /ingresar /offline.html /sw.js /manifest.webmanifest; do
             code=$(curl -s -o /dev/null -w "%{http_code}" -L "$SITE_URL$p")
             echo "$p → $code"
             [ "$code" = "200" ] || { echo "::error::La app no respondió bien en $p"; exit 1; }
           done
+      - name: Probar la app publicada en iPhone y Android (service worker + redirecciones)
+        if: steps.cf.outputs.ready == 'true'
+        env:
+          BASE_URL: ${{ env.SITE_URL }}
+        run: |
+          npx playwright install --with-deps chromium webkit > /dev/null
+          npx playwright test --config e2e-pwa/playwright.config.ts --grep-invert "con sesión" --trace off
+      - name: Si la app publicada falla, volver a la versión anterior
+        if: failure() && steps.cf.outputs.ready == 'true' && env.PREV_VERSION != ''
+        run: |
+          npx wrangler rollback "$PREV_VERSION" -y -m "Vuelta atrás automática: fallaron las pruebas de la app publicada"
+          echo "::error::La versión nueva falló en la app publicada y se volvió automáticamente a la anterior."

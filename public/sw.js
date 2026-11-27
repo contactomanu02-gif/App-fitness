@@ -1,9 +1,32 @@
 // Service worker: permite instalar la app, guarda en el celular los archivos que no cambian
 // (código, estilos y fuentes) para abrirla más rápido, y muestra una página simple sin conexión.
-const VERSION = "v6";
+// Cambiar VERSION borra en todos los celulares lo guardado por versiones anteriores.
+const VERSION = "v7";
 const OFFLINE = "/offline.html";
+const PRECACHE = [OFFLINE, "/icons/icon-192.png"];
+
+// Regla de oro para Safari (iPhone): nunca entregarle al navegador una respuesta que vino de una
+// redirección ("Response served by service worker has redirections"). Toda respuesta que se guarda
+// o se devuelve desde el celular pasa por acá y se rearma limpia, con el mismo contenido.
+async function clean(res) {
+  if (!res || !res.redirected) return res;
+  const body = await res.blob();
+  return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers });
+}
+
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll([OFFLINE, "/icons/icon-192.png"])));
+  e.waitUntil(
+    caches.open(VERSION).then((c) =>
+      Promise.all(
+        PRECACHE.map((u) =>
+          fetch(u, { cache: "reload" })
+            .then(clean)
+            .then((r) => (r && r.ok ? c.put(u, r) : undefined))
+            .catch(() => {}),
+        ),
+      ),
+    ),
+  );
   self.skipWaiting();
 });
 self.addEventListener("activate", (e) =>
@@ -19,11 +42,13 @@ const isStatic = (url) => url.origin === self.location.origin && url.pathname.st
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.mode === "navigate") {
-    // Nunca devolver al navegador una respuesta guardada que vino de una redirección (Safari la rechaza):
-    // se arma una respuesta nueva con el mismo contenido.
+    // Pantallas: siempre de internet (las redirecciones del servidor las sigue el navegador).
+    // Sin conexión: la página «Sin conexión» guardada, rearmada como respuesta nueva.
     e.respondWith(
       fetch(req).catch(() =>
-        caches.match(OFFLINE).then((r) => (r ? r.text().then((t) => new Response(t, { headers: { "Content-Type": "text/html; charset=utf-8" } })) : Response.error())),
+        caches
+          .match(OFFLINE)
+          .then((r) => (r ? r.text().then((t) => new Response(t, { headers: { "Content-Type": "text/html; charset=utf-8" } })) : Response.error())),
       ),
     );
     return;
@@ -35,9 +60,9 @@ self.addEventListener("fetch", (e) => {
     caches.open(VERSION).then((c) =>
       c.match(req).then(
         (hit) =>
-          hit ||
+          (hit && !hit.redirected && hit) ||
           fetch(req).then((res) => {
-            if (res.ok && res.type === "basic") c.put(req, res.clone());
+            if (res.ok && res.type === "basic" && !res.redirected) c.put(req, res.clone());
             return res;
           }),
       ),
