@@ -243,3 +243,98 @@ input, select, textarea, button { font: inherit; }
 }
 .nav-progress { animation: nav-progress 1s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .nav-progress { animation: none; width: 100%; } }
+
+/* ---------- Pantalla de entrada con el logo (ver components/brand/splash.tsx) ---------- */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #0b0b0b;
+  pointer-events: none;
+  animation: splash-out 0.5s cubic-bezier(0.7, 0, 0.3, 1) 1.55s forwards;
+}
+.splash-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(28rem 20rem at 50% 45%, rgb(216 18 27 / 0.35), transparent 65%),
+    radial-gradient(30rem 22rem at 100% 0%, rgb(255 59 63 / 0.25), transparent 60%);
+  animation: splash-fade 0.5s ease-out both;
+}
+.splash-center { position: relative; display: flex; flex-direction: column; align-items: center; }
+.splash-logo {
+  width: 132px;
+  height: 132px;
+  border-radius: 9999px;
+  box-shadow: 0 0 0 4px rgb(255 255 255 / 0.06), 0 20px 60px -10px rgb(216 18 27 / 0.6);
+  animation: splash-logo 0.85s cubic-bezier(0.2, 0.9, 0.25, 1.25) both;
+}
+.splash-name {
+  margin-top: 18px;
+  color: #fff;
+  font-family: var(--font-display);
+  font-stretch: 62%;
+  font-style: italic;
+  font-weight: 800;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  animation: splash-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.45s both;
+}
+.splash-name span { color: #ff3b3f; }
+/* barra de carga corta debajo del nombre */
+.splash-bar {
+  margin-top: 14px;
+  width: 92px;
+  height: 3px;
+  background: rgb(255 255 255 / 0.12);
+  transform: skewX(-30deg);
+  overflow: hidden;
+  position: relative;
+  animation: splash-fade 0.3s ease-out 0.5s both;
+}
+.splash-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #ff3b3f;
+  transform-origin: left;
+  animation: splash-load 0.95s cubic-bezier(0.6, 0, 0.2, 1) 0.55s both;
+}
+/* las dos rayas rojas de la marca cruzan la pantalla en diagonal */
+.splash-slash {
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  width: 6px;
+  height: 140%;
+  background: #ff3b3f;
+  transform: translateX(-60vw) rotate(32deg);
+  animation: splash-slash 0.9s cubic-bezier(0.6, 0, 0.2, 1) 0.2s both;
+}
+.splash-slash-2 { width: 2px; margin-left: 22px; opacity: 0.7; animation-delay: 0.3s; }
+
+@keyframes splash-logo {
+  from { opacity: 0; transform: scale(0.4) rotate(-200deg); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes splash-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes splash-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes splash-load { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes splash-slash {
+  from { transform: translateX(-60vw) rotate(32deg); }
+  to { transform: translateX(60vw) rotate(32deg); }
+}
+/* se va con un corte en diagonal hacia arriba */
+@keyframes splash-out {
+  from { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+  to { clip-path: polygon(0 0, 100% 0, 100% -30%, 0 0%); visibility: hidden; }
+}
+@media (prefers-reduced-motion: reduce) { .splash { display: none; } }

@@ -22,7 +22,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const { data: w } = await supabase
     .from("workouts")
     .select(
-      "id, name, goal, est_duration_min, intensity_pct, focus, notes, program_id, athlete_id, athletes(first_name, last_name), scheduled_workouts(id, date, status, started_at, completed_at, duration_min, session_rpe, comment, pain, pain_area, pain_level, set_logs(workout_item_id, set_number, reps, load_kg)), block_id, week_index, day_index, programs(id, name, program_blocks(id, name, weeks, sort_order)), program_blocks(name), workout_items(id, exercise_id, sort_order, group_label, sets, reps, load, rest_sec, tempo, rpe, notes)",
+      "id, name, goal, est_duration_min, intensity_pct, focus, tags, notes, program_id, athlete_id, athletes(first_name, last_name), scheduled_workouts(id, date, status, started_at, completed_at, duration_min, session_rpe, comment, pain, pain_area, pain_level, set_logs(workout_item_id, set_number, reps, load_kg)), block_id, week_index, day_index, programs(id, name, program_blocks(id, name, weeks, sort_order)), program_blocks(name), workout_items(id, exercise_id, sort_order, group_label, sets, reps, load, rest_sec, tempo, rpe, notes)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -51,6 +51,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     est_duration_min: w.est_duration_min,
     intensity_pct: w.intensity_pct,
     focus: w.focus,
+    // Las etiquetas sirven para buscar plantillas sueltas; en sesiones de una planificación o de un alumno no se muestran.
+    tags: !w.program_id && !w.athlete_id ? w.tags : null,
     notes: w.notes,
     items: [...w.workout_items].sort((a, b) => a.sort_order - b.sort_order),
   };

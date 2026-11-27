@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { requireStaff } from "@/lib/session";
 import { blockSchema, programSchema, workoutSchema, type WorkoutInput } from "@/lib/programs";
 import { isValidISO } from "@/lib/dates";
+import { cleanTags } from "@/lib/routine-tags";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -24,7 +25,7 @@ export async function createProgram(_: FormState, form: FormData): Promise<FormS
   const weeks = blockSchema.shape.weeks.safeParse(form.get("weeks"));
   if (!weeks.success) return { error: weeks.error.issues[0].message };
 
-  const { data: p, error } = await supabase.from("programs").insert({ ...parsed.data, org_id: org.id }).select("id").single();
+  const { data: p, error } = await supabase.from("programs").insert({ ...parsed.data, tags: cleanTags(form.getAll("tags")), org_id: org.id }).select("id").single();
   if (error || !p) return { error: "No pudimos crear la planificación. Probá de nuevo." };
   await supabase.from("program_blocks").insert({ program_id: p.id, org_id: org.id, name: "Bloque 1", weeks: weeks.data });
   done(programPath(p.id));
@@ -34,7 +35,7 @@ export async function updateProgram(id: string, _: FormState, form: FormData): P
   const { supabase } = await requireStaff();
   const parsed = programSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
-  const { error } = await supabase.from("programs").update(parsed.data).eq("id", id);
+  const { error } = await supabase.from("programs").update({ ...parsed.data, tags: cleanTags(form.getAll("tags")) }).eq("id", id);
   if (error) return { error: "No pudimos guardar los cambios." };
   done();
   return { ok: "Guardado" };
@@ -152,7 +153,7 @@ export async function createLooseWorkout(_: FormState, form: FormData): Promise<
 
 export type SaveResult = { error?: string; savedAt?: string };
 
-export async function saveWorkout(id: string, input: WorkoutInput): Promise<SaveResult> {
+export async function saveWorkout(id: string, input: WorkoutInput, tags?: string[]): Promise<SaveResult> {
   const { supabase } = await requireStaff();
   const parsed = workoutSchema.safeParse(input);
   if (!parsed.success) {
@@ -162,6 +163,7 @@ export async function saveWorkout(id: string, input: WorkoutInput): Promise<Save
   }
   const { error } = await supabase.rpc("save_workout", { p_workout: id, p_data: parsed.data });
   if (error) return { error: error.message.includes("exercise_not_available") ? "Hay un ejercicio que ya no está disponible." : "No pudimos guardar la sesión. Probá de nuevo." };
+  if (tags) await supabase.from("workouts").update({ tags: cleanTags(tags) }).eq("id", id);
   revalidatePath("/panel/rutinas", "layout");
   return { savedAt: new Date().toISOString() };
 }
