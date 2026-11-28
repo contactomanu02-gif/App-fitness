@@ -132,7 +132,7 @@ export function achievements(input: { doneTotal: number; bestStreak: number; per
     b("cincuenta", "50 sesiones", "Llegá a 50 entrenamientos", "medal", input.doneTotal, 50),
     b("racha12", "Incendio", "12 semanas seguidas sin fallar", "fire", input.bestStreak, 12),
     b("cien", "100 sesiones", "Llegá a 100 entrenamientos", "medal", input.doneTotal, 100),
-    b("racha26", "Medio año en llamas", "26 semanas seguidas sin fallar", "fire", input.bestStreak, 26),
+    b("racha26", "Prendido fuego", "26 semanas seguidas sin fallar", "fire", input.bestStreak, 26),
     b("desafio", "Desafío cumplido", "Terminá un desafío del mes", "trophy", input.challengesFinished, 1),
     b("tres", "3 desafíos", "Terminá 3 desafíos", "trophy", input.challengesFinished, 3),
     b("fuerte", "Más fuerte", "Mejorá un básico respecto del mes anterior", "strength", input.anyLiftImproved ? 1 : 0, 1),
