@@ -1,0 +1,189 @@
+# Control general de todos los domingos (18:00 en Argentina), para arrancar la semana sin errores.
+# 1) Todas las pruebas de la app (las mismas que antes de publicar), incluida la app instalada en iPhone y Android.
+# 2) La app publicada de verdad, en iPhone y Android.
+# 3) Respaldos diarios y latido de la semana, estado y espacio de Supabase, avisos al celular,
+#    videos de YouTube, y que la semana que viene de cada alumno esté bien armada.
+# No cambia nada en la app ni en la base: solo mira. Si encuentra algo, abre un aviso (issue)
+# "Control semanal" en GitHub y el control queda en rojo (GitHub manda un mail).
+# El repositorio es público: el informe muestra solo cantidades, nunca nombres.
+name: Control semanal
+
+on:
+  schedule:
+    - cron: "0 21 * * 0" # domingo 18:00 en Argentina
+  workflow_dispatch:
+  push:
+    branches: [claude/project-thread-g8lrgx] # PRUEBA TEMPORAL: se quita antes de unir
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: control-semanal
+  cancel-in-progress: false
+
+env:
+  SUPABASE_PROJECT_ID: jixprysxcuyzpvreohgi
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  APP_URL: ${{ vars.SITE_URL || 'https://app.fitness-approach-app.workers.dev' }}
+
+jobs:
+  pruebas:
+    uses: ./.github/workflows/pruebas.yml
+
+  app-publicada:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: La app publicada responde
+        run: |
+          for p in / /ingresar /offline.html /abrir.html /sw.js /manifest.webmanifest; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -L "$APP_URL$p")
+            echo "$p → $code"
+            [ "$code" = "200" ] || { echo "::error::La app publicada no respondió bien en $p ($code)"; exit 1; }
+          done
+      - name: App publicada en iPhone y Android (service worker + redirecciones)
+        env:
+          BASE_URL: ${{ env.APP_URL }}
+        run: |
+          pnpm install --frozen-lockfile
+          npx playwright install --with-deps chromium webkit > /dev/null
+          npx playwright test --config e2e-pwa/playwright.config.ts --grep-invert "con sesión" --trace off
+
+  revision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      informe: ${{ steps.informe.outputs.informe }}
+      problemas: ${{ steps.informe.outputs.problemas }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Revisar respaldos, Supabase, avisos, videos y la semana que viene
+        id: informe
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ok()    { echo "- ✅ $1" >> informe.md; }
+          aviso() { echo "- ⚠️ $1" >> informe.md; echo "x" >> problemas.txt; }
+          : > informe.md; : > problemas.txt
+
+          # --- Respaldos y latido (últimos 7 días) ---
+          desde=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)
+          for wf in respaldo.yml latido.yml; do
+            runs=$(gh api "repos/${{ github.repository }}/actions/workflows/$wf/runs?event=schedule&created=>$desde&per_page=20" \
+              --jq '[.workflow_runs[] | select(.status=="completed")] | {ok: map(select(.conclusion=="success")) | length, total: length, ultima: (.[0].conclusion // "ninguna")}')
+            okn=$(echo "$runs" | jq .ok); total=$(echo "$runs" | jq .total); ultima=$(echo "$runs" | jq -r .ultima)
+            nombre=$([ "$wf" = respaldo.yml ] && echo "Respaldo diario" || echo "Latido diario")
+            if [ "$total" -ge 6 ] && [ "$okn" = "$total" ]; then ok "$nombre: $okn de $total días bien."
+            elif [ "$ultima" = "success" ] && [ "$okn" -ge 5 ]; then aviso "$nombre: $okn de $total días bien (la última salió bien)."
+            else aviso "$nombre: solo $okn de $total días bien esta semana (última: $ultima)."; fi
+          done
+
+          # --- Supabase ---
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then aviso "Falta el secreto SUPABASE_ACCESS_TOKEN: no se pudo revisar la base."; else
+            api="https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID"
+            estado=$(curl -sS "$api" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" | jq -r '.status // "desconocido"')
+            if [ "$estado" = "ACTIVE_HEALTHY" ]; then ok "Supabase activo."; else aviso "Supabase en estado $estado."; fi
+            salud=$(curl -sS "$api/health?services=auth,db,rest,storage" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              | jq -r '[.[]? | select(.healthy != true) | .name] | join(", ")' 2>/dev/null || echo "?")
+            if [ -z "$salud" ]; then ok "Supabase: base, cuentas, datos y archivos funcionando."; else aviso "Supabase con problemas en: $salud."; fi
+
+            jq -n --rawfile q scripts/control-semanal/semana.sql '{query: $q}' > body.json
+            r=$(curl -sS -X POST "$api/database/query" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              -H "Content-Type: application/json" --data @body.json | jq -c '.[0].r // empty')
+            if [ -z "$r" ]; then aviso "No se pudo consultar la base de datos."; else
+              v() { echo "$r" | jq -r ".$1"; }
+              base=$(v base_mb); arch=$(v archivos_mb)
+              if awk "BEGIN{exit !($base < 400)}"; then ok "Base de datos: $base MB de 500 MB del plan gratis."; else aviso "Base de datos: $base MB de 500 MB (cerca del límite del plan gratis)."; fi
+              if awk "BEGIN{exit !($arch < 800)}"; then ok "Fotos y archivos: $arch MB de 1024 MB."; else aviso "Fotos y archivos: $arch MB de 1024 MB (cerca del límite)."; fi
+
+              # Avisos al celular
+              [ "$(v tareas_avisos_activas)" = "2" ] && ok "Tareas de avisos al celular encendidas." || aviso "Hay tareas de avisos al celular apagadas ($(v tareas_avisos_activas) de 2)."
+              dok=$(v avisos_diarios_ok); dmal=$(v avisos_diarios_mal)
+              hd=$(v horas_ultimo_aviso_diario)
+              if [ "$dmal" = "0" ] && [ "$hd" != "null" ] && [ "$hd" -le 26 ]; then ok "Aviso diario de las 8: salió bien los $dok días de esta semana."; else aviso "Aviso diario de las 8: $dok días bien y $dmal con error (último bien hace ${hd} horas)."; fi
+              rok=$(v recordatorios_ok); rmal=$(v recordatorios_mal)
+              hr=$(v horas_ultimo_recordatorio)
+              if [ "$rmal" = "0" ] && [ "$hr" != "null" ] && [ "$hr" -le 2 ]; then ok "Recordatorio de la tarde: revisó cada hora sin errores ($rok veces)."; else aviso "Recordatorio de la tarde: $rok veces bien y $rmal con error (último bien hace ${hr} horas; debería ser cada hora)."; fi
+              echo "- 📱 Celulares con avisos activados: $(v celulares_con_avisos)." >> informe.md
+
+              # La semana que viene
+              echo "" >> informe.md
+              echo "**Semana del $(v semana_desde) al $(v semana_hasta):** $(v sesiones_semana) sesiones para $(v alumnos_con_sesiones) de $(v alumnos_activos) alumnos activos, $(v competencias_semana) competencias." >> informe.md
+              [ "$(v sin_sesiones)" = "0" ] && ok "Todos los que venían entrenando tienen sesiones la semana que viene." || aviso "$(v sin_sesiones) alumnos venían entrenando y no tienen sesiones la semana que viene."
+              [ "$(v sesiones_vacias)" = "0" ] && ok "Ninguna sesión vacía." || aviso "$(v sesiones_vacias) sesiones de la semana que viene no tienen ejercicios."
+              [ "$(v fuera_de_dias)" = "0" ] && ok "Todas las sesiones caen en días que el alumno entrena." || aviso "$(v fuera_de_dias) sesiones caen en un día que el alumno no entrena (según su ficha)."
+              [ "$(v dobles)" = "0" ] && ok "Ningún alumno tiene dos sesiones el mismo día." || aviso "$(v dobles) veces un alumno tiene dos sesiones el mismo día."
+              [ "$(v sin_cuenta)" = "0" ] || aviso "$(v sin_cuenta) alumnos tienen sesiones pero todavía no crearon su cuenta (no las van a ver)."
+              [ "$(v en_competencia)" = "0" ] || echo "- ℹ️ $(v en_competencia) sesiones caen el mismo día de una competencia (revisar que sea la activación)." >> informe.md
+              [ "$(v termina_pronto)" = "0" ] || echo "- ℹ️ A $(v termina_pronto) alumnos se les termina la planificación en las próximas 2 semanas." >> informe.md
+            fi
+          fi
+
+          # --- Videos de YouTube del catálogo ---
+          grep -ohE "(youtube\.com/watch\?v=|youtu\.be/)[A-Za-z0-9_-]{11}" supabase/migrations/*.sql | grep -oE "[A-Za-z0-9_-]{11}$" | sort -u > ids.txt
+          malos=0; total=0
+          while read -r id; do
+            total=$((total+1))
+            code=$(curl -s -o /dev/null -w "%{http_code}" "https://www.youtube.com/oembed?format=json&url=https://www.youtube.com/watch?v=$id")
+            page=$(curl -s -A "Mozilla/5.0" "https://www.youtube.com/embed/$id" | grep -o '"playableInEmbed":[a-z]*' | head -1)
+            if [ "$code" != "200" ] || [ "$page" = '"playableInEmbed":false' ]; then malos=$((malos+1)); echo "Video con problema: $id"; fi
+          done < ids.txt
+          [ "$malos" = "0" ] && ok "Los $total videos de ejercicios se pueden ver." || aviso "$malos de $total videos de ejercicios no se pueden ver (ver el detalle en el control)."
+
+          cat informe.md
+          {
+            echo "informe<<FIN_INFORME"; cat informe.md; echo "FIN_INFORME"
+            echo "problemas=$(wc -l < problemas.txt)"
+          } >> "$GITHUB_OUTPUT"
+
+  informe:
+    needs: [pruebas, app-publicada, revision]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Armar el informe y avisar si hay algo
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PRUEBAS: ${{ needs.pruebas.result }}
+          PUBLICADA: ${{ needs.app-publicada.result }}
+          REVISION: ${{ needs.revision.result }}
+          INFORME: ${{ needs.revision.outputs.informe }}
+          PROBLEMAS: ${{ needs.revision.outputs.problemas || '0' }}
+        run: |
+          mal=0
+          {
+            echo "## Control semanal — $(TZ=America/Argentina/Buenos_Aires date +%d/%m/%Y)"
+            echo ""
+            if [ "$PRUEBAS" = success ]; then echo "- ✅ Todas las pruebas de la app pasaron (incluida la app instalada en iPhone y Android)."
+            else echo "- ❌ Fallaron pruebas de la app ($PRUEBAS)."; mal=1; fi
+            if [ "$PUBLICADA" = success ]; then echo "- ✅ La app publicada abre bien en iPhone y Android."
+            else echo "- ❌ La app publicada falló en iPhone/Android ($PUBLICADA)."; mal=1; fi
+            [ "$REVISION" = success ] || { echo "- ❌ La revisión de datos no terminó ($REVISION)."; mal=1; }
+            echo "$INFORME"
+            echo ""
+            echo "[Ver el control completo]($RUN_URL)"
+          } > final.md
+          [ "${PROBLEMAS:-0}" -gt 0 ] && mal=1
+          cat final.md >> "$GITHUB_STEP_SUMMARY"
+          cat final.md
+
+          abierto=$(gh issue list -R "$REPO" --state open --label control-semanal --json number --jq '.[0].number // empty' 2>/dev/null || true)
+          if [ "$mal" = 1 ]; then
+            gh label create control-semanal -R "$REPO" --color B60205 --description "Avisos del control de los domingos" 2>/dev/null || true
+            if [ -n "$abierto" ]; then gh issue comment "$abierto" -R "$REPO" --body-file final.md
+            else gh issue create -R "$REPO" --title "Control semanal: hay algo para revisar" --label control-semanal --body-file final.md; fi
+            exit 1
+          elif [ -n "$abierto" ]; then
+            gh issue close "$abierto" -R "$REPO" --comment "Esta semana todo salió bien. $RUN_URL"
+          fi

@@ -2,7 +2,8 @@
 # - Supabase (plan gratis) pausa los proyectos sin uso por una semana: acá se usa la base
 #   todos los días y, si igual estuviera pausada, se la reactiva y se avisa (falla en rojo).
 # - GitHub apaga las tareas programadas (como el respaldo diario) si el repositorio no tiene
-#   cambios en 60 días: acá se vuelven a encender todos los días.
+#   cambios en 60 días: acá se vuelven a encender todos los días
+#   (respaldo, latido y control de los domingos).
 name: Latido diario
 
 on:
@@ -28,7 +29,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for wf in respaldo.yml latido.yml; do
+          for wf in respaldo.yml latido.yml control-semanal.yml; do
             gh api -X PUT "repos/${{ github.repository }}/actions/workflows/$wf/enable" >/dev/null 2>&1 \
               && echo "Encendida: $wf" || echo "No existe o no se pudo: $wf"
           done
