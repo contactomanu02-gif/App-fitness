@@ -21,10 +21,28 @@ export function tournamentWeeks(events: { start_date: string; end_date: string }
   return set;
 }
 
+// Sesiones agrupadas por lunes, calculado una sola vez por lista (el servidor tiene poco tiempo de CPU).
+const buckets = new WeakMap<Row[], Map<string, Row[]>>();
+function byWeek(rows: Row[]) {
+  let m = buckets.get(rows);
+  if (!m) {
+    m = new Map();
+    const mondays = new Map<string, string>();
+    for (const r of rows) {
+      let mon = mondays.get(r.date);
+      if (!mon) mondays.set(r.date, (mon = mondayOf(r.date)));
+      const list = m.get(mon);
+      if (list) list.push(r);
+      else m.set(mon, [r]);
+    }
+    buckets.set(rows, m);
+  }
+  return m;
+}
+
 /** Estado de una semana (lunes a domingo). «open» = todavía se puede completar. */
 export function weekState(rows: Row[], start: string, today: string, torneos?: Set<string>) {
-  const end = addDays(start, 6);
-  const week = rows.filter((r) => r.date >= start && r.date <= end);
+  const week = byWeek(rows).get(start) ?? [];
   const done = week.filter((r) => isDone(r.status)).length;
   const left = week.filter((r) => r.status === "planned" && r.date >= today).length;
   let state: WeekState;
@@ -57,7 +75,8 @@ export function weekStreak(rows: Row[], today: string, lookback = 53, torneos?: 
 
 /** Mejor racha y semanas perfectas en todo el historial (la semana en curso cuenta solo si ya está completa). */
 export function streakHistory(rows: Row[], today: string, torneos?: Set<string>) {
-  const mondays = [...new Set(rows.filter((r) => r.date <= addDays(mondayOf(today), 6)).map((r) => mondayOf(r.date)))].sort();
+  const thisMonday = mondayOf(today);
+  const mondays = [...byWeek(rows).keys()].filter((m) => m <= thisMonday).sort();
   let best = 0;
   let cur = 0;
   let perfect = 0;
