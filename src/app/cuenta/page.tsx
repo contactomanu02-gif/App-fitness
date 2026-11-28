@@ -5,13 +5,16 @@ import { getSession, homeFor } from "@/lib/session";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ThemeChooser } from "@/components/theme";
 import { PushToggle } from "@/components/push-toggle";
-import { ProfileForm, PasswordForm } from "./forms";
+import { ProfileForm, PasswordForm, PendingReminderForm } from "./forms";
 
 export const metadata = { title: "Mi cuenta" };
 
 export default async function Page() {
   const s = await getSession();
   if (!s) redirect("/ingresar");
+  const reminderHour = s.staffOrg
+    ? ((await s.supabase.from("organizations").select("pending_reminder_hour").eq("id", s.staffOrg.id).maybeSingle()).data?.pending_reminder_hour ?? null)
+    : null;
   return (
     <main className="mx-auto max-w-lg px-4 pt-[max(env(safe-area-inset-top),20px)] pb-16">
       <Link href={homeFor(s)} className="inline-flex items-center gap-1 text-sm text-muted-fg hover:text-fg">
@@ -35,6 +38,15 @@ export default async function Page() {
             />
           </div>
         </Card>
+        {s.staffOrg && (
+          <Card>
+            <CardHeader
+              title="Recordatorio a tus alumnos"
+              subtitle="Si un alumno tiene sesión hoy y todavía no la marcó, le llega un aviso al celular a esta hora (de Argentina)."
+            />
+            <div className="px-5 pb-5"><PendingReminderForm hour={reminderHour} /></div>
+          </Card>
+        )}
         <Card>
           <CardHeader title="Apariencia" />
           <div className="px-5 pb-5"><ThemeChooser /></div>

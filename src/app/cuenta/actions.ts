@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "@/lib/zod";
 import { createClient } from "@/lib/supabase/server";
+import { getSession } from "@/lib/session";
 
 type State = { error?: string; notice?: string } | undefined;
 
@@ -25,4 +26,17 @@ export async function changePassword(_: State, form: FormData): Promise<State> {
   const { error } = await supabase.auth.updateUser({ password: pw.data });
   if (error) return { error: "No pudimos cambiar la contraseña. Volvé a ingresar y probá de nuevo." };
   return { notice: "Contraseña actualizada." };
+}
+
+/** Hora del recordatorio a los alumnos que todavía no hicieron la sesión del día ("" = apagado). */
+export async function updatePendingReminder(_: State, form: FormData): Promise<State> {
+  const raw = String(form.get("hour") ?? "");
+  const hour = raw === "" ? null : Number(raw);
+  if (hour !== null && !(Number.isInteger(hour) && hour >= 10 && hour <= 22)) return { error: "Elegí una hora entre las 10 y las 22." };
+  const s = await getSession();
+  if (!s?.staffOrg) return { error: "Tu sesión venció." };
+  const { error } = await s.supabase.from("organizations").update({ pending_reminder_hour: hour }).eq("id", s.staffOrg.id);
+  if (error) return { error: "No pudimos guardar." };
+  revalidatePath("/cuenta");
+  return { notice: hour === null ? "Recordatorio apagado." : `Listo: el recordatorio sale a las ${hour} h.` };
 }

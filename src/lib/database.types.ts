@@ -573,14 +573,14 @@ isOneToOne: false
                   ]
                 },"organizations": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"id": string,"join_code": string,"name": string,"plan": string,"updated_at": string
+                    "created_at": string,"created_by": string | null,"id": string,"join_code": string,"name": string,"pending_reminder_hour": number | null,"pending_reminder_sent_on": string | null,"plan": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"join_code"?: string,"name": string,"plan"?: string,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"join_code"?: string,"name": string,"pending_reminder_hour"?: number | null,"pending_reminder_sent_on"?: string | null,"plan"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"join_code"?: string,"name"?: string,"plan"?: string,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"join_code"?: string,"name"?: string,"pending_reminder_hour"?: number | null,"pending_reminder_sent_on"?: string | null,"plan"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -1097,6 +1097,9 @@ isOneToOne: false
 { Args: { "p_name": string }; Returns: string
                            },
 "trigger_daily_push":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"trigger_pending_push":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "undo_challenge":
