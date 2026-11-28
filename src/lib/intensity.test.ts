@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { latestMaxes, leftText, loadTip, maxRepsAt, pctForReps, refOf, repsInReserve, repsNumber, zoneOf } from "./intensity";
+import { combinedMaxes, latestMaxes, leftText, loadTip, maxFromSession, maxRepsAt, ownMaxes, parseSessionLoads, pctForReps, refOf, repsInReserve, repsNumber, zoneOf } from "./intensity";
 
 describe("intensidad", () => {
   it("repeticiones máximas según el %", () => {
@@ -50,5 +50,52 @@ describe("intensidad", () => {
     expect(loadTip({ pct: 70, reps: "10", name: "Remo con barra", maxes })?.needsLift).toBe("jalon_pecho");
     expect(loadTip({ pct: 70, reps: "10", name: "Prensa", maxes })).toMatchObject({ kg: null, needsLift: null, left: 2 });
     expect(loadTip({ pct: null, reps: "10", name: "Prensa", maxes })).toBeNull();
+  });
+
+  it("máximo con los kilos de la sesión: justo no cambia, liviano sube, pesado baja", () => {
+    // Al 80 % con 5 repeticiones le sobran 3 → 8 posibles → 80 %: 60 kg ⇒ 75 kg de máximo
+    expect(maxFromSession({ kg: 60, reps: 5, pct: 80, feel: "justo" })).toBe(75);
+    expect(maxFromSession({ kg: 60, reps: 5, pct: 80, feel: "liviano" })!).toBeGreaterThan(75);
+    expect(maxFromSession({ kg: 60, reps: 5, pct: 80, feel: "pesado" })!).toBeLessThan(75);
+    expect(maxFromSession({ kg: 60, reps: null, pct: 80, feel: "justo" })).toBeNull();
+    // Si usa lo sugerido y le queda justo, la sugerencia queda igual
+    const tip = loadTip({ pct: 75, reps: "8", name: "Prensa", maxes: {}, own: { max: 120, kg: 90, date: "2026-11-20" } });
+    const used = tip!.kg!.to;
+    const again = maxFromSession({ kg: used, reps: 8, pct: 75, feel: "justo" })!;
+    expect(Math.abs(again - 120)).toBeLessThan(3);
+  });
+  it("kilos sugeridos con lo que anotó en ese ejercicio", () => {
+    const own = ownMaxes([
+      { exercise_id: "a", est_max_kg: 100, load_kg: 70, logged_at: "2026-11-01T10:00:00Z", exercises: { name: "Prensa" } },
+      { exercise_id: "a", est_max_kg: 110, load_kg: 80, logged_at: "2026-11-20T10:00:00Z", exercises: { name: "Prensa" } },
+      { exercise_id: "b", est_max_kg: null, load_kg: 10, logged_at: "2026-11-20T10:00:00Z" },
+    ]);
+    expect(own.a).toEqual({ max: 110, kg: 80, date: "2026-11-20", name: "Prensa" });
+    expect(own.b).toBeUndefined();
+    const tip = loadTip({ pct: 70, reps: "10", name: "Prensa", maxes: {}, own: own.a });
+    expect(tip?.kg).toEqual({ from: 72.5, to: 77.5, perHand: false });
+    expect(tip?.last).toEqual({ kg: 80, date: "2026-11-20" });
+    // Mancuernas sin referencia: de a 1 kg y en cada mano
+    const db = loadTip({ pct: 70, reps: "10", name: "Vuelos laterales con mancuernas", maxes: {}, own: { max: 14, kg: 9, date: "2026-11-20" } });
+    expect(db?.kg).toEqual({ from: 9, to: 10, perHand: true });
+    // Lo propio manda sobre la proporción del básico
+    const sq = loadTip({ pct: 80, reps: "5", name: "Sentadilla goblet", maxes: { sentadilla: 100 }, own: { max: 50, kg: 36, date: "2026-11-20" } });
+    expect(sq?.kg?.to).toBe(40);
+  });
+  it("lo que anota en el básico actualiza los ejercicios parecidos", () => {
+    const rows = [{ month: "2026-11-01", lift: "sentadilla", weight_kg: 80, reps: 5, updated_at: "2026-11-02T00:00:00Z" }];
+    const own = { x: { max: 110, kg: 85, date: "2026-11-20", name: "Sentadilla con barra" }, y: { max: 30, kg: 20, date: "2026-11-21", name: "Sentadilla goblet" } };
+    expect(combinedMaxes(rows, own).sentadilla).toBe(110);
+    // Si el peso del mes es más nuevo, manda el del mes
+    expect(combinedMaxes([{ ...rows[0], updated_at: "2026-11-25T00:00:00Z" }], own).sentadilla).toBe(93.3);
+    expect(combinedMaxes([], own)).toEqual({ sentadilla: 110 });
+  });
+  it("lee los kilos del formulario de cierre", () => {
+    const items = [{ id: "i1", reps: "8" }, { id: "i2", reps: "10" }, { id: "i3", reps: "30 seg" }];
+    const r = parseSessionLoads({ kg_i1: "62,5", feel_i1: "liviano", kg_i2: "", kg_i3: "10" }, items, 75);
+    expect("items" in r && r.items.map((x) => [x.item, x.kg, x.feel])).toEqual([["i1", 62.5, "liviano"], ["i2", null, null], ["i3", 10, "justo"]]);
+    expect("items" in r && r.items[2].max).toBeNull();
+    expect("items" in r && r.items[0].max).toBeGreaterThan(62.5);
+    expect(parseSessionLoads({ kg_i1: "abc" }, items, 75)).toEqual({ error: "Los kilos van de 0,5 a 500" });
   });
 });

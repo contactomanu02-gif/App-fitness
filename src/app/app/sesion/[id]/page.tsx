@@ -10,11 +10,12 @@ import { VideoEmbed } from "@/components/exercises/video-embed";
 import { labelOf } from "@/lib/athletes";
 import { SCHEDULE_STATUS } from "@/lib/calendar";
 import { displayLabels, prescription, tracksLoad } from "@/lib/programs";
-import { latestMaxes, loadTip } from "@/lib/intensity";
+import { combinedMaxes, isFeel, loadTip, ownMaxes, perHandName, refOf, repsNumber } from "@/lib/intensity";
 import { IntensityCard, LoadHint } from "@/components/session/intensity-guide";
 import { splitBlocks, toneOf } from "@/lib/blocks";
 import { BlockPause, BlockSection } from "@/components/session/block-parts";
 import { longDate, todayISO } from "@/lib/dates";
+import { fmtKg } from "@/lib/progress";
 import { loadAthleteSession } from "@/lib/session-data";
 import { FormNotice } from "@/components/ui/form";
 import { ReopenButton } from "./reopen-button";
@@ -32,14 +33,24 @@ export default async function Page({
   const { id } = await params;
   const { cerrada } = await searchParams;
   const { supabase, athlete } = await requireAthlete();
-  const [data, { data: lifts }] = await Promise.all([
+  const [data, { data: lifts }, { data: logged }] = await Promise.all([
     loadAthleteSession(supabase, id, athlete.id, athlete.org_id),
-    supabase.from("lift_records").select("month, lift, weight_kg, reps").eq("athlete_id", athlete.id),
+    supabase.from("lift_records").select("month, lift, weight_kg, reps, updated_at").eq("athlete_id", athlete.id),
+    // Kilos que anotó al cerrar otras sesiones (los de esta no cuentan, para no pisar la sugerencia de hoy).
+    supabase
+      .from("set_logs")
+      .select("exercise_id, est_max_kg, load_kg, logged_at, exercises(name)")
+      .eq("athlete_id", athlete.id)
+      .neq("scheduled_id", id)
+      .not("est_max_kg", "is", null)
+      .order("logged_at", { ascending: false })
+      .limit(400),
   ]);
   if (!data) notFound();
   const { s, w, items, photoOf } = data;
-  // Ayuda con el %: kilos sugeridos a partir de los pesos que el alumno carga cada mes.
-  const maxes = latestMaxes(lifts ?? []);
+  // Ayuda con el %: kilos sugeridos con los pesos del mes y con lo que anotó al cerrar cada sesión.
+  const own = ownMaxes(logged ?? []);
+  const maxes = combinedMaxes(lifts ?? [], own);
   const withWeight = (it: (typeof items)[number]) => {
     const ex = it.exercises;
     if (!ex || !tracksLoad(ex.category, it.load)) return false;
@@ -47,7 +58,7 @@ export default async function Page({
     return !bodyOnly && !/sin peso/i.test(ex.name);
   };
   const tipFor = (it: (typeof items)[number]) =>
-    w.intensity_pct && withWeight(it) ? loadTip({ pct: w.intensity_pct, reps: it.reps, name: it.exercises?.name, maxes }) : null;
+    w.intensity_pct && withWeight(it) ? loadTip({ pct: w.intensity_pct, reps: it.reps, name: it.exercises?.name, maxes, own: it.exercises ? own[it.exercises.id] : null }) : null;
   const weighted = items.filter(withWeight);
   const labels = displayLabels(items.map((i) => i.group_label));
   const blocks = splitBlocks(
@@ -55,6 +66,22 @@ export default async function Page({
   );
   const today = todayISO();
   const open = s.status === "planned";
+  // Ejercicios con peso donde puede anotar los kilos al cerrar (se necesitan repeticiones para calcular).
+  const loads = weighted
+    .filter((it) => it.exercises && repsNumber(it.reps))
+    .map((it) => {
+      const tip = tipFor(it);
+      const prev = s.set_logs.find((l) => l.workout_item_id === it.id && l.load_kg !== null);
+      const name = it.exercises!.name;
+      return {
+        id: it.id,
+        name,
+        suggested: tip?.kg ? (tip.kg.from === tip.kg.to ? fmtKg(tip.kg.to) : `${fmtKg(tip.kg.from)} a ${fmtKg(tip.kg.to)}`) : null,
+        perHand: refOf(name)?.perHand ?? perHandName(name),
+        kg: prev ? Number(prev.load_kg) : null,
+        feel: prev && isFeel(prev.feel) ? prev.feel : null,
+      };
+    });
   const logsFor = (itemId: string) =>
     s.set_logs
       .filter((l) => l.workout_item_id === itemId)
@@ -131,7 +158,7 @@ export default async function Page({
         <Card className="p-4 text-sm whitespace-pre-line">{w.notes}</Card>
       ) : null}
       {w.intensity_pct && weighted.length ? (
-        <IntensityCard pct={w.intensity_pct} maxes={maxes} />
+        <IntensityCard pct={w.intensity_pct} maxes={maxes} hasOwn={Object.keys(own).length > 0} />
       ) : null}
 
       <div className="space-y-3">
@@ -239,7 +266,7 @@ export default async function Page({
             </div>
           </div>
           <div className="p-4">
-            <FinishForm scheduledId={s.id} duration={w.est_duration_min} initialStatus={null} />
+            <FinishForm scheduledId={s.id} duration={w.est_duration_min} initialStatus={null} loads={loads} />
           </div>
         </section>
       ) : null}
