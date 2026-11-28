@@ -67,7 +67,7 @@ export type WorkoutItemInput = z.input<typeof workoutItemSchema>;
 
 /**
  * Asigna letras de grupo (A, B, C…) a partir de qué ejercicios van unidos al anterior.
- * Cada ejercicio suelto también recibe su letra: así se lee como A1, A2, B1… igual que en papel.
+ * Es el código que se guarda en la base; en pantalla se muestra como bloque 1, 2, 3 (ver displayLabels).
  */
 export function groupLabels(linked: boolean[]): (string | null)[] {
   let g = -1;
@@ -77,21 +77,31 @@ export function groupLabels(linked: boolean[]): (string | null)[] {
   });
 }
 
-/** Etiqueta visible de cada ejercicio: A1, A2, B1… (solo numera si el grupo tiene más de uno). */
+/**
+ * Número de bloque de cada ejercicio (1, 2, 3…), en orden de aparición. Ejercicios seguidos con la
+ * misma letra guardada forman un bloque; uno suelto (o sin letra) es un bloque propio.
+ * Las letras quedan solo como código interno: el entrenador y el alumno siempre ven números.
+ */
+export function blockNumbers(labels: (string | null)[]): number[] {
+  let n = 0;
+  return labels.map((l, i) => (i === 0 || !l || l !== labels[i - 1] ? ++n : n));
+}
+
+/** Etiqueta visible de cada ejercicio: 1.1, 1.2, 2, 3.1… (solo numera adentro si el bloque tiene más de uno). */
 export function displayLabels(labels: (string | null)[]): string[] {
-  const size = new Map<string, number>();
-  labels.forEach((l) => l && size.set(l, (size.get(l) ?? 0) + 1));
-  const seen = new Map<string, number>();
-  return labels.map((l) => {
-    if (!l) return "";
-    const n = (seen.get(l) ?? 0) + 1;
-    seen.set(l, n);
-    return (size.get(l) ?? 0) > 1 ? `${l}${n}` : l;
+  const nums = blockNumbers(labels);
+  const size = new Map<number, number>();
+  nums.forEach((b) => size.set(b, (size.get(b) ?? 0) + 1));
+  const seen = new Map<number, number>();
+  return nums.map((b) => {
+    const k = (seen.get(b) ?? 0) + 1;
+    seen.set(b, k);
+    return (size.get(b) ?? 0) > 1 ? `${b}.${k}` : String(b);
   });
 }
 
 /**
- * Texto que explica al alumno cómo hacer un grupo de ejercicios (A1, A2, A3…).
+ * Texto que explica al alumno cómo hacer un grupo de ejercicios (1.1, 1.2, 1.3…).
  * Devuelve el texto solo en el primer ejercicio de un grupo de 2 o más; si no, null.
  */
 export function groupIntro(labels: (string | null)[], i: number): string | null {
@@ -99,7 +109,7 @@ export function groupIntro(labels: (string | null)[], i: number): string | null 
   if (!l || (i > 0 && labels[i - 1] === l)) return null;
   const n = labels.filter((x) => x === l).length;
   if (n < 2) return null;
-  return `Bloque ${l} · Hacé una serie de cada uno (${n} ejercicios) y volvé a empezar hasta completar las series.`;
+  return `Bloque ${blockNumbers(labels)[i]} · Hacé una serie de cada uno (${n} ejercicios) y volvé a empezar hasta completar las series.`;
 }
 
 /** Ejercicios en los que tiene sentido anotar el peso. */

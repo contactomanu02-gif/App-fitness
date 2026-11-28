@@ -300,7 +300,7 @@ const MAX_STRENGTH = 8;
 
 /**
  * Arma la sesión correctiva con las reglas de rutinas de Manu:
- * A zona media, B entrada en calor sin peso, después movilidad correctiva
+ * bloque 1 zona media, bloque 2 entrada en calor sin peso, después movilidad correctiva
  * y fuerza correctiva, todo en bloques de 3 o 4 ejercicios.
  */
 export function buildSession(chosen: Suggestion[]): SessionItem[] {
