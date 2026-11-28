@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { admin, newCoach } from "../tests/db/helpers";
-import { addDays, isoDow, mondayOf, todayISO } from "../src/lib/dates";
+import { addDays, mondayOf, todayISO } from "../src/lib/dates";
 
 test("importancia de torneos y plan hacia competencias", async ({ page }, info) => {
   test.setTimeout(120_000);
@@ -16,7 +16,6 @@ test("importancia de torneos y plan hacia competencias", async ({ page }, info) 
     return w!.id as string;
   };
   const fuerza = await tpl("Tren inferior");
-  await tpl("Activación pre competencia 15");
   // 3 sesiones por semana durante 6 semanas desde el próximo lunes
   await coach.client.rpc("assign_workout", { p_workout: fuerza, p_athletes: [id], p_start: addDays(monday, 7), p_weekdays: [1, 3, 5], p_weeks: 6 });
   // Un torneo chico en 2 semanas (sábado) y uno grande en 5 semanas (sábado)
@@ -53,13 +52,10 @@ test("importancia de torneos y plan hacia competencias", async ({ page }, info) 
   const descarga = page.getByTestId("semana-plan").nth(4).getByRole("spinbutton");
   await descarga.fill("60");
   await page.getByRole("button", { name: "Aprobar y aplicar" }).click();
-  await expect(page.getByText(/Plan aprobado: \d+ sesiones quedaron con el % del plan y 1 activación agendada/)).toBeVisible();
+  await expect(page.getByText(/Plan aprobado: \d+ sesiones quedaron con el % del plan\./)).toBeVisible();
 
   const { data: rows } = await admin.from("scheduled_workouts").select("date, workouts(name, intensity_pct)").eq("athlete_id", id).order("date");
   const week5 = rows!.filter((r) => r.date >= addDays(monday, 28) && r.date < addDays(monday, 35));
   expect(week5.length).toBe(3);
   expect(week5.every((r) => (r.workouts as unknown as { intensity_pct: number }).intensity_pct === 60)).toBe(true);
-  const act = rows!.filter((r) => (r.workouts as unknown as { name: string }).name.startsWith("Activación"));
-  expect(act.map((r) => r.date)).toEqual([addDays(sat(5), -1)]);
-  expect(isoDow(act[0].date)).toBe(5);
 });

@@ -3,7 +3,7 @@
  * semana por semana, qué fase toca y con qué % de intensidad.
  * La importancia de cada torneo (1 a 5 estrellas) decide cuánto se baja la carga:
  * - 4 y 5: fuerza lejos, potencia al acercarse, descarga la semana previa, semana de
- *   torneo con activación y una semana de recuperación después.
+ *   torneo (modo torneo) y una semana de recuperación después.
  * - 3: se mantiene la semana del torneo, sin descarga previa.
  * - 1 y 2: se entrena normal (torneo de rodaje); solo se afloja el día anterior.
  * Si dos torneos se pisan, manda el que más protege al alumno.
@@ -20,7 +20,7 @@ export const PHASES = {
   mantenimiento: { label: "Mantener", tone: "info", note: "Torneo de importancia media: mantener sin cansar." },
   recuperacion: { label: "Recuperación", tone: "success", note: "Después del torneo: aflojar antes de volver a cargar." },
   descarga: { label: "Descarga", tone: "warn", note: "Baja la carga para llegar fresco." },
-  torneo: { label: "Torneo", tone: "accent", note: "Sesiones cortas y activación el día antes. Nada pesado." },
+  torneo: { label: "Torneo", tone: "accent", note: "Modo torneo: previa corta 2 o 3 días antes, activación antes de jugar y recuperación al día siguiente. Nada pesado." },
 } as const;
 export type Phase = keyof typeof PHASES;
 
@@ -41,7 +41,7 @@ export type PlanWeek = {
   note: string;
 };
 
-export type PlanDay = { date: string; kind: "activacion" | "torneo"; comp: Comp };
+export type PlanDay = { date: string; kind: "previa" | "torneo" | "recuperacion"; comp: Comp };
 
 export const importanceOf = (c: { importance: number | null }) => c.importance ?? 3;
 
@@ -101,16 +101,16 @@ export function buildPlan(today: string, comps: Comp[], weeks = 12): { weeks: Pl
       note,
     });
   }
-  // Días clave: activación el día antes de los torneos de 3 o más estrellas.
+  // Días clave (modo torneo): previa 2 días antes y recuperación al día siguiente en los de 3 o más estrellas.
   const lastDay = addDays(first, weeks * 7 - 1);
   const days: PlanDay[] = [];
   for (const c of list) {
     if (c.start_date > lastDay || c.end_date < today) continue;
-    if (importanceOf(c) >= 3) {
-      const before = addDays(c.start_date, -1);
-      if (before >= today) days.push({ date: before, kind: "activacion", comp: c });
-    }
+    const big = importanceOf(c) >= 3;
+    const before = addDays(c.start_date, -2);
+    if (big && before >= today) days.push({ date: before, kind: "previa", comp: c });
     if (c.start_date >= today) days.push({ date: c.start_date, kind: "torneo", comp: c });
+    if (big) days.push({ date: addDays(c.end_date, 1), kind: "recuperacion", comp: c });
   }
   days.sort((a, b) => a.date.localeCompare(b.date));
   return { weeks: out, days };

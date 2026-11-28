@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarClock, ChevronRight, Dumbbell, Flame, Trophy, X } from "lucide-react";
+import { CalendarClock, Check, ChevronRight, Dumbbell, Flame, Lightbulb, Trophy, X } from "lucide-react";
 import { requireAthlete } from "@/lib/session";
 import { Badge, Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { LiftsForm } from "@/components/progress/lifts-form";
 import { ChallengeCard } from "@/components/progress/challenge-card";
 import { Stars } from "@/components/stars";
 import { PushToggle } from "@/components/push-toggle";
+import { STEP_LABEL, kitHeadline, kitVisible, type KitStep } from "@/lib/tournament";
 import { saveMyLifts } from "./actions";
 
 export const metadata = { title: "Hoy" };
@@ -30,7 +31,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
   const sunday = addDays(monday, 6);
   const thisMonth = monthStart(today);
   await ensureMonthChallenges(athlete.org_id, thisMonth);
-  const [progress, challenges, { data: injuries }, { data: upcoming }, { data: weekEvents }, { data: nextComp }] = await Promise.all([
+  const [progress, challenges, { data: injuries }, { data: upcoming }, { data: weekEvents }, { data: nextComp }, { data: kits }] = await Promise.all([
     loadProgress(supabase, athlete),
     monthChallenges(supabase, athlete.org_id, athlete.id, thisMonth),
     supabase.from("injuries").select("id, body_area, status").eq("athlete_id", athlete.id).neq("status", "resuelta"),
@@ -57,7 +58,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
       .order("start_date")
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from("competition_kits")
+      .select("pre_days, pre_workout_id, day_workout_id, post_workout_id, tips, workout_ids, calendar_events(title, start_date, end_date, location)")
+      .eq("athlete_id", athlete.id),
   ]);
+  const kit = (kits ?? [])
+    .filter((k) => k.calendar_events && kitVisible(k.calendar_events, k.pre_days, today))
+    .sort((a, b) => a.calendar_events!.start_date.localeCompare(b.calendar_events!.start_date))[0];
+  const { data: kitSessions } = kit?.workout_ids.length
+    ? await supabase.from("scheduled_workouts").select("id, date, status, workout_id").in("workout_id", kit.workout_ids).order("date")
+    : { data: [] };
   const liftsDone = progress.liftRows.some((l) => l.month === thisMonth);
   const previousLifts = Object.fromEntries(progress.liftRows.map((l) => [l.lift, { kg: l.weight_kg, reps: l.reps }]));
   const level = levelOf(progress.current.score);
@@ -123,6 +134,18 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
           </div>
         </Card>
       )}
+
+      {kit?.calendar_events ? (
+        <TournamentCard
+          comp={kit.calendar_events}
+          tips={kit.tips}
+          today={today}
+          sessions={(kitSessions ?? []).map((s) => ({
+            ...s,
+            step: (s.date < kit.calendar_events!.start_date ? "previa" : s.date > kit.calendar_events!.end_date ? "recuperacion" : "torneo") as KitStep,
+          }))}
+        />
+      ) : null}
 
       <PushToggle compact description="Activalos y te avisamos los días que tenés entrenamiento." />
 
@@ -329,5 +352,75 @@ async function SessionDone({ status, scheduledId, name }: { status: string; sche
         Ver el resumen →
       </Link>
     </Card>
+  );
+}
+
+/** Modo torneo: la semana del torneo, con la previa, la activación, la recuperación y los consejos. */
+function TournamentCard({
+  comp,
+  tips,
+  today,
+  sessions,
+}: {
+  comp: { title: string; start_date: string; end_date: string; location: string | null };
+  tips: string[];
+  today: string;
+  sessions: { id: string; date: string; status: string; step: KitStep }[];
+}) {
+  const fmt = (d: string) =>
+    new Intl.DateTimeFormat("es-AR", { weekday: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`)).replace(".", "");
+  return (
+    <section className="notch-lg hero-brand relative overflow-hidden rounded-2xl p-5 text-white" data-testid="modo-torneo-alumno">
+      <span aria-hidden className="watermark -right-3 -bottom-4 text-[110px]">Torneo</span>
+      <p className="kicker relative text-[#ff3b3f]">Modo torneo</p>
+      <h2 className="relative mt-1 font-display text-[40px] leading-[0.9] font-extrabold uppercase">{kitHeadline(comp, today)}</h2>
+      <p className="relative mt-1 text-sm text-white/75">
+        {comp.title}
+        {comp.location ? ` · ${comp.location}` : ""}
+      </p>
+      {sessions.length ? (
+        <ol className="relative mt-4 grid grid-cols-1 gap-2">
+          {sessions.map((s) => {
+            const isToday = s.date === today;
+            const done = s.status !== "planned";
+            return (
+              <li key={s.id}>
+                <Link
+                  href={`/app/sesion/${s.id}`}
+                  className={`flex items-center gap-3 rounded-md px-3 py-2.5 transition ${isToday ? "bg-[#ff3b3f] text-white" : "bg-white/10 hover:bg-white/15"}`}
+                >
+                  <span className={`grid h-8 w-8 shrink-0 -skew-x-[8deg] place-items-center rounded-[4px] ${done ? "bg-white text-black" : isToday ? "bg-black/25" : "bg-white/10"}`}>
+                    {done ? <Check size={16} className="skew-x-[8deg]" aria-hidden /> : <span className="skew-x-[8deg] font-display text-sm font-bold">{Number(s.date.slice(8))}</span>}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-condensed text-[13px] font-bold tracking-[0.08em] uppercase">
+                      {STEP_LABEL[s.step]}
+                      {s.step === "torneo" ? " antes de jugar" : ""}
+                    </span>
+                    <span className={`block text-xs capitalize ${isToday ? "text-white/85" : "text-white/60"}`}>{isToday ? "Hoy" : fmt(s.date)}{done ? " · hecho" : ""}</span>
+                  </span>
+                  <ChevronRight size={16} className="text-white/60" aria-hidden />
+                </Link>
+              </li>
+            );
+          })}
+        </ol>
+      ) : null}
+      {tips.length ? (
+        <div className="relative mt-4 rounded-md bg-white/[0.07] p-3">
+          <p className="flex items-center gap-1.5 font-condensed text-[13px] font-bold tracking-[0.08em] text-[#ff3b3f] uppercase">
+            <Lightbulb size={14} aria-hidden /> Consejos para el torneo
+          </p>
+          <ul className="mt-2 space-y-1.5 text-sm text-white/85">
+            {tips.map((t, i) => (
+              <li key={i} className="flex gap-2">
+                <span aria-hidden className="mt-[7px] h-1.5 w-1.5 shrink-0 -skew-x-[12deg] bg-[#ff3b3f]" />
+                <span>{t}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </section>
   );
 }

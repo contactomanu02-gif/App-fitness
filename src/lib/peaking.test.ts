@@ -19,7 +19,7 @@ describe("buildPlan", () => {
     expect(weeks.map((w) => w.phase)).toEqual(["potencia", "potencia", "descarga", "torneo", "recuperacion", "carga"]);
     expect(weeks[2].pct).toBe(65);
     expect(weeks[3].pct).toBe(55);
-    expect(days.map((d) => [d.date, d.kind])).toEqual([["2026-12-25", "activacion"], ["2026-12-26", "torneo"]]);
+    expect(days.map((d) => [d.date, d.kind])).toEqual([["2026-12-24", "previa"], ["2026-12-26", "torneo"], ["2026-12-27", "recuperacion"]]);
   });
 
   it("torneo de 1 estrella: se entrena normal", () => {
