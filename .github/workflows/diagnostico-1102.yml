@@ -1,0 +1,41 @@
+name: Diagnostico 1102 (temporal)
+
+on:
+  push:
+    branches: [claude/project-thread-q6n6of]
+    paths: [.github/workflows/diagnostico-1102.yml]
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      ACC: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'f68bc8e18b4a1b34a419652c4c64dcc8' }}
+      APP: https://app.fitness-approach-app.workers.dev
+    steps:
+      - name: La app responde ahora
+        run: |
+          for i in 1 2 3; do
+            for p in / /ingresar /offline.html /sw.js /panel /hoy; do
+              echo "$p -> $(curl -s -o /dev/null -w '%{http_code} %{time_total}s' "$APP$p")"
+            done
+          done
+      - name: Errores por cuarto de hora (ultimas 24 h)
+        run: |
+          desde=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          q='query($a:String!,$d:Time!){viewer{accounts(filter:{accountTag:$a}){workersInvocationsAdaptive(limit:1000,filter:{datetime_geq:$d,scriptName:"app"},orderBy:[datetimeFifteenMinutes_ASC]){sum{requests errors subrequests} quantiles{cpuTimeP50 cpuTimeP99 wallTimeP99} dimensions{datetimeFifteenMinutes status}}}}}'
+          jq -n --arg q "$q" --arg a "$ACC" --arg d "$desde" '{query:$q,variables:{a:$a,d:$d}}' > body.json
+          curl -s https://api.cloudflare.com/client/v4/graphql -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H 'Content-Type: application/json' -d @body.json > out.json
+          jq -r '.errors // empty' out.json
+          jq -r '.data.viewer.accounts[0].workersInvocationsAdaptive[]? | [.dimensions.datetimeFifteenMinutes, .dimensions.status, .sum.requests, .sum.errors, .sum.subrequests, .quantiles.cpuTimeP50, .quantiles.cpuTimeP99, .quantiles.wallTimeP99] | @tsv' out.json
+      - name: Pedidos que fallaron (logs, ultimas 3 h)
+        run: |
+          to=$(($(date +%s)*1000)); from=$((to-3*3600*1000))
+          jq -n --argjson f $from --argjson t $to '{queryId:"diag",timeframe:{from:$f,to:$t},view:"events",limit:500,parameters:{filters:[{key:"$metadata.service",operation:"eq",type:"string",value:"app"}]}}' > q.json
+          curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$ACC/workers/observability/telemetry/query" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H 'Content-Type: application/json' -d @q.json > ev.json
+          jq -r '.success, (.errors // [] | tostring)' ev.json
+          jq -r '[.. | objects | select(has("$workers"))] | .[] | .["$workers"] | [(.outcome // "-"), (.cpuTimeMs // "-"), (.wallTimeMs // "-"), (.eventType // "-"), ((.event.request.url // .scriptName // "") | sub("\\?.*";"") | gsub("[0-9a-f]{8}-[0-9a-f-]{27}";":id"))] | @tsv' ev.json | sort | uniq -c | sort -rn | head -80
+      - name: Versiones publicadas
+        run: npx -y wrangler@4 deployments list --name app 2>&1 | grep -E "Created|Version|Percentage|Message|Source" | tail -40
