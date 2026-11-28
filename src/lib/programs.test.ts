@@ -57,3 +57,30 @@ describe("ayudas para el alumno", () => {
     expect(tracksLoad("movilidad", "banda")).toBe(true);
   });
 });
+
+import { fitNotes, maxDaysPerWeek } from "./programs";
+
+describe("días del alumno", () => {
+  it("cuenta los días distintos de la semana más cargada", () => {
+    expect(
+      maxDaysPerWeek([
+        { block_id: "a", week_index: 1, day_index: 1 },
+        { block_id: "a", week_index: 1, day_index: 1 },
+        { block_id: "a", week_index: 1, day_index: 3 },
+        { block_id: "a", week_index: 2, day_index: 1 },
+        { block_id: "a", week_index: 2, day_index: 3 },
+        { block_id: "a", week_index: 2, day_index: 5 },
+        { block_id: null, week_index: null, day_index: null },
+      ]),
+    ).toBe(3);
+    expect(maxDaysPerWeek([])).toBe(0);
+  });
+
+  it("avisa quién no tiene días cargados y quién tiene menos días que sesiones", () => {
+    expect(fitNotes([{ name: "Ana", days: 3 }], 3)).toBeNull();
+    expect(fitNotes([{ name: "Ana", days: 0 }], 3)).toContain("Ana no tiene cargados sus días");
+    expect(fitNotes([{ name: "Ana", days: 0 }, { name: "Tomás", days: 0 }], 3)).toContain("Ana y Tomás no tienen cargados");
+    expect(fitNotes([{ name: "Lucía", days: 2 }], 3)).toContain("Lucía (2 días) entrena menos días que las 3 sesiones");
+    expect(fitNotes([{ name: "Ana", days: 0 }], 0)).toBeNull();
+  });
+});
