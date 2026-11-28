@@ -144,14 +144,18 @@ test("asignar planificación y sesiones, calendario del entrenador y del alumno"
   await page.goto(`/panel/alumnos/${sofiaId}/calendario?mes=${nextMonth}`);
   const friday = addDays(START, 4);
   await page.locator(`[data-date="${friday}"] > button`).click({ position: { x: 12, y: 12 } });
-  await page.getByRole("button", { name: "Evento" }).click();
+  // Tocar un día vacío abre «Asignar»; desde ahí también se carga un evento
+  await expect(page.getByRole("dialog", { name: new RegExp(`Asignar el ${label(friday)}`) })).toBeVisible();
+  await page.getByRole("button", { name: "Cargar torneo, viaje o descanso" }).click();
   await page.getByLabel("Nombre").fill("Abierto del club");
   await page.getByLabel("Hasta").fill(addDays(friday, 2));
   await page.getByRole("button", { name: "Guardar evento" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByRole("button", { name: new RegExp(`^${label(addDays(friday, 1))}, Abierto del club`) })).toBeVisible();
-  await page.getByLabel("Sesión para agendar").selectOption({ label: "Activación pre-ronda" });
-  await page.getByRole("button", { name: "Agendar", exact: true }).click();
+  await page.getByRole("button", { name: "Asignar rutina" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: /Activación pre-ronda/ }).click();
+  await page.getByRole("button", { name: "Asignar este día" }).click();
+  await expect(page.getByText("Listo: sesión asignada a 1 alumno.")).toBeVisible();
   await expect(page.getByRole("button", { name: new RegExp(`^${label(friday)}, 1 sesión, Abierto del club`) })).toBeVisible();
 
   // Sesión suelta al grupo: martes y jueves durante 2 semanas

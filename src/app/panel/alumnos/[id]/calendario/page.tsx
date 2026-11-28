@@ -7,7 +7,9 @@ import { MonthCalendar } from "@/components/calendar/month-calendar";
 import { isValidMonth, monthGrid, monthOf, todayISO } from "@/lib/dates";
 import { fullName } from "@/lib/utils";
 import { loadCalendar } from "@/lib/calendar-data";
-import { addSessionOnDate, deleteEvent, moveScheduled, saveEvent, type AgendaState } from "../../../agenda-actions";
+import { routineOptions } from "@/lib/assign-data";
+import type { AssignChoice } from "@/components/calendar/assign-day-sheet";
+import { assignOnDate, deleteEvent, moveScheduled, saveEvent, type AgendaState } from "../../../agenda-actions";
 
 export const metadata = { title: "Calendario del alumno" };
 
@@ -19,10 +21,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const month = isValidMonth(sp.mes) ? sp.mes : monthOf(today);
 
   const grid = monthGrid(month);
-  const [{ data: athlete }, { sessions, events }, { data: templates }] = await Promise.all([
+  const [{ data: athlete }, { sessions, events }, routines] = await Promise.all([
     supabase.from("athletes").select("id, first_name, last_name").eq("id", id).eq("org_id", org.id).maybeSingle(),
     loadCalendar(supabase, id, grid[0][0], grid.at(-1)![6], null),
-    supabase.from("workouts").select("id, name").eq("org_id", org.id).is("program_id", null).is("athlete_id", null).order("name"),
+    routineOptions(supabase, org.id),
   ]);
   if (!athlete) notFound();
 
@@ -30,9 +32,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     "use server";
     return moveScheduled(sid, date);
   }
-  async function onAddSession(date: string, templateId: string) {
+  async function onAssign(date: string, choice: AssignChoice) {
     "use server";
-    return addSessionOnDate(id, date, templateId);
+    // Este calendario es de un solo alumno: se ignora cualquier otro que venga.
+    return assignOnDate(date, { kind: choice.kind, id: choice.id, athletes: [id], groups: [] });
   }
   async function onSaveEvent(eventId: string | null, s: AgendaState, f: FormData) {
     "use server";
@@ -65,8 +68,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
         sessionKey="workoutId"
         canMove
         onMove={onMove}
-        templates={templates ?? []}
-        onAddSession={onAddSession}
+        assign={{ ...routines, fixedAthlete: athlete.first_name, onAssign }}
         onSaveEvent={onSaveEvent}
         onDeleteEvent={onDeleteEvent}
       />
