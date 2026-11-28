@@ -10,6 +10,8 @@ import { SCHEDULE_STATUS } from "@/lib/calendar";
 import { labelOf } from "@/lib/athletes";
 import { fullName } from "@/lib/utils";
 import { ExercisePicker } from "./exercise-picker";
+import { FEELS, ownMaxes } from "@/lib/intensity";
+import { fmtKg } from "@/lib/progress";
 
 export const metadata = { title: "Seguimiento" };
 
@@ -20,7 +22,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const today = todayISO();
   const from = addDays(today, -7 * 12);
 
-  const [{ data: athlete }, { data: rows }, { data: logs }] = await Promise.all([
+  const [{ data: athlete }, { data: rows }, { data: logs }, { data: maxLogs }] = await Promise.all([
     supabase.from("athletes").select("id, first_name, last_name").eq("id", id).eq("org_id", org.id).maybeSingle(),
     supabase
       .from("scheduled_workouts")
@@ -34,6 +36,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       .select("exercise_id, reps, load_kg, scheduled_workouts!inner(date), exercises(name)")
       .eq("athlete_id", id)
       .gte("scheduled_workouts.date", from),
+    supabase
+      .from("set_logs")
+      .select("exercise_id, est_max_kg, load_kg, logged_at, feel, exercises(name)")
+      .eq("athlete_id", id)
+      .not("est_max_kg", "is", null)
+      .order("logged_at", { ascending: false })
+      .limit(400),
   ]);
   if (!athlete) notFound();
   const list = rows ?? [];
@@ -56,6 +65,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     if (!cur || kg > cur.max) byDate.set(d, { max: kg, reps: l.reps });
   }
   const loadSeries = [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b));
+  // Máximo estimado de cada ejercicio con los kilos que anota al cerrar: de ahí salen sus kilos sugeridos.
+  const own = ownMaxes(maxLogs ?? []);
+  const feelOf = new Map<string, string | null>();
+  for (const l of maxLogs ?? []) if (!feelOf.has(l.exercise_id)) feelOf.set(l.exercise_id, l.feel);
+  const maxList = Object.entries(own)
+    .map(([exId, m]) => ({ exId, ...m, feel: feelOf.get(exId) ?? null }))
+    .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", "es"));
   const recent = [...list].reverse().filter((r) => r.status !== "planned" || r.date < today).slice(0, 12);
 
   return (
@@ -141,9 +157,31 @@ export default async function Page({ params, searchParams }: { params: Promise<{
               )}
             </>
           ) : (
-            <p className="py-6 text-center text-sm text-muted-fg">Cuando el alumno registre pesos en sus series, vas a ver acá cómo evolucionan.</p>
+            <p className="py-6 text-center text-sm text-muted-fg">Cuando el alumno anote los kilos al terminar sus sesiones, vas a ver acá cómo evolucionan.</p>
           )}
         </div>
+      </Card>
+
+      <Card className="mt-4" data-testid="maximos-estimados">
+        <CardHeader title="Máximos estimados" subtitle="Calculados con los kilos que anota al terminar cada sesión. Con esto la app le sugiere los kilos de cada %." />
+        {maxList.length ? (
+          <ul className="divide-y divide-border border-t border-border">
+            {maxList.map((m) => (
+              <li key={m.exId} className="flex items-center justify-between gap-3 px-5 py-3">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{m.name}</p>
+                  <p className="text-sm text-muted-fg">
+                    Usó {fmtKg(m.kg)} kg el {shortDate(m.date).split(" ")[1]}
+                    {m.feel ? ` · le quedó ${FEELS.find((f) => f.v === m.feel)?.label.toLowerCase() ?? m.feel}` : ""}
+                  </p>
+                </div>
+                <p className="shrink-0 font-display text-2xl leading-none font-extrabold tabular-nums">{fmtKg(m.max)} kg</p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="px-5 pb-5 text-sm text-muted-fg">Cuando {athlete.first_name} anote los kilos al terminar una sesión con %, vas a ver acá su máximo estimado en cada ejercicio.</p>
+        )}
       </Card>
 
       <Card className="mt-4">
