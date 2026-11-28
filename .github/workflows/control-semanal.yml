@@ -68,6 +68,8 @@ jobs:
         id: informe
         env:
           GH_TOKEN: ${{ github.token }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'f68bc8e18b4a1b34a419652c4c64dcc8' }}
         run: |
           ok()    { echo "- ✅ $1" >> informe.md; }
           aviso() { echo "- ⚠️ $1" >> informe.md; echo "x" >> problemas.txt; }
@@ -124,6 +126,19 @@ jobs:
               [ "$(v en_competencia)" = "0" ] || echo "- ℹ️ $(v en_competencia) sesiones caen el mismo día de una competencia (revisar que sea la activación)." >> informe.md
               [ "$(v termina_pronto)" = "0" ] || echo "- ℹ️ A $(v termina_pronto) alumnos se les termina la planificación en las próximas 2 semanas." >> informe.md
             fi
+          fi
+
+          # --- Límite de cálculo de Cloudflare (plan gratis: 10 ms por pedido) ---
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then aviso "Falta el secreto CLOUDFLARE_API_TOKEN: no se pudo revisar Cloudflare."; else
+            desde=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)
+            q='query($a:String!,$d:Time!){viewer{accounts(filter:{accountTag:$a}){workersInvocationsAdaptive(limit:100,filter:{datetime_geq:$d,scriptName:"app"}){sum{requests} quantiles{cpuTimeP50} dimensions{status}}}}}'
+            jq -n --arg q "$q" --arg a "$CLOUDFLARE_ACCOUNT_ID" --arg d "$desde" '{query:$q,variables:{a:$a,d:$d}}' > cf.json
+            cf=$(curl -sS https://api.cloudflare.com/client/v4/graphql -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H 'Content-Type: application/json' --data @cf.json \
+              | jq -c '[.data.viewer.accounts[0].workersInvocationsAdaptive[]?] | {total: (map(.sum.requests) | add // 0), cortados: (map(select(.dimensions.status=="exceededResources") | .sum.requests) | add // 0)}')
+            ctotal=$(echo "$cf" | jq -r .total); cortados=$(echo "$cf" | jq -r .cortados)
+            if [ "$ctotal" = 0 ]; then aviso "No se pudo leer la actividad de la app en Cloudflare.";
+            elif [ "$cortados" = 0 ]; then ok "Cloudflare: $ctotal visitas a la app esta semana, ninguna cortada por exceso de cálculo (error 1102).";
+            else aviso "Cloudflare cortó $cortados de $ctotal visitas por exceso de cálculo (error 1102). Revisar qué páginas pesan más."; fi
           fi
 
           # --- Videos de YouTube del catálogo ---
