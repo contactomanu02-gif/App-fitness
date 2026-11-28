@@ -26,7 +26,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       className={cn("grid h-10 w-10 place-items-center rounded-xl text-muted-fg hover:bg-muted hover:text-fg", className)}
     >
       {mounted ? (isDark ? <Sun size={18} /> : <Moon size={18} />) : <Monitor size={18} />}
-      <span className="sr-only">{theme}</span>
+      {mounted ? <span className="sr-only">{theme}</span> : null}
     </button>
   );
 }

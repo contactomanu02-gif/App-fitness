@@ -1,4 +1,3 @@
-
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
@@ -328,6 +327,56 @@ isOneToOne: false
       columns: ["org_id"]
 isOneToOne: false
       referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"competition_kits": {
+                  Row: {
+                    "approved_at": string,"approved_by": string | null,"athlete_id": string,"created_at": string,"day_workout_id": string | null,"event_id": string,"id": string,"org_id": string,"post_workout_id": string | null,"pre_days": number | null,"pre_workout_id": string | null,"tips": (string)[],"workout_ids": (string)[]
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "approved_at"?: string,"approved_by"?: string | null,"athlete_id": string,"created_at"?: string,"day_workout_id"?: string | null,"event_id": string,"id"?: string,"org_id": string,"post_workout_id"?: string | null,"pre_days"?: number | null,"pre_workout_id"?: string | null,"tips"?: (string)[],"workout_ids"?: (string)[]
+                  }
+                  Update: {
+                    "approved_at"?: string,"approved_by"?: string | null,"athlete_id"?: string,"created_at"?: string,"day_workout_id"?: string | null,"event_id"?: string,"id"?: string,"org_id"?: string,"post_workout_id"?: string | null,"pre_days"?: number | null,"pre_workout_id"?: string | null,"tips"?: (string)[],"workout_ids"?: (string)[]
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "competition_kits_athlete_id_fkey"
+      columns: ["athlete_id"]
+isOneToOne: false
+      referencedRelation: "athletes"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "competition_kits_day_workout_id_fkey"
+      columns: ["day_workout_id"]
+isOneToOne: false
+      referencedRelation: "workouts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "competition_kits_event_id_fkey"
+      columns: ["event_id"]
+isOneToOne: true
+      referencedRelation: "calendar_events"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "competition_kits_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "competition_kits_post_workout_id_fkey"
+      columns: ["post_workout_id"]
+isOneToOne: false
+      referencedRelation: "workouts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "competition_kits_pre_workout_id_fkey"
+      columns: ["pre_workout_id"]
+isOneToOne: false
+      referencedRelation: "workouts"
       referencedColumns: ["id"]
     }
                   ]
@@ -933,6 +982,9 @@ isOneToOne: false
 "apply_week_intensities":
 { Args: { "p_athlete": string,"p_weeks": Json }; Returns: number
                            },
+"approve_competition_kit":
+{ Args: { "p_day": string,"p_event": string,"p_post": string,"p_pre": string,"p_pre_days": number,"p_tips": (string)[] }; Returns: number
+                           },
 "assign_program":
 { Args: { "p_athletes": (string)[],"p_program": string,"p_start": string }; Returns: number
                            },
@@ -941,6 +993,9 @@ isOneToOne: false
                            },
 "athlete_org":
 { Args: { "p_athlete": string }; Returns: string
+                           },
+"can_manage_athlete_photo":
+{ Args: { "p_name": string }; Returns: boolean
                            },
 "challenge_total":
 { Args: { "p_steps": Json }; Returns: number
@@ -1051,6 +1106,9 @@ isOneToOne: false
 "regenerate_join_code":
 { Args: { "p_org": string }; Returns: string
                            },
+"remove_competition_kit":
+{ Args: { "p_event": string }; Returns: undefined
+                           },
 "reopen_session":
 { Args: { "p_scheduled": string }; Returns: undefined
                            },
@@ -1093,9 +1151,6 @@ isOneToOne: false
 "storage_athlete":
 { Args: { "p_name": string }; Returns: string
                            },
-"can_manage_athlete_photo":
-{ Args: { "p_name": string }; Returns: boolean
-                           },
 "storage_org":
 { Args: { "p_name": string }; Returns: string
                            },
@@ -1113,6 +1168,9 @@ isOneToOne: false
                            },
 "workout_abs_week":
 { Args: { "p_block": string,"p_week": number }; Returns: number
+                           },
+"workout_has_history":
+{ Args: { "p_workout": string }; Returns: boolean
                            },
 "workout_org":
 { Args: { "p": string }; Returns: string

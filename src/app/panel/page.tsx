@@ -68,6 +68,11 @@ export default async function Page() {
       .limit(12),
     orgStreaks(supabase, org.id, today),
   ]);
+  const soon = (comps ?? []).filter((c) => c.start_date <= addDays(today, 14));
+  const { data: kits } = soon.length
+    ? await supabase.from("competition_kits").select("event_id").in("event_id", soon.map((c) => c.id))
+    : { data: [] };
+  const withKit = new Set((kits ?? []).map((k) => k.event_id));
   const rows = recent ?? [];
   const week = adherence(rows, mondayOf(today), addDays(mondayOf(today), 6), today);
   const pending = rows.filter((r) => r.status === "planned" && r.date < today && r.date >= addDays(today, -7));
@@ -137,7 +142,7 @@ export default async function Page() {
                   const days = Math.round((new Date(`${c.start_date}T12:00:00Z`).getTime() - new Date(`${today}T12:00:00Z`).getTime()) / 864e5);
                   return (
                     <li key={c.id}>
-                      <Link href={`/panel/alumnos/${c.athlete_id}/competencias`} className="flex items-center gap-3 py-2.5 hover:opacity-80">
+                      <Link href={`/panel/alumnos/${c.athlete_id}/competencias${days <= 14 ? "#modo-torneo" : ""}`} className="flex items-center gap-3 py-2.5 hover:opacity-80">
                         <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-center leading-none ${days <= 14 ? "bg-accent text-accent-fg" : "bg-muted"}`}>
                           <span>
                             <b className="block text-base">{Math.max(0, days)}</b>
@@ -153,6 +158,13 @@ export default async function Page() {
                             {fullName(c.athletes)} · {shortDate(c.start_date)}
                             {c.location ? ` · ${c.location}` : ""}
                           </span>
+                          {days <= 14 ? (
+                            withKit.has(c.id) ? (
+                              <Badge tone="success" className="mt-1">Modo torneo aprobado</Badge>
+                            ) : (
+                              <Badge tone="accent" className="mt-1">Modo torneo: falta aprobar</Badge>
+                            )
+                          ) : null}
                         </span>
                       </Link>
                     </li>

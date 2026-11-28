@@ -35,4 +35,17 @@ describe("bloques de la sesión", () => {
     ]);
     expect(movilidad.map((x) => x.title)).toEqual(["Zona media", "Movilidad"]);
   });
+
+  it("una sola entrada en calor aunque haya otro bloque de activación antes del trabajo principal", () => {
+    const b = splitBlocks([
+      { group_label: "A", sets: 1, category: "core" },
+      { group_label: "B", sets: 1, category: "fuerza" },
+      { group_label: "B", sets: 1, category: "movilidad" },
+      { group_label: "C", sets: 1, category: "activacion" },
+      { group_label: "C", sets: 1, category: "activacion" },
+      { group_label: "C", sets: 1, category: "core" },
+      { group_label: "D", sets: 1, category: "velocidad" },
+    ]);
+    expect(b.map((x) => x.title)).toEqual(["Zona media", "Entrada en calor", "Activación", "Velocidad"]);
+  });
 });

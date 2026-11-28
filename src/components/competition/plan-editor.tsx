@@ -2,10 +2,10 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CalendarPlus, Check, Flag, Sparkles, Zap } from "lucide-react";
+import { AlertTriangle, CalendarPlus, Check, Flag, HeartPulse, Sparkles, Zap } from "lucide-react";
 import { Badge, Card, CardHeader } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { FormError, FormNotice, Select } from "@/components/ui/form";
+import { FormError, FormNotice } from "@/components/ui/form";
 import { StarInput, Stars } from "@/components/stars";
 import { PHASES, importanceOf, type Phase, type PlanDay, type PlanWeek } from "@/lib/peaking";
 import { shortDate } from "@/lib/dates";
@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { applyPlan, setImportance } from "@/app/panel/alumnos/[id]/competencias/actions";
 
 type CompRow = { id: string; title: string; start_date: string; end_date: string; location: string | null; importance: number | null };
-type Session = { id: string; date: string; status: string; name: string; pct: number | null };
+type Session = { id: string; date: string; status: string; name: string; pct: number | null; kit: boolean };
 
 const BAR: Record<Phase, string> = {
   carga: "bg-ink/55",
@@ -33,7 +33,6 @@ export function PlanEditor({
   weeks,
   days,
   sessions,
-  templates,
 }: {
   athleteId: string;
   today: string;
@@ -41,15 +40,10 @@ export function PlanEditor({
   weeks: PlanWeek[];
   days: PlanDay[];
   sessions: Session[];
-  templates: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [pcts, setPcts] = useState<Record<string, number>>({});
   const pctOf = (w: PlanWeek) => pcts[w.start] ?? w.pct;
-  const activationDays = days.filter((d) => d.kind === "activacion");
-  const defaultTpl = templates.find((t) => /activaci/i.test(t.name))?.id ?? "";
-  const [tpl, setTpl] = useState(defaultTpl);
-  const [withActivation, setWithActivation] = useState(!!defaultTpl && activationDays.length > 0);
   const [result, setResult] = useState<{ error?: string; ok?: string } | null>(null);
   const [pending, start] = useTransition();
   const [saving, startSaving] = useTransition();
@@ -62,15 +56,14 @@ export function PlanEditor({
   // Sesiones agendadas justo el día de un torneo de 3 estrellas o más
   const clashes = days
     .filter((d) => d.kind === "torneo" && importanceOf(d.comp) >= 3)
-    .flatMap((d) => sessions.filter((s) => s.status === "planned" && s.date >= d.comp.start_date && s.date <= d.comp.end_date).map((s) => ({ s, comp: d.comp })));
-  const busy = new Set(sessions.map((s) => s.date));
+    .flatMap((d) => sessions.filter((s) => s.status === "planned" && !s.kit && s.date >= d.comp.start_date && s.date <= d.comp.end_date).map((s) => ({ s, comp: d.comp })));
 
   function approve() {
     setResult(null);
     start(async () => {
       const r = await applyPlan(athleteId, {
         weeks: weeks.map((w) => ({ start: w.start, pct: pctOf(w) })),
-        activation: withActivation && tpl ? { templateId: tpl, dates: activationDays.map((d) => d.date) } : null,
+        activation: null,
       });
       setResult(r);
       if (r.ok) router.refresh();
@@ -236,16 +229,24 @@ export function PlanEditor({
 
       {days.length ? (
         <Card>
-          <CardHeader title="Días clave" />
+          <CardHeader title="Días clave" subtitle="Las sesiones de estos días se aprueban abajo, en «Modo torneo»." />
           <ul className="space-y-2 px-5 pb-4 text-sm">
             {days.map((d) => (
               <li key={`${d.kind}-${d.date}-${d.comp.id}`} className="flex items-start gap-2">
-                {d.kind === "activacion" ? <Zap size={16} className="mt-0.5 shrink-0 text-warn" aria-hidden /> : <Flag size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />}
+                {d.kind === "torneo" ? (
+                  <Flag size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+                ) : d.kind === "previa" ? (
+                  <Zap size={16} className="mt-0.5 shrink-0 text-warn" aria-hidden />
+                ) : (
+                  <HeartPulse size={16} className="mt-0.5 shrink-0 text-success" aria-hidden />
+                )}
                 <span>
                   <b className="capitalize">{shortDate(d.date)}</b>:{" "}
-                  {d.kind === "activacion"
-                    ? `activación corta, el día antes de ${d.comp.title}${busy.has(d.date) ? " (ese día tiene una sesión: al aprobar se cambia por la activación)" : ""}.`
-                    : `${d.comp.title}. ${importanceOf(d.comp) <= 2 ? "Torneo de rodaje." : "Ese día no entrena."}`}
+                  {d.kind === "previa"
+                    ? `previa corta de fuerza y potencia para ${d.comp.title}.`
+                    : d.kind === "recuperacion"
+                      ? `recuperación suave después de ${d.comp.title}.`
+                      : `${d.comp.title}. ${importanceOf(d.comp) <= 2 ? "Torneo de rodaje." : "Activación antes de jugar."}`}
                 </span>
               </li>
             ))}
@@ -268,30 +269,12 @@ export function PlanEditor({
         <p className="mt-1 text-sm text-muted-fg">
           Al aprobar, cada sesión pendiente de estas semanas toma el % de su semana. Los ejercicios no se tocan.
         </p>
-        {activationDays.length ? (
-          <div className="mt-3 space-y-2 rounded-md bg-muted p-3">
-            <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" checked={withActivation} onChange={(e) => setWithActivation(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[var(--accent)]" />
-              <span>
-                Agendar una activación el día antes de cada torneo de 3 estrellas o más ({activationDays.map((d) => shortDate(d.date)).join(", ")}). Si ese día ya tiene una sesión, se cambia por la activación.
-              </span>
-            </label>
-            {withActivation ? (
-              <Select value={tpl} onChange={(e) => setTpl(e.target.value)} aria-label="Sesión de activación" className="h-9 text-sm">
-                <option value="">Elegí la sesión de activación…</option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </Select>
-            ) : null}
-          </div>
-        ) : null}
         <div className="mt-3 space-y-2">
           <FormError message={result?.error} />
           <FormNotice message={result?.ok} />
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button onClick={approve} disabled={pending || (withActivation && !tpl)} className="notch">
+          <Button onClick={approve} disabled={pending} className="notch">
             <Check size={16} /> {pending ? "Aplicando…" : "Aprobar y aplicar"}
           </Button>
           <Link href={`/panel/claude?alumno=${athleteId}`} className={buttonVariants({ variant: "outline" })}>

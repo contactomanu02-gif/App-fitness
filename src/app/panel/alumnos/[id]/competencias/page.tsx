@@ -6,6 +6,8 @@ import { addDays, mondayOf, todayISO } from "@/lib/dates";
 import { fullName } from "@/lib/utils";
 import { buildPlan } from "@/lib/peaking";
 import { PlanEditor } from "@/components/competition/plan-editor";
+import { TournamentMode } from "@/components/competition/tournament-mode";
+import { defaultTips } from "@/lib/tournament";
 
 export const metadata = { title: "Plan hacia competencias" };
 
@@ -17,8 +19,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const today = todayISO();
   const first = mondayOf(today);
   const last = addDays(first, WEEKS * 7 - 1);
-  const [{ data: athlete }, { data: comps }, { data: sched }, { data: templates }] = await Promise.all([
-    supabase.from("athletes").select("id, first_name, last_name").eq("id", id).eq("org_id", org.id).maybeSingle(),
+  const [{ data: athlete }, { data: comps }, { data: sched }, { data: templates }, { data: kits }] = await Promise.all([
+    supabase.from("athletes").select("id, first_name, last_name, sports!athletes_sport_id_fkey(slug)").eq("id", id).eq("org_id", org.id).maybeSingle(),
     supabase
       .from("calendar_events")
       .select("id, title, start_date, end_date, location, importance")
@@ -29,19 +31,24 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       .order("start_date"),
     supabase
       .from("scheduled_workouts")
-      .select("id, date, status, workouts(name, intensity_pct)")
+      .select("id, date, status, workout_id, workouts(name, intensity_pct)")
       .eq("athlete_id", id)
       .gte("date", first)
       .lte("date", last)
       .order("date"),
     supabase.from("workouts").select("id, name").eq("org_id", org.id).is("program_id", null).is("athlete_id", null).order("name"),
+    supabase
+      .from("competition_kits")
+      .select("event_id, pre_days, pre_workout_id, day_workout_id, post_workout_id, tips, approved_at, workout_ids")
+      .eq("athlete_id", id),
   ]);
   if (!athlete) notFound();
   const list = comps ?? [];
   const plan = buildPlan(today, list, WEEKS);
+  const kitWorkouts = new Set((kits ?? []).flatMap((k) => k.workout_ids));
   const sessions = (sched ?? [])
     .filter((s) => s.workouts)
-    .map((s) => ({ id: s.id, date: s.date, status: s.status, name: s.workouts!.name, pct: s.workouts!.intensity_pct }));
+    .map((s) => ({ id: s.id, date: s.date, status: s.status, name: s.workouts!.name, pct: s.workouts!.intensity_pct, kit: kitWorkouts.has(s.workout_id) }));
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -62,8 +69,18 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         weeks={plan.weeks}
         days={plan.days}
         sessions={sessions}
-        templates={templates ?? []}
       />
+      <div className="mt-4">
+        <TournamentMode
+          athleteId={id}
+          athleteName={athlete.first_name}
+          today={today}
+          comps={list.filter((c) => addDays(c.end_date, 1) >= today)}
+          kits={kits ?? []}
+          templates={templates ?? []}
+          tips={defaultTips(athlete.sports?.slug)}
+        />
+      </div>
     </div>
   );
 }
