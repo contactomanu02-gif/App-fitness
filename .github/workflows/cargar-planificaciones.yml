@@ -40,8 +40,9 @@ jobs:
       - name: Aplicar en la base
         run: |
           jq -n --rawfile q cargar.sql '{query: $q}' > body.json
-          curl -sS -f -X POST "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/database/query" \
+          CODE=$(curl -sS -X POST "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/database/query" \
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
-            --data @body.json -o resultado.json || { echo "::error::La base rechazó la carga"; head -c 500 resultado.json; exit 1; }
+            --data @body.json -o resultado.json -w '%{http_code}')
+          if [ "$CODE" -ge 300 ]; then echo "::error::La base rechazó la carga"; head -c 500 resultado.json; exit 1; fi
           rm -f cargar.sql body.json
           echo "Carga aplicada."
