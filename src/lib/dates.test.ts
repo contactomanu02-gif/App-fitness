@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { addDays, isoDow, longDate, monthGrid, nextMonday, shiftMonth, todayISO, isValidISO, shortDate } from "./dates";
+import { addDays, argentinaHour, isoDow, longDate, monthGrid, nextMonday, shiftMonth, todayISO, isValidISO, shortDate } from "./dates";
 
 describe("fechas", () => {
   it("suma días cruzando meses y años", () => {
@@ -37,5 +37,13 @@ describe("eventos", () => {
     expect(eventSchema.parse({ kind: "torneo", title: "Abierto", start_date: "2026-12-12", end_date: "" }).end_date).toBe("2026-12-12");
     const r = eventSchema.safeParse({ kind: "viaje", title: "X", start_date: "2026-12-12", end_date: "2026-12-10" });
     expect(r.error!.issues[0].message).toBe("La fecha de fin no puede ser anterior al inicio");
+  });
+});
+
+describe("argentinaHour", () => {
+  it("da la hora de Argentina (UTC-3)", () => {
+    expect(argentinaHour(new Date("2026-11-28T22:05:00Z"))).toBe(19);
+    expect(argentinaHour(new Date("2026-11-29T02:30:00Z"))).toBe(23);
+    expect(argentinaHour(new Date("2026-11-29T03:00:00Z"))).toBe(0);
   });
 });
