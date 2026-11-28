@@ -87,7 +87,7 @@ test("rutinas: sesión suelta, planificación con bloques, superseries, copiar s
   await expect(page.getByLabel("Intensidad (%)")).toHaveValue("80");
   await expect(page.getByLabel("Duración (min)")).toHaveValue("50");
   // El que se unió "al anterior" sigue unido al que ahora tiene arriba
-  await expect(page.getByTestId("item-sesion").nth(0).getByText("A", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("item-sesion").nth(0).getByText("1", { exact: true })).toBeVisible();
   await expect(page.getByTestId("item-sesion").nth(2).getByText("2.2", { exact: true })).toBeVisible();
 
   // Volver y sumar la sesión suelta el miércoles
