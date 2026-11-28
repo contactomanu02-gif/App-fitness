@@ -12,8 +12,6 @@ on:
   schedule:
     - cron: "0 21 * * 0" # domingo 18:00 en Argentina
   workflow_dispatch:
-  push:
-    branches: [claude/project-thread-g8lrgx] # PRUEBA TEMPORAL: se quita antes de unir
 
 permissions:
   actions: read
