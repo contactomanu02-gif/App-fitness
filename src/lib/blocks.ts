@@ -51,13 +51,17 @@ export function splitBlocks<T extends { group_label: string | null; sets: number
     });
     return [...count.entries()].sort((a, c) => c[1] - a[1])[0]?.[0];
   });
+  // Una sola entrada en calor por sesión: la primera que cumple.
+  let warmDone = false;
   return blocks.map((b, n) => {
     const warm = b.items.some(({ item }) => item.category === "movilidad" || item.category === "activacion");
     const mainLater = tops.slice(n + 1).some((t) => t && MAIN.has(t));
+    const isWarm = !warmDone && warm && mainLater && tops[n] !== "Zona media";
+    if (isWarm) warmDone = true;
     return {
       ...b,
       letter: b.letter || String(n + 1),
-      title: warm && mainLater && tops[n] !== "Zona media" ? "Entrada en calor" : tops[n] || "Ejercicios",
+      title: isWarm ? "Entrada en calor" : tops[n] || "Ejercicios",
       rounds: Math.max(1, ...b.items.map(({ item }) => item.sets ?? 1)),
     };
   });

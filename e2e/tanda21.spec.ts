@@ -129,6 +129,7 @@ test("modo torneo: el entrenador aprueba y el alumno ve su semana de torneo", as
   await stPage.waitForURL(/\/app\/sesion\//);
   await expect(stPage.getByText("Día de torneo · Activación 15 min").first()).toBeVisible();
   await expect(stPage.getByText("Swing en potencia").first()).toBeVisible();
+  await expect(stPage.getByText("Entrada en calor", { exact: true })).toHaveCount(1);
   if (SHOTS) {
     await stPage.setViewportSize({ width: stPage.viewportSize()!.width, height: 2600 });
     await stPage.waitForTimeout(1500);
