@@ -34,9 +34,18 @@ export function AssignForm({
       <FormNotice message={state?.ok} />
 
       <Card className="space-y-4 p-5">
-        <Field label={repeat ? "Desde" : "Fecha de inicio"} htmlFor="start" hint={repeat ? undefined : "La semana 1 empieza ese día; cada sesión cae en su día de la semana."}>
+        <Field label={repeat ? "Desde" : "Fecha de inicio"} htmlFor="start" hint={repeat ? undefined : "La semana 1 empieza ese día."}>
           <Input id="start" name="start" type="date" defaultValue={defaultStart} required className="w-48" />
         </Field>
+        {repeat ? null : (
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border p-3 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+            <input type="checkbox" name="adapt" value="1" defaultChecked className="mt-0.5 accent-[var(--color-accent)]" />
+            <span>
+              <span className="block font-medium">Acomodar a los días de cada alumno</span>
+              <span className="block text-muted-fg">Las sesiones de cada semana caen en los días que el alumno marcó en su ficha. Si no tiene días cargados, quedan los de la plantilla.</span>
+            </span>
+          </label>
+        )}
         {repeat ? (
           <>
             <fieldset>

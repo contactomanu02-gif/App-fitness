@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { fullName } from "@/lib/utils";
+import { fitNotes, maxDaysPerWeek } from "@/lib/programs";
 
 /** Alumnos activos y grupos (con cantidad de alumnos activos) para los formularios de asignación. */
 export async function assignOptions(supabase: SupabaseClient<Database>, orgId: string) {
@@ -70,4 +71,16 @@ export async function resolveAthleteIds(supabase: SupabaseClient<Database>, orgI
     for (const m of data ?? []) if (m.athletes.status === "active" && m.athletes.org_id === orgId) ids.add(m.athlete_id);
   }
   return [...ids];
+}
+
+/** Después de asignar una planificación acomodada a los días de cada alumno: aviso si a alguno no le entró. */
+export async function programFitNote(supabase: SupabaseClient<Database>, programId: string, athleteIds: string[]) {
+  const [{ data: ws }, { data: aths }] = await Promise.all([
+    supabase.from("workouts").select("block_id, week_index, day_index").eq("program_id", programId),
+    supabase.from("athletes").select("first_name, training_days").in("id", athleteIds),
+  ]);
+  return fitNotes(
+    (aths ?? []).map((a) => ({ name: a.first_name, days: new Set(a.training_days).size })),
+    maxDaysPerWeek(ws ?? []),
+  );
 }

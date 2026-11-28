@@ -934,7 +934,7 @@ isOneToOne: false
 { Args: { "p_athlete": string,"p_weeks": Json }; Returns: number
                            },
 "assign_program":
-{ Args: { "p_athletes": (string)[],"p_program": string,"p_start": string }; Returns: number
+{ Args: { "p_adapt"?: boolean,"p_athletes": (string)[],"p_program": string,"p_start": string }; Returns: number
                            },
 "assign_workout":
 { Args: { "p_athletes": (string)[],"p_start": string,"p_weekdays": (number)[],"p_weeks": number,"p_workout": string }; Returns: number

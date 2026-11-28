@@ -21,19 +21,28 @@ import {
   type FormState,
 } from "../actions";
 
-export function ProgramActions({ programId }: { programId: string }) {
+export function ProgramActions({ programId, athleteName }: { programId: string; athleteName?: string | null }) {
   const [pending, start] = useTransition();
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button variant="outline" size="sm" disabled={pending} onClick={() => start(() => duplicateProgram(programId))}>
         <Copy size={15} /> {pending ? "Duplicando…" : "Duplicar"}
       </Button>
-      <ConfirmAction
-        label="Eliminar"
-        confirmLabel="Sí, eliminar"
-        question="¿Eliminar la planificación y todas sus sesiones?"
-        onConfirm={() => deleteProgram(programId)}
-      />
+      {athleteName ? (
+        <ConfirmAction
+          label="Quitar al alumno"
+          confirmLabel="Sí, quitar"
+          question={`¿Quitarle esta planificación a ${athleteName}? Se borran las sesiones que le faltan; las que ya entrenó quedan en su historial.`}
+          onConfirm={() => deleteProgram(programId)}
+        />
+      ) : (
+        <ConfirmAction
+          label="Eliminar"
+          confirmLabel="Sí, eliminar"
+          question="¿Eliminar la planificación y todas sus sesiones? A los alumnos que ya la tienen asignada no les cambia nada."
+          onConfirm={() => deleteProgram(programId)}
+        />
+      )}
     </div>
   );
 }

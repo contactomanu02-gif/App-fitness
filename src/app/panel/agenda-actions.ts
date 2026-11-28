@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { requireStaff } from "@/lib/session";
 import { isValidISO, isoDow } from "@/lib/dates";
 import { eventSchema } from "@/lib/calendar";
-import { resolveAthleteIds } from "@/lib/assign-data";
+import { programFitNote, resolveAthleteIds } from "@/lib/assign-data";
 
 export type AgendaState = { error?: string; ok?: string } | undefined;
 
@@ -46,11 +46,14 @@ export async function assignOnDate(date: string, input: AssignOnDate): Promise<A
   const { error } =
     input.kind === "workout"
       ? await supabase.rpc("assign_workout", { p_workout: input.id, p_athletes: athletes, p_start: date, p_weekdays: [isoDow(date)], p_weeks: 1 })
-      : await supabase.rpc("assign_program", { p_program: input.id, p_athletes: athletes, p_start: date });
+      : await supabase.rpc("assign_program", { p_program: input.id, p_athletes: athletes, p_start: date, p_adapt: true });
   if (error) return { error: input.kind === "workout" ? "No pudimos asignar la sesión. Probá de nuevo." : "No pudimos asignar la planificación. Probá de nuevo." };
   refresh();
   const who = athletes.length === 1 ? "1 alumno" : `${athletes.length} alumnos`;
-  return { ok: input.kind === "workout" ? `Listo: sesión asignada a ${who}.` : `Listo: planificación asignada a ${who}, arranca ese día.` };
+  if (input.kind === "workout") return { ok: `Listo: sesión asignada a ${who}.` };
+  const note = await programFitNote(supabase, input.id, athletes);
+  const ok = `Listo: planificación asignada a ${who}, arranca ese día y cae en sus días de entrenamiento.`;
+  return { ok: note ? `${ok} ${note}` : ok };
 }
 
 export async function saveEvent(athleteId: string, eventId: string | null, _: AgendaState, form: FormData): Promise<AgendaState> {

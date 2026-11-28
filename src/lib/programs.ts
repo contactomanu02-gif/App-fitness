@@ -116,3 +116,39 @@ export function prescription(i: { sets?: number | null; reps?: string | null; lo
   if (i.load) parts.push(i.load);
   return parts.join(" · ");
 }
+
+// ---------------------------------------------------------------- días del alumno
+
+/** Mayor cantidad de días distintos con sesiones en una misma semana de la planificación. */
+export function maxDaysPerWeek(ws: { block_id: string | null; week_index: number | null; day_index: number | null }[]): number {
+  const weeks = new Map<string, Set<number>>();
+  for (const w of ws) {
+    if (!w.block_id || w.week_index == null || w.day_index == null) continue;
+    const key = `${w.block_id}:${w.week_index}`;
+    if (!weeks.has(key)) weeks.set(key, new Set());
+    weeks.get(key)!.add(w.day_index);
+  }
+  return Math.max(0, ...[...weeks.values()].map((s) => s.size));
+}
+
+const joinNames = (names: string[]) => (names.length <= 1 ? names.join("") : `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}`);
+
+/**
+ * Aviso para el entrenador después de asignar una planificación acomodada a los días de cada alumno:
+ * quién no tiene días cargados (queda con los días de la plantilla) y quién tiene menos días que sesiones por semana.
+ */
+export function fitNotes(athletes: { name: string; days: number }[], perWeek: number): string | null {
+  if (perWeek <= 0) return null;
+  const none = athletes.filter((a) => a.days === 0).map((a) => a.name);
+  const few = athletes.filter((a) => a.days > 0 && a.days < perWeek);
+  const parts: string[] = [];
+  if (none.length)
+    parts.push(
+      `${joinNames(none)} no ${none.length === 1 ? "tiene" : "tienen"} cargados sus días de entrenamiento, así que ${none.length === 1 ? "le quedaron" : "les quedaron"} los días de la plantilla. Podés cargarlos en su ficha y volver a asignar.`,
+    );
+  if (few.length)
+    parts.push(
+      `${joinNames(few.map((a) => `${a.name} (${a.days} ${a.days === 1 ? "día" : "días"})`))} ${few.length === 1 ? "entrena" : "entrenan"} menos días que las ${perWeek} sesiones por semana: las que no entraban quedaron en el día libre más cercano.`,
+    );
+  return parts.length ? parts.join(" ") : null;
+}
