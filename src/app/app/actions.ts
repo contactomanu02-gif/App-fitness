@@ -48,6 +48,7 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { emailConfigured, painEmail, sendEmail } from "@/lib/email";
 import { finishSchema } from "@/lib/tracking";
+import { parseSessionLoads } from "@/lib/intensity";
 import { siteUrl } from "@/lib/utils";
 
 export async function startSession(scheduledId: string) {
@@ -75,6 +76,16 @@ export async function finishSession(scheduledId: string, _: FinishState, form: F
   const parsed = finishSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const f = parsed.data;
+  // Kilos que anotó en cada ejercicio: con eso se recalculan sus kilos sugeridos.
+  if (f.status !== "skipped" && [...form.keys()].some((k) => k.startsWith("kg_"))) {
+    const { data: sw } = await supabase.from("scheduled_workouts").select("workouts(intensity_pct, workout_items(id, reps))").eq("id", scheduledId).maybeSingle();
+    const loads = parseSessionLoads(Object.fromEntries(form), sw?.workouts?.workout_items ?? [], sw?.workouts?.intensity_pct ?? null);
+    if ("error" in loads) return { error: loads.error };
+    if (loads.items.length) {
+      const { error: e } = await supabase.rpc("save_session_loads", { p_scheduled: scheduledId, p_items: loads.items as never });
+      if (e) return { error: "No pudimos guardar los kilos. Probá de nuevo." };
+    }
+  }
   const { error } = await supabase.rpc("finish_session", {
     p_scheduled: scheduledId,
     p_status: f.status,

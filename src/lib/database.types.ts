@@ -711,14 +711,14 @@ isOneToOne: true
                   ]
                 },"set_logs": {
                   Row: {
-                    "athlete_id": string,"done": boolean,"exercise_id": string,"id": string,"load_kg": number | null,"logged_at": string,"org_id": string,"reps": number | null,"scheduled_id": string,"set_number": number,"workout_item_id": string | null
+                    "athlete_id": string,"done": boolean,"est_max_kg": number | null,"exercise_id": string,"feel": string | null,"id": string,"load_kg": number | null,"logged_at": string,"org_id": string,"reps": number | null,"scheduled_id": string,"set_number": number,"workout_item_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "athlete_id": string,"done"?: boolean,"exercise_id": string,"id"?: string,"load_kg"?: number | null,"logged_at"?: string,"org_id": string,"reps"?: number | null,"scheduled_id": string,"set_number": number,"workout_item_id"?: string | null
+                    "athlete_id": string,"done"?: boolean,"est_max_kg"?: number | null,"feel"?: string | null,"exercise_id": string,"id"?: string,"load_kg"?: number | null,"logged_at"?: string,"org_id": string,"reps"?: number | null,"scheduled_id": string,"set_number": number,"workout_item_id"?: string | null
                   }
                   Update: {
-                    "athlete_id"?: string,"done"?: boolean,"exercise_id"?: string,"id"?: string,"load_kg"?: number | null,"logged_at"?: string,"org_id"?: string,"reps"?: number | null,"scheduled_id"?: string,"set_number"?: number,"workout_item_id"?: string | null
+                    "athlete_id"?: string,"done"?: boolean,"est_max_kg"?: number | null,"feel"?: string | null,"exercise_id"?: string,"id"?: string,"load_kg"?: number | null,"logged_at"?: string,"org_id"?: string,"reps"?: number | null,"scheduled_id"?: string,"set_number"?: number,"workout_item_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -1062,6 +1062,9 @@ isOneToOne: false
                            },
 "save_my_lifts":
 { Args: { "p_athlete": string,"p_items": Json,"p_month": string }; Returns: undefined
+                           },
+"save_session_loads":
+{ Args: { "p_items": Json,"p_scheduled": string }; Returns: undefined
                            },
 "save_push_subscription":
 { Args: { "p_auth": string,"p_endpoint": string,"p_p256dh": string,"p_ua": string }; Returns: undefined

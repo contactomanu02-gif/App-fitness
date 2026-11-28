@@ -1,12 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { admin, anon, newCoach } from "../tests/db/helpers";
-import { argentinaHour, isoDow, todayISO } from "../src/lib/dates";
-import { fakePhones } from "./fixtures/phone";
+import { addDays, isoDow, mondayOf, todayISO } from "../src/lib/dates";
 
 const PASSWORD = "clave-segura-123";
-const phones = fakePhones(4556);
-test.beforeAll(() => phones.start());
-test.afterAll(() => phones.stop());
+const SHOTS = process.env.SHOTS_DIR;
 
 async function login(page: Page, email: string) {
   await page.goto("/ingresar");
@@ -16,85 +13,83 @@ async function login(page: Page, email: string) {
   await page.waitForURL(/\/(panel|app)/);
 }
 
-async function athleteWithAccount(coach: Awaited<ReturnType<typeof newCoach>>, first: string) {
-  const email = `rp-${Math.random().toString(36).slice(2, 8)}@test.local`;
-  const { data: ath } = await coach.client.from("athletes").insert({ org_id: coach.orgId, first_name: first, last_name: "Prueba", email }).select("id").single();
+test("kilos sugeridos automáticos: anota lo que usó y la próxima sesión se ajusta sola", async ({ page, browser, isMobile }) => {
+  test.setTimeout(150_000);
+  const today = todayISO();
+  const coach = await newCoach("coach-kilos");
+  const email = `kilos-${Math.random().toString(36).slice(2, 8)}@test.local`;
+  const { data: ath } = await coach.client.from("athletes").insert({ org_id: coach.orgId, first_name: "Juan", last_name: "Ríos", email }).select("id").single();
   const { data: token } = await coach.client.rpc("create_invitation", { p_athlete: ath!.id });
-  const { data: created } = await admin.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });
-  const c = anon();
-  await c.auth.signInWithPassword({ email, password: PASSWORD });
-  await c.rpc("accept_invitation", { p_token: token });
-  return { id: ath!.id as string, userId: created.user!.id };
-}
+  await admin.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });
+  const st = anon();
+  await st.auth.signInWithPassword({ email, password: PASSWORD });
+  await st.rpc("accept_invitation", { p_token: token });
 
-async function sessionToday(coach: Awaited<ReturnType<typeof newCoach>>, athleteIds: string[], name: string) {
-  const today = todayISO();
-  const { data: ex } = await coach.client.from("exercises").select("id").is("org_id", null).limit(1);
-  const { data: w } = await coach.client.from("workouts").insert({ org_id: coach.orgId, name }).select("id").single();
-  await coach.client.rpc("save_workout", { p_workout: w!.id, p_data: { name, items: [{ exercise_id: ex![0].id, sets: "3", reps: "8" }] } });
-  await coach.client.rpc("assign_workout", { p_workout: w!.id, p_athletes: athleteIds, p_start: today, p_weekdays: [isoDow(today)], p_weeks: 1 });
-}
-
-test("recordatorio de la tarde: solo al alumno que todavía no hizo la sesión de hoy, a la hora que elige el entrenador", async ({ page, request, isMobile }) => {
-  test.skip(isMobile, "Se prueba una vez (escritorio)");
-  test.setTimeout(120_000);
-  const today = todayISO();
-
-  const coach = await newCoach("coach-recordatorio");
-  const sofia = await athleteWithAccount(coach, "Sofía");
-  const juan = await athleteWithAccount(coach, "Juan");
-  await sessionToday(coach, [sofia.id, juan.id], "Tren inferior");
-  // Juan ya la hizo; Sofía no
-  await admin.from("scheduled_workouts").update({ status: "done", completed_at: new Date().toISOString() }).eq("athlete_id", juan.id).eq("date", today);
-  const sofiaPhone = await phones.subscribe(sofia.userId, "sofia");
-  const juanPhone = await phones.subscribe(juan.userId, "juan");
-
-  // Otro entrenador con el recordatorio a otra hora: a sus alumnos no les llega ahora
-  const other = await newCoach("coach-otra-hora");
-  const lu = await athleteWithAccount(other, "Lucía");
-  await sessionToday(other, [lu.id], "Movilidad");
-  const luPhone = await phones.subscribe(lu.userId, "lucia");
-  await admin.from("organizations").update({ pending_reminder_hour: (argentinaHour() + 3) % 24 }).eq("id", other.orgId);
-
-  // --- El entrenador elige la hora en "Mi cuenta" (por defecto 19 h) ---
-  await login(page, coach.email);
-  await page.goto("/cuenta");
-  await expect(page.getByText("Recordatorio a tus alumnos")).toBeVisible();
-  const hour = page.getByLabel("Hora del recordatorio");
-  await expect(hour).toHaveValue("19");
-  await hour.selectOption("20");
-  await page.getByRole("button", { name: "Guardar" }).nth(1).click();
-  await expect(page.getByText("Listo: el recordatorio sale a las 20 h.")).toBeVisible();
-  const { data: org } = await admin.from("organizations").select("pending_reminder_hour").eq("id", coach.orgId).single();
-  expect(org!.pending_reminder_hour).toBe(20);
-
-  // --- Llega la hora (la ponemos en la hora actual para probar) ---
-  await admin.from("organizations").update({ pending_reminder_hour: argentinaHour(), pending_reminder_sent_on: null }).eq("id", coach.orgId);
-  expect((await request.post("/api/avisos/pendientes")).status()).toBe(403);
-  const { data: secret } = await admin.from("app_secrets").select("value").eq("key", "daily_token").single();
-  const auth = { headers: { Authorization: `Bearer ${secret!.value}` } };
-  const res = await request.post("/api/avisos/pendientes", auth);
-  expect(res.status()).toBe(200);
-  await expect.poll(() => sofiaPhone.received.length).toBe(1);
-  expect(sofiaPhone.received[0]).toMatchObject({
-    title: "Sofía, ¿llegás a entrenar hoy?",
-    body: "Todavía te queda Tren inferior. Cuando termines, marcala en la app.",
-    tag: "sesion-pendiente",
+  const names = ["Plancha", "Sentadilla con barra", "Prensa"];
+  const { data: exs } = await admin.from("exercises").select("id, name").is("org_id", null).in("name", names);
+  const idOf = (n: string) => exs!.find((e) => e.name === n)!.id;
+  const { data: w } = await coach.client.from("workouts").insert({ org_id: coach.orgId, name: "Fuerza piernas" }).select("id").single();
+  await coach.client.rpc("save_workout", {
+    p_workout: w!.id,
+    p_data: {
+      name: "Fuerza piernas",
+      items: [
+        { exercise_id: idOf("Plancha"), group_label: "A", sets: "3", reps: "30 seg" },
+        { exercise_id: idOf("Sentadilla con barra"), group_label: "B", sets: "4", reps: "5" },
+        { exercise_id: idOf("Prensa"), group_label: "B", sets: "4", reps: "5" },
+      ],
+    },
   });
-  expect(sofiaPhone.received[0].url).toMatch(/^\/app\/sesion\//);
-  expect(juanPhone.received).toHaveLength(0);
-  expect(luPhone.received).toHaveLength(0);
+  // Hoy y dentro de una semana, al 80 %
+  const { error } = await coach.client.rpc("assign_workout", { p_workout: w!.id, p_athletes: [ath!.id], p_start: mondayOf(today), p_weekdays: [isoDow(today)], p_weeks: 2 });
+  expect(error).toBeNull();
+  const { data: sch } = await admin.from("scheduled_workouts").select("id, date, workout_id").eq("athlete_id", ath!.id).order("date");
+  expect(sch!.map((s) => s.date)).toEqual([today, addDays(today, 7)]);
+  await admin.from("workouts").update({ intensity_pct: 80 }).in("id", sch!.map((s) => s.workout_id));
 
-  // Si la base llama dos veces en el día, no se repite
-  const again = await (await request.post("/api/avisos/pendientes", auth)).json();
-  expect(again.orgs).toBe(0);
-  expect(sofiaPhone.received).toHaveLength(1);
+  const ctx = await browser.newContext(isMobile ? { viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true } : {});
+  const ap = await ctx.newPage();
+  await login(ap, email);
+  await ap.goto(`/app/sesion/${sch![0].id}`);
+  const card = (n: string) => ap.getByTestId("ejercicio").filter({ hasText: n });
+  // Sin datos todavía: la prensa no tiene kilos
+  await expect(card("Prensa").getByTestId("peso-sugerido")).toContainText("Elegí un peso");
 
-  // --- El entrenador lo apaga ---
-  await page.reload();
-  await hour.selectOption("");
-  await page.getByRole("button", { name: "Guardar" }).nth(1).click();
-  await expect(page.getByText("Recordatorio apagado.")).toBeVisible();
-  const { data: off } = await admin.from("organizations").select("pending_reminder_hour").eq("id", coach.orgId).single();
-  expect(off!.pending_reminder_hour).toBeNull();
+  // Al cerrar, anota con cuántos kilos lo hizo y cómo le quedó
+  const cerrar = ap.locator("#cerrar");
+  await cerrar.getByText("Sí, lo hice completo").click();
+  await cerrar.getByText("7", { exact: true }).first().click();
+  const kilos = cerrar.getByTestId("kilos-usados");
+  await expect(kilos.locator("li")).toHaveCount(2); // sin la plancha
+  await kilos.getByLabel("Kilos en Prensa").fill("100");
+  await kilos.getByLabel("Kilos en Sentadilla con barra").fill("80");
+  await kilos.locator("li").filter({ hasText: "Sentadilla con barra" }).getByText("Liviano").click();
+  if (SHOTS && isMobile) await kilos.screenshot({ path: `${SHOTS}/1-anotar-kilos.png` });
+  await cerrar.getByRole("button", { name: "Guardar" }).click();
+  await ap.waitForURL(/\/app\?listo=done/);
+
+  const { data: logs } = await admin.from("set_logs").select("load_kg, feel, est_max_kg, exercises(name)").eq("scheduled_id", sch![0].id);
+  const byName = Object.fromEntries((logs ?? []).map((l) => [(l.exercises as unknown as { name: string }).name, l]));
+  // 100 kg × 5 al 80 % «justo» (le sobraron 3) ⇒ máximo 125 kg
+  expect(byName["Prensa"]).toMatchObject({ load_kg: 100, feel: "justo", est_max_kg: 125 });
+  expect(byName["Sentadilla con barra"].feel).toBe("liviano");
+  expect(Number(byName["Sentadilla con barra"].est_max_kg)).toBeGreaterThan(100);
+
+  // La sesión siguiente ya trae los kilos calculados con eso
+  await ap.goto(`/app/sesion/${sch![1].id}`);
+  await expect(card("Prensa").getByTestId("peso-sugerido")).toContainText("95 a 100 kg para arrancar");
+  await expect(card("Prensa").getByTestId("peso-sugerido")).toContainText("Calculado con tus 100 kg del");
+  // Le quedó liviana: la sentadilla sube
+  await expect(card("Sentadilla con barra").getByTestId("peso-sugerido")).toContainText("82,5 a 87,5 kg");
+  if (SHOTS && isMobile) await card("Prensa").screenshot({ path: `${SHOTS}/2-kilos-ajustados.png` });
+  await ctx.close();
+
+  // El entrenador ve el máximo estimado de cada ejercicio
+  await login(page, coach.email);
+  await page.goto(`/panel/alumnos/${ath!.id}/seguimiento`);
+  const maxs = page.getByTestId("maximos-estimados");
+  await expect(maxs.locator("li").filter({ hasText: "Prensa" })).toContainText("125 kg");
+  await expect(maxs.locator("li").filter({ hasText: "Prensa" })).toContainText("Usó 100 kg");
+  await expect(maxs.locator("li").filter({ hasText: "Sentadilla con barra" })).toContainText("le quedó liviano");
+  if (SHOTS && !isMobile) await maxs.screenshot({ path: `${SHOTS}/3-panel-maximos.png` });
 });
