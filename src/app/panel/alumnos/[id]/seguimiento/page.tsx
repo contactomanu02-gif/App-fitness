@@ -163,7 +163,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       </Card>
 
       <Card className="mt-4" data-testid="maximos-estimados">
-        <CardHeader title="Máximos estimados" subtitle="Calculados con los kilos que anota al terminar cada sesión. Con esto la app le sugiere los kilos de cada %." />
+        <CardHeader title="Máximos estimados" subtitle="Calculadora de RM con los kilos y repeticiones que anota al terminar una sesión (se le pide una vez por mes por ejercicio). Con esto la app le sugiere los kilos de cada %." />
         {maxList.length ? (
           <ul className="divide-y divide-border border-t border-border">
             {maxList.map((m) => (

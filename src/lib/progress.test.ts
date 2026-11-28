@@ -49,7 +49,7 @@ describe("básicos", () => {
       { month: "2026-11-01", lift: "press_banca", weight_kg: 60, reps: 8 },
     ];
     const t = liftTrends(rows);
-    expect(t[0]).toMatchObject({ lift: "sentadilla", change: 5.9, changePct: 6 });
+    expect(t[0]).toMatchObject({ lift: "sentadilla", change: 5.8, changePct: 6 });
     expect(t[1].change).toBeNull();
     expect(improvedThisMonth(rows, "2026-11-01")).toBe(true);
     expect(improvedThisMonth(rows, "2026-10-01")).toBeNull();

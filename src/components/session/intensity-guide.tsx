@@ -83,7 +83,7 @@ export function IntensityCard({ pct, maxes, hasOwn = false }: { pct: number; max
             <Lightbulb size={16} className="mt-0.5 shrink-0 text-accent" />
             <span>
               {pct >= 78 ? "Antes de la primera serie hacé 1 o 2 series de aproximación con menos peso y pocas repeticiones. " : ""}
-              Los kilos sugeridos salen de los pesos que cargás cada mes en <Link href="/app/progreso#pesos" className="text-accent underline">Progreso</Link> y de los kilos que anotás al terminar cada sesión: se actualizan solos
+              Los kilos sugeridos salen de los pesos que cargás cada mes en <Link href="/app/progreso#pesos" className="text-accent underline">Progreso</Link> y de los kilos que anotás al terminar una sesión (te los pedimos una vez por mes): se actualizan solos
               {squat ? ` (por ejemplo, tu máximo estimado en sentadilla es ${fmtKg(squat)} kg: al ${pct} % son unos ${fmtKg(Math.round((squat * pct) / 250) * 2.5)} kg)` : ""}. Son un punto de partida: lo que manda es cómo te sale cada serie.
             </span>
           </p>

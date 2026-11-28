@@ -10,11 +10,11 @@ import { VideoEmbed } from "@/components/exercises/video-embed";
 import { labelOf } from "@/lib/athletes";
 import { SCHEDULE_STATUS } from "@/lib/calendar";
 import { displayLabels, prescription, tracksLoad } from "@/lib/programs";
-import { combinedMaxes, isFeel, loadTip, ownMaxes, perHandName, refOf, repsNumber } from "@/lib/intensity";
+import { RM_REFRESH_DAYS, combinedMaxes, isFeel, loadTip, ownMaxes, perHandName, refOf, repsNumber } from "@/lib/intensity";
 import { IntensityCard, LoadHint } from "@/components/session/intensity-guide";
 import { splitBlocks, toneOf } from "@/lib/blocks";
 import { BlockPause, BlockSection } from "@/components/session/block-parts";
-import { longDate, todayISO } from "@/lib/dates";
+import { addDays, longDate, todayISO } from "@/lib/dates";
 import { fmtKg } from "@/lib/progress";
 import { loadAthleteSession } from "@/lib/session-data";
 import { FormNotice } from "@/components/ui/form";
@@ -67,8 +67,14 @@ export default async function Page({
   const today = todayISO();
   const open = s.status === "planned";
   // Ejercicios con peso donde puede anotar los kilos al cerrar (se necesitan repeticiones para calcular).
+  // Como con los básicos: pregunta una vez y vuelve a preguntar recién al mes (o si ya lo anotó en esta sesión, para corregir).
+  const askSince = addDays(today, -RM_REFRESH_DAYS);
   const loads = weighted
     .filter((it) => it.exercises && repsNumber(it.reps))
+    .filter((it) => {
+      const mine = own[it.exercises!.id];
+      return !mine || mine.date < askSince || s.set_logs.some((l) => l.workout_item_id === it.id && l.load_kg !== null);
+    })
     .map((it) => {
       const tip = tipFor(it);
       const prev = s.set_logs.find((l) => l.workout_item_id === it.id && l.load_kg !== null);
@@ -79,6 +85,8 @@ export default async function Page({
         suggested: tip?.kg ? (tip.kg.from === tip.kg.to ? fmtKg(tip.kg.to) : `${fmtKg(tip.kg.from)} a ${fmtKg(tip.kg.to)}`) : null,
         perHand: refOf(name)?.perHand ?? perHandName(name),
         kg: prev ? Number(prev.load_kg) : null,
+        reps: prev?.reps ?? repsNumber(it.reps)!,
+        pct: w.intensity_pct,
         feel: prev && isFeel(prev.feel) ? prev.feel : null,
       };
     });

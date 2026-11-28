@@ -53,10 +53,10 @@ describe("intensidad", () => {
   });
 
   it("máximo con los kilos de la sesión: justo no cambia, liviano sube, pesado baja", () => {
-    // Al 80 % con 5 repeticiones le sobran 3 → 8 posibles → 80 %: 60 kg ⇒ 75 kg de máximo
-    expect(maxFromSession({ kg: 60, reps: 5, pct: 80, feel: "justo" })).toBe(75);
-    expect(maxFromSession({ kg: 60, reps: 5, pct: 80, feel: "liviano" })!).toBeGreaterThan(75);
-    expect(maxFromSession({ kg: 60, reps: 5, pct: 80, feel: "pesado" })!).toBeLessThan(75);
+    // Al 80 % con 5 repeticiones le sobran 3 → calculadora de RM con 60 kg × 8 ⇒ 76,6 kg
+    expect(maxFromSession({ kg: 60, reps: 5, pct: 80, feel: "justo" })).toBe(76.6);
+    expect(maxFromSession({ kg: 60, reps: 5, pct: 80, feel: "liviano" })!).toBeGreaterThan(76.6);
+    expect(maxFromSession({ kg: 60, reps: 5, pct: 80, feel: "pesado" })!).toBeLessThan(76.6);
     expect(maxFromSession({ kg: 60, reps: null, pct: 80, feel: "justo" })).toBeNull();
     // Si usa lo sugerido y le queda justo, la sugerencia queda igual
     const tip = loadTip({ pct: 75, reps: "8", name: "Prensa", maxes: {}, own: { max: 120, kg: 90, date: "2026-11-20" } });
@@ -96,6 +96,9 @@ describe("intensidad", () => {
     expect("items" in r && r.items.map((x) => [x.item, x.kg, x.feel])).toEqual([["i1", 62.5, "liviano"], ["i2", null, null], ["i3", 10, "justo"]]);
     expect("items" in r && r.items[2].max).toBeNull();
     expect("items" in r && r.items[0].max).toBeGreaterThan(62.5);
+    // Las repeticiones que anotó cuentan (si no, las de la sesión)
+    const r2 = parseSessionLoads({ kg_i1: "60", reps_i1: "6", feel_i1: "pesado" }, items, 75);
+    expect("items" in r2 && r2.items[0]).toMatchObject({ reps: 6, max: 72.2 });
     expect(parseSessionLoads({ kg_i1: "abc" }, items, 75)).toEqual({ error: "Los kilos van de 0,5 a 500" });
   });
 });
