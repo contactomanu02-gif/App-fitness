@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { addExerciseMedia, removeExerciseMedia } from "@/app/panel/ejercicios/actions";
 import { FormError } from "@/components/ui/form";
 
-/** Achica la foto en el navegador (máx. 1600 px, WebP) antes de subirla. */
+/** Achica la foto en el navegador (máx. 1600 px, JPEG: Safari no sabe generar WebP) antes de subirla. */
 async function compress(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
@@ -15,7 +15,7 @@ async function compress(file: File): Promise<Blob> {
   canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
   return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("compress"))), "image/webp", 0.82),
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("compress"))), "image/jpeg", 0.82),
   );
 }
 
@@ -45,8 +45,8 @@ export function MediaUploader({
           continue;
         }
         const blob = await compress(file);
-        const path = `${orgId}/${exerciseId}/${crypto.randomUUID()}.webp`;
-        const { error: upErr } = await supabase.storage.from("exercise-media").upload(path, blob, { contentType: "image/webp" });
+        const path = `${orgId}/${exerciseId}/${crypto.randomUUID()}.jpg`;
+        const { error: upErr } = await supabase.storage.from("exercise-media").upload(path, blob, { contentType: "image/jpeg" });
         if (upErr) {
           setError("No pudimos subir la foto. Probá de nuevo.");
           continue;

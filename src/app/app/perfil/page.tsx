@@ -4,7 +4,9 @@ import { InjuryForm } from "@/components/athletes/injury-form";
 import { InjuryList } from "@/components/athletes/injury-list";
 import { PushToggle } from "@/components/push-toggle";
 import { DAYS, LEVELS, labelOf } from "@/lib/athletes";
-import { ageFrom, fullName } from "@/lib/utils";
+import { ageFrom, fullName, initials } from "@/lib/utils";
+import { PhotoPicker } from "@/components/athletes/photo-picker";
+import { photoUrls } from "@/lib/athlete-photo";
 import { reportInjury } from "../actions";
 
 export const metadata = { title: "Perfil" };
@@ -20,7 +22,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 export default async function Page() {
   const { athlete: a, supabase } = await requireAthlete();
-  const [{ data: injuries }, { data: sportProfile }, { data: fields }] = await Promise.all([
+  const [{ data: injuries }, { data: sportProfile }, { data: fields }, photos] = await Promise.all([
     supabase.from("injuries").select("*").eq("athlete_id", a.id).order("created_at", { ascending: false }),
     a.sport_id
       ? supabase.from("athlete_sport_profiles").select("values").eq("athlete_id", a.id).eq("sport_id", a.sport_id).maybeSingle()
@@ -28,6 +30,7 @@ export default async function Page() {
     a.sport_id
       ? supabase.from("sport_fields").select("key, label, unit, field_type, sort_order").eq("sport_id", a.sport_id).order("sort_order")
       : Promise.resolve({ data: [] as { key: string; label: string; unit: string | null; field_type: string; sort_order: number }[] }),
+    photoUrls(supabase, [a.photo_path]),
   ]);
   const values = (sportProfile?.values ?? {}) as Record<string, unknown>;
   const age = ageFrom(a.birth_date);
@@ -38,6 +41,14 @@ export default async function Page() {
         <p className="kicker text-muted-fg">Tu perfil</p>
         <h1 className="mt-1 text-[40px]">{fullName(a)}</h1>
       </div>
+      <Card className="px-5 py-4">
+        <PhotoPicker
+          orgId={a.org_id}
+          athleteId={a.id}
+          initials={initials(a.first_name, a.last_name)}
+          url={a.photo_path ? (photos.get(a.photo_path) ?? null) : null}
+        />
+      </Card>
       <Card>
         <CardHeader title="Mi ficha" subtitle="La carga tu entrenador. Si algo está mal, avisale." />
         <dl className="divide-y divide-border px-5 pb-3">

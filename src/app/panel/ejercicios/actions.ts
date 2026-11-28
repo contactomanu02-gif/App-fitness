@@ -75,9 +75,12 @@ export async function setExerciseArchived(exerciseId: string, archived: boolean)
 
 export async function deleteExercise(exerciseId: string) {
   const { supabase, org } = await requireStaff();
+  // Si el ejercicio está en alguna sesión o tiene cargas registradas, la base no deja borrarlo
+  // (se perdería historia): en ese caso se archiva y las fotos se conservan.
   const { data: media } = await supabase.from("exercise_media").select("storage_path").eq("exercise_id", exerciseId);
-  if (media?.length) await supabase.storage.from("exercise-media").remove(media.map((m) => m.storage_path));
-  await supabase.from("exercises").delete().eq("id", exerciseId).eq("org_id", org.id);
+  const { error } = await supabase.from("exercises").delete().eq("id", exerciseId).eq("org_id", org.id);
+  if (error) await supabase.from("exercises").update({ archived: true }).eq("id", exerciseId).eq("org_id", org.id);
+  else if (media?.length) await supabase.storage.from("exercise-media").remove(media.map((m) => m.storage_path));
   revalidatePath("/panel/ejercicios", "layout");
   redirect("/panel/ejercicios");
 }

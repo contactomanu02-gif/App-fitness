@@ -9,6 +9,7 @@ import { LEVELS, labelOf } from "@/lib/athletes";
 import { siteUrl } from "@/lib/utils";
 import { JoinLinkCard } from "@/components/athletes/join-link-card";
 import { regenerateJoinCode } from "./actions";
+import { photoUrls } from "@/lib/athlete-photo";
 
 export const metadata = { title: "Alumnos" };
 
@@ -19,13 +20,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
 
   let query = supabase
     .from("athletes")
-    .select("id, first_name, last_name, email, birth_date, level, user_id, self_registered, created_at, sports!athletes_sport_id_fkey(name), injuries(status), invitations(accepted_at, revoked_at, expires_at)")
+    .select("id, first_name, last_name, email, photo_path, birth_date, level, user_id, self_registered, created_at, sports!athletes_sport_id_fkey(name), injuries(status), invitations(accepted_at, revoked_at, expires_at)")
     .eq("org_id", org.id)
     .eq("status", status)
     .order("first_name");
   const term = q.trim().replace(/[%,()]/g, "");
   if (term) query = query.or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%`);
   const [{ data: athletes }, { data: orgRow }] = await Promise.all([query, supabase.from("organizations").select("join_code").eq("id", org.id).single()]);
+  const photos = await photoUrls(supabase, athletes?.map((a) => a.photo_path) ?? []);
 
   return (
     <div>
@@ -85,7 +87,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
               return (
                 <li key={a.id}>
                   <Link href={`/panel/alumnos/${a.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-muted/60">
-                    <Avatar text={initials(a.first_name, a.last_name)} />
+                    <Avatar text={initials(a.first_name, a.last_name)} src={a.photo_path ? photos.get(a.photo_path) : null} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{fullName(a)}</p>
                       <p className="truncate text-sm text-muted-fg">
