@@ -1,13 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Award, CalendarCheck, Clock, Flame, Lock, TrendingDown, TrendingUp, XCircle } from "lucide-react";
+import { Award, CalendarCheck, Clock, Dumbbell, Flame, Lock, TrendingDown, TrendingUp, Trophy, XCircle } from "lucide-react";
 import type { Database } from "@/lib/database.types";
 import { Card, CardHeader } from "@/components/ui/card";
 import { BarChart, LineChart } from "@/components/charts/simple-charts";
-import { addDays, shiftMonth, todayISO } from "@/lib/dates";
+import { addDays, mondayOf, shiftMonth, todayISO } from "@/lib/dates";
 import { weeklyCompliance } from "@/lib/adherence";
 import type { ChallengeStep } from "@/lib/challenges";
 import {
-  achievements,
   challengeShare,
   improvedThisMonth,
   levelOf,
@@ -16,9 +15,9 @@ import {
   fmtKg,
   monthStart,
   sessionStats,
-  streakHistory,
-  weekStreak,
 } from "@/lib/progress";
+import { achievements, fireSummary, type Badge } from "@/lib/streak";
+import { Flame as FireFlame } from "./fire";
 import { cn } from "@/lib/utils";
 import { ScoreRing } from "./score-ring";
 
@@ -28,17 +27,17 @@ const monthName = (m: string, opts: Intl.DateTimeFormatOptions = { month: "long"
   new Intl.DateTimeFormat("es-AR", { ...opts, timeZone: "UTC" }).format(new Date(`${m.slice(0, 7)}-15T12:00:00Z`));
 
 /** Carga y calcula todo el progreso de un alumno. Lo usan la app del alumno y el panel del entrenador. */
-export async function loadProgress(supabase: DB, athlete: { id: string; org_id: string }) {
+export async function loadProgress(supabase: DB, athlete: { id: string; org_id: string }, opts: { justClosed?: string } = {}) {
   const today = todayISO();
   const thisMonth = monthStart(today);
   const firstMonth = `${shiftMonth(thisMonth.slice(0, 7), -5)}-01`;
   const [{ data: sessions }, { data: lifts }, { data: challenges }] = await Promise.all([
     supabase
       .from("scheduled_workouts")
-      .select("date, status, duration_min, session_rpe")
+      .select("id, date, status, duration_min, session_rpe")
       .eq("athlete_id", athlete.id)
-      .gte("date", addDays(today, -365))
-      .lte("date", today)
+      .gte("date", addDays(mondayOf(today), -7 * 53))
+      .lte("date", addDays(mondayOf(today), 6)) // la semana entera, para saber cuántas faltan
       .order("date"),
     supabase.from("lift_records").select("month, lift, weight_kg, reps").eq("athlete_id", athlete.id).order("month"),
     supabase.from("challenges").select("id, month, points, steps").eq("org_id", athlete.org_id).gte("month", firstMonth).lte("month", thisMonth),
@@ -64,20 +63,29 @@ export async function loadProgress(supabase: DB, athlete: { id: string; org_id: 
   const current = scoreFor(thisMonth);
   const history = Array.from({ length: 6 }, (_, i) => `${shiftMonth(thisMonth.slice(0, 7), i - 5)}-01`).map((m) => ({ month: m, ...scoreFor(m) }));
   const all = sessionStats(rows, today);
-  const streak = weekStreak(rows, today);
-  const hist = streakHistory(rows, today);
   const trends = liftTrends(liftRows);
   const finishedAll = challengeShare(chs, doneBy).finished;
-  const badges = achievements({
-    doneTotal: all.done + all.partial,
-    streak,
-    bestStreak: Math.max(hist.best, streak),
-    perfectWeeks: hist.perfect,
-    challengesFinished: finishedAll,
-    anyLiftImproved: trends.some((t) => (t.change ?? 0) > 0),
-    liftsThisMonth: current.loaded,
-  });
-  return { today, thisMonth, current, history, all, streak, bestStreak: Math.max(hist.best, streak), weeks: weeklyCompliance(rows, today, 8), trends, badges, liftRows };
+  const badgesFor = (list: typeof rows, f: ReturnType<typeof fireSummary>) => {
+    const s = sessionStats(list, today);
+    return achievements({
+      doneTotal: s.done + s.partial,
+      bestStreak: f.best,
+      perfectWeeks: f.perfectWeeks,
+      challengesFinished: finishedAll,
+      anyLiftImproved: trends.some((t) => (t.change ?? 0) > 0),
+      liftsThisMonth: current.loaded,
+    });
+  };
+  const fire = fireSummary(rows, today);
+  const badges = badgesFor(rows, fire);
+  // Cómo estaba todo antes de registrar la última sesión: para festejar la semana cumplida y los logros nuevos.
+  let before: { fire: typeof fire; badges: Badge[] } | null = null;
+  if (opts.justClosed && rows.some((r) => r.id === opts.justClosed)) {
+    const prev = rows.map((r) => (r.id === opts.justClosed ? { ...r, status: "planned" } : r));
+    const f = fireSummary(prev, today);
+    before = { fire: f, badges: badgesFor(prev, f) };
+  }
+  return { today, thisMonth, current, history, all, streak: fire.streak, bestStreak: fire.best, fire, before, weeks: weeklyCompliance(rows, today, 8), trends, badges, liftRows };
 }
 
 export type Progress = Awaited<ReturnType<typeof loadProgress>>;
@@ -132,9 +140,9 @@ export function ProgressView({ p, liftsSlot, coach }: { p: Progress; liftsSlot?:
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <Tile icon={CalendarCheck} label="Cumplimiento" value={m.pct === null ? "—" : `${m.pct}%`} sub={m.total ? `${m.done + m.partial} de ${m.total} sesiones del mes` : "Sin sesiones este mes"} tone="bg-success-soft text-success" />
-        <Tile icon={Flame} label="Racha" value={p.streak} sub={`${p.streak === 1 ? "semana" : "semanas"} sin fallar · mejor: ${p.bestStreak}`} tone="bg-accent-soft text-accent" />
-        <Tile icon={XCircle} label="Faltas del mes" value={faltas} sub={faltas ? `${m.skipped} no ${coach ? "pudo" : "pudiste"} · ${m.missed} sin registrar` : "¡Ninguna!"} tone="bg-warn-soft text-warn" />
         <Tile icon={Clock} label="Minutos" value={m.minutes} sub={m.avgRpe ? `entrenados · esfuerzo medio ${m.avgRpe}/10` : "entrenados este mes"} tone="bg-info-soft text-info" />
+        <Tile icon={XCircle} label="Faltas del mes" value={faltas} sub={faltas ? `${m.skipped} no ${coach ? "pudo" : "pudiste"} · ${m.missed} sin registrar` : "¡Ninguna!"} tone="bg-warn-soft text-warn" />
+        <Tile icon={Flame} label="Semanas perfectas" value={p.fire.perfectWeeks} sub="con todas las sesiones hechas" tone="bg-accent-soft text-accent" />
       </div>
 
       <Card>
@@ -214,17 +222,9 @@ export function ProgressView({ p, liftsSlot, coach }: { p: Progress; liftsSlot?:
 
       <Card>
         <CardHeader title="Logros" subtitle={`${got} de ${p.badges.length} desbloqueados`} />
-        <ul className="grid grid-cols-2 gap-2 px-5 pb-5 sm:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-2 px-5 pb-5 min-[380px]:grid-cols-2 sm:grid-cols-3">
           {p.badges.map((b) => (
-            <li key={b.key} className={cn("flex items-center gap-2.5 rounded-xl border p-2.5", b.got ? "border-warn/40 bg-warn-soft" : "border-border opacity-70")}>
-              <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-full", b.got ? "bg-warn text-white dark:text-black" : "bg-muted text-muted-fg")}>
-                {b.got ? <Award size={18} aria-hidden /> : <Lock size={15} aria-hidden />}
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm leading-tight font-semibold">{b.label}</span>
-                <span className="block text-[11px] leading-tight text-muted-fg">{b.hint}</span>
-              </span>
-            </li>
+            <BadgeItem key={b.key} b={b} />
           ))}
         </ul>
       </Card>
@@ -235,5 +235,32 @@ export function ProgressView({ p, liftsSlot, coach }: { p: Progress; liftsSlot?:
         </p>
       </Card>
     </div>
+  );
+}
+
+const BADGE_ICON = { medal: Award, trophy: Trophy, strength: Dumbbell } as const;
+
+export function BadgeItem({ b }: { b: Badge }) {
+  const Icon = b.kind === "fire" ? null : BADGE_ICON[b.kind];
+  return (
+    <li className={cn("flex items-center gap-2.5 rounded-md border p-2.5", b.got ? (b.kind === "fire" ? "border-transparent bg-[#0b0b0b] text-white" : "border-accent/30 bg-accent-soft") : "border-border")}>
+      <span className={cn("grid h-10 w-10 shrink-0 -skew-x-[8deg] place-items-center rounded-[4px]", b.got ? (b.kind === "fire" ? "bg-white/10" : "bg-accent text-accent-fg") : "bg-muted text-muted-fg")}>
+        <span className="skew-x-[8deg]">
+          {b.kind === "fire" ? <FireFlame size={22} heat={b.got ? Math.min(5, 1 + Math.floor(Math.log2(Math.max(1, b.goal)))) : 0} still={!b.got} /> : b.got && Icon ? <Icon size={18} aria-hidden /> : <Lock size={15} aria-hidden />}
+        </span>
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm leading-tight font-semibold">{b.label}</span>
+        <span className={cn("block text-[11px] leading-tight", b.got && b.kind === "fire" ? "text-white/60" : "text-muted-fg")}>{b.hint}</span>
+        {!b.got && b.goal > 1 ? (
+          <span className="mt-1 flex items-center gap-1.5">
+            <span className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
+              <span className={cn("block h-full rounded-full", b.kind === "fire" ? "fire-bar" : "bg-accent")} style={{ width: `${(b.cur / b.goal) * 100}%` }} />
+            </span>
+            <span className="text-[10px] text-muted-fg tabular-nums">{b.cur}/{b.goal}</span>
+          </span>
+        ) : null}
+      </span>
+    </li>
   );
 }
