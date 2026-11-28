@@ -37,7 +37,7 @@ describe("kilos anotados al cerrar la sesión", () => {
     await coach.client.rpc("assign_workout", { p_workout: w1, p_athletes: [one.id, two.id], p_start: "2026-12-07", p_weekdays: [1], p_weeks: 1 });
     const { data: s } = await st.from("scheduled_workouts").select("id, workout_id").single();
     sched = s!.id;
-    item = (await st.from("workout_items").select("id").eq("workout_id", w1).single()).data!.id;
+    item = (await st.from("workout_items").select("id").eq("workout_id", s!.workout_id).single()).data!.id;
     foreignItem = (await admin.from("workout_items").select("id").eq("workout_id", w2).single()).data!.id;
   });
 
