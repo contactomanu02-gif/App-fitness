@@ -2,10 +2,12 @@ import { describe, it, expect } from "vitest";
 import { displayLabels, groupLabels, prescription, workoutSchema } from "./programs";
 
 describe("superseries", () => {
-  it("asigna letras por grupo y numera solo los grupos de más de uno", () => {
+  it("asigna letras por grupo y en pantalla muestra bloques numerados", () => {
     const g = groupLabels([false, true, false, false, true, true]);
     expect(g).toEqual(["A", "A", "B", "C", "C", "C"]);
-    expect(displayLabels(g)).toEqual(["A1", "A2", "B", "C1", "C2", "C3"]);
+    expect(displayLabels(g)).toEqual(["1.1", "1.2", "2", "3.1", "3.2", "3.3"]);
+    // Las letras guardadas no importan: en pantalla siempre se numera 1, 2, 3 en orden
+    expect(displayLabels(["C", "C", null, "A", "B", "B"])).toEqual(["1.1", "1.2", "2", "3", "4.1", "4.2"]);
   });
   it("el primero nunca se une a nada y pasado la Z queda sin letra", () => {
     expect(groupLabels([true, true])).toEqual(["A", "A"]);
@@ -43,12 +45,12 @@ describe("ayudas para el alumno", () => {
   it("explica los grupos solo en el primer ejercicio de un grupo de 2 o más", async () => {
     const { groupIntro } = await import("./programs");
     const labels = ["A", "A", "A", "B", null, "C", "C"];
-    expect(groupIntro(labels, 0)).toContain("Bloque A");
+    expect(groupIntro(labels, 0)).toContain("Bloque 1");
     expect(groupIntro(labels, 0)).toContain("3 ejercicios");
     expect(groupIntro(labels, 1)).toBeNull();
     expect(groupIntro(labels, 3)).toBeNull();
     expect(groupIntro(labels, 4)).toBeNull();
-    expect(groupIntro(labels, 5)).toContain("Bloque C");
+    expect(groupIntro(labels, 5)).toContain("Bloque 4");
   });
   it("pide kilos solo en fuerza o si hay carga indicada", async () => {
     const { tracksLoad } = await import("./programs");
