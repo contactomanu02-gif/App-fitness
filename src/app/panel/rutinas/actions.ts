@@ -5,6 +5,7 @@ import { requireStaff } from "@/lib/session";
 import { blockSchema, programSchema, workoutSchema, type WorkoutInput } from "@/lib/programs";
 import { isValidISO } from "@/lib/dates";
 import { cleanTags } from "@/lib/routine-tags";
+import { resolveAthleteIds } from "@/lib/assign-data";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -227,13 +228,7 @@ export async function deleteWorkout(id: string) {
 // ---------------------------------------------------------------- asignación
 
 async function resolveAthletes(supabase: Awaited<ReturnType<typeof requireStaff>>["supabase"], orgId: string, form: FormData) {
-  const ids = new Set(form.getAll("athlete").map(String));
-  const groups = form.getAll("group").map(String);
-  if (groups.length) {
-    const { data } = await supabase.from("group_members").select("athlete_id, athletes!inner(status, org_id)").in("group_id", groups);
-    for (const m of data ?? []) if (m.athletes.status === "active" && m.athletes.org_id === orgId) ids.add(m.athlete_id);
-  }
-  return [...ids];
+  return resolveAthleteIds(supabase, orgId, form.getAll("athlete").map(String), form.getAll("group").map(String));
 }
 
 export async function assignProgram(programId: string, _: FormState, form: FormData): Promise<FormState> {

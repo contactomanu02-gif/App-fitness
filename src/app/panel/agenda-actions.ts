@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { requireStaff } from "@/lib/session";
 import { isValidISO, isoDow } from "@/lib/dates";
 import { eventSchema } from "@/lib/calendar";
+import { resolveAthleteIds } from "@/lib/assign-data";
 
 export type AgendaState = { error?: string; ok?: string } | undefined;
 
@@ -30,20 +31,26 @@ export async function unschedule(workoutId: string, athleteId: string) {
   refresh();
 }
 
-/** Agenda una sesión guardada (plantilla) en un día puntual del alumno. */
-export async function addSessionOnDate(athleteId: string, date: string, templateId: string) {
-  const { supabase } = await requireStaff();
+export type AssignOnDate = { kind: "workout" | "program"; id: string; athletes: string[]; groups: string[] };
+
+/**
+ * Asigna una sesión suelta (solo ese día) o una planificación (arranca ese día)
+ * a los alumnos y grupos elegidos. Lo usa «tocar un día» en los calendarios del entrenador.
+ */
+export async function assignOnDate(date: string, input: AssignOnDate): Promise<AgendaState> {
+  const { supabase, org } = await requireStaff();
   if (!isValidISO(date)) return { error: "Fecha inválida." };
-  const { error } = await supabase.rpc("assign_workout", {
-    p_workout: templateId,
-    p_athletes: [athleteId],
-    p_start: date,
-    p_weekdays: [isoDow(date)],
-    p_weeks: 1,
-  });
-  if (error) return { error: "No pudimos agendar la sesión." };
+  if (!input?.id || (input.kind !== "workout" && input.kind !== "program")) return { error: "Elegí una rutina." };
+  const athletes = await resolveAthleteIds(supabase, org.id, input.athletes ?? [], input.groups ?? []);
+  if (!athletes.length) return { error: "Elegí al menos un alumno o un grupo." };
+  const { error } =
+    input.kind === "workout"
+      ? await supabase.rpc("assign_workout", { p_workout: input.id, p_athletes: athletes, p_start: date, p_weekdays: [isoDow(date)], p_weeks: 1 })
+      : await supabase.rpc("assign_program", { p_program: input.id, p_athletes: athletes, p_start: date });
+  if (error) return { error: input.kind === "workout" ? "No pudimos asignar la sesión. Probá de nuevo." : "No pudimos asignar la planificación. Probá de nuevo." };
   refresh();
-  return {};
+  const who = athletes.length === 1 ? "1 alumno" : `${athletes.length} alumnos`;
+  return { ok: input.kind === "workout" ? `Listo: sesión asignada a ${who}.` : `Listo: planificación asignada a ${who}, arranca ese día.` };
 }
 
 export async function saveEvent(athleteId: string, eventId: string | null, _: AgendaState, form: FormData): Promise<AgendaState> {

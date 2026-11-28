@@ -1,11 +1,11 @@
 "use client";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { DndContext, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { ChevronLeft, ChevronRight, Dumbbell, Flag, Plane, Moon, CalendarPlus, Plus, Trash2, Pencil, Check } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge, Card } from "@/components/ui/card";
-import { Field, FormError, Input, Select, Textarea } from "@/components/ui/form";
+import { Field, FormError, FormNotice, Input, Select, Textarea } from "@/components/ui/form";
 import { SubmitButton } from "@/components/submit-button";
 import { useFormAction } from "@/components/use-form-action";
 import { EVENT_KINDS, SCHEDULE_STATUS } from "@/lib/calendar";
@@ -13,8 +13,19 @@ import { labelOf } from "@/lib/athletes";
 import { longDate, monthGrid, monthLabel, monthOf, shiftMonth } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { StarInput, Stars } from "@/components/stars";
+import { AssignDaySheet, type AssignConfig } from "./assign-day-sheet";
 
-export type CalSession = { id: string; workoutId: string; date: string; name: string; status: string; program: string | null; items: number };
+export type CalSession = {
+  id: string;
+  workoutId: string;
+  date: string;
+  name: string;
+  status: string;
+  program: string | null;
+  items: number;
+  /** Calendario general del entrenador: de quién es. */
+  athlete?: string;
+};
 export type CalEvent = {
   id: string;
   kind: string;
@@ -25,6 +36,7 @@ export type CalEvent = {
   notes: string | null;
   importance: number | null;
   editable: boolean;
+  athlete?: string;
 };
 type State = { error?: string; ok?: string } | undefined;
 
@@ -57,8 +69,7 @@ export function MonthCalendar({
   sessionKey = "id",
   canMove,
   onMove,
-  templates,
-  onAddSession,
+  assign,
   onSaveEvent,
   onDeleteEvent,
 }: {
@@ -73,8 +84,8 @@ export function MonthCalendar({
   sessionKey?: "id" | "workoutId";
   canMove?: boolean;
   onMove?: (id: string, date: string) => Promise<{ error?: string }>;
-  templates?: { id: string; name: string }[];
-  onAddSession?: (date: string, templateId: string) => Promise<{ error?: string }>;
+  /** Tocar un día abre «Asignar» (sesión o planificación) para ese día. */
+  assign?: AssignConfig;
   onSaveEvent?: (eventId: string | null, s: State, f: FormData) => Promise<State>;
   onDeleteEvent?: (id: string) => Promise<void>;
 }) {
@@ -83,6 +94,9 @@ export function MonthCalendar({
   const [selected, setSelected] = useState<string>(monthOf(today) === month ? today : `${month}-01`);
   const [error, setError] = useState<string | null>(null);
   const [eventForm, setEventForm] = useState<{ event: CalEvent | null; date: string } | null>(null);
+  const [sheet, setSheet] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const closeSheet = useCallback(() => setSheet(null), []);
   const [, start] = useTransition();
   const weeks = useMemo(() => monthGrid(month), [month]);
 
@@ -124,7 +138,12 @@ export function MonthCalendar({
               inMonth={monthOf(d) === month}
               today={d === today}
               selected={d === selected}
-              onSelect={() => setSelected(d)}
+              onSelect={() => {
+                setSelected(d);
+                setNotice(null);
+                // Día vacío: directo a asignar. Si ya tiene algo, primero se ve qué hay (con el botón «Asignar»).
+                if (assign && !sessionsOn(d).length && !eventsOn(d).length) setSheet(d);
+              }}
               sessions={sessionsOn(d)}
               events={eventsOn(d)}
               draggable={Boolean(canMove)}
@@ -151,6 +170,11 @@ export function MonthCalendar({
         </Link>
       </div>
       {error ? <FormError message={error} /> : null}
+      {notice ? (
+        <div className="mb-3">
+          <FormNotice message={notice} />
+        </div>
+      ) : null}
       {canMove ? (
         <DndContext sensors={sensors} onDragEnd={onDragEnd}>
           {grid}
@@ -172,18 +196,27 @@ export function MonthCalendar({
           </li>
         ))}
       </ul>
-      {canMove ? <p className="mt-2 hidden text-xs text-muted-fg md:block">Arrastrá una sesión a otro día para moverla.</p> : null}
+      {assign || canMove ? (
+        <p className="mt-2 text-xs text-muted-fg">
+          {assign ? "Tocá un día para asignarle una rutina." : ""}
+          {canMove ? <span className="hidden md:inline"> Arrastrá una sesión a otro día para moverla.</span> : null}
+        </p>
+      ) : null}
 
       <section className="mt-5" aria-label="Día elegido">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="section-title first-letter:uppercase">{longDate(selected)}</h3>
           <div className="flex max-w-full min-w-0 gap-2">
+            {assign ? (
+              <Button variant="brand" size="sm" onClick={() => setSheet(selected)}>
+                <Plus size={15} /> Asignar rutina
+              </Button>
+            ) : null}
             {onSaveEvent ? (
               <Button variant="outline" size="sm" onClick={() => setEventForm({ event: null, date: selected })}>
                 <Plus size={15} /> Evento
               </Button>
             ) : null}
-            {onAddSession && templates?.length ? <AddSessionPicker date={selected} templates={templates} onAdd={onAddSession} /> : null}
           </div>
         </div>
         <div className="mt-3 space-y-2">
@@ -195,7 +228,7 @@ export function MonthCalendar({
                   <Icon size={17} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium">{e.title}</p>
+                  <p className="font-medium">{e.athlete ? `${e.athlete} · ` : ""}{e.title}</p>
                   {e.kind === "torneo" ? <Stars value={e.importance} size={15} className="mt-0.5" /> : null}
                   <p className="text-xs text-muted-fg">
                     {labelOf(EVENT_KINDS, e.kind)}
@@ -221,6 +254,7 @@ export function MonthCalendar({
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{s.name}</p>
                   <p className="text-xs text-muted-fg">
+                    {s.athlete ? `${s.athlete} · ` : ""}
                     {s.items} {s.items === 1 ? "ejercicio" : "ejercicios"}
                     {s.program ? ` · ${s.program}` : ""}
                   </p>
@@ -232,6 +266,27 @@ export function MonthCalendar({
           {!dayEvents.length && !daySessions.length ? <p className="text-sm text-muted-fg">Nada agendado este día.</p> : null}
         </div>
       </section>
+
+      {sheet && assign ? (
+        <AssignDaySheet
+          date={sheet}
+          config={assign}
+          onClose={closeSheet}
+          onDone={(m) => {
+            setSelected(sheet);
+            setSheet(null);
+            setNotice(m);
+          }}
+          onNewEvent={
+            onSaveEvent
+              ? () => {
+                  setEventForm({ event: null, date: sheet });
+                  setSheet(null);
+                }
+              : undefined
+          }
+        />
+      ) : null}
 
       {eventForm && onSaveEvent ? (
         <EventDialog
@@ -301,7 +356,7 @@ function DayCell({
         {events.map((e) => (
           <span key={e.id} className={cn("h-2 w-2 rounded-full", EVENT_DOT[e.kind] ?? "bg-slate-500")} />
         ))}
-        {sessions.map((s) => (
+        {sessions.slice(0, 6).map((s) => (
           <span key={s.id} className={cn("h-2 w-2 rounded-full", s.status === "done" ? "bg-emerald-500" : "bg-accent")} />
         ))}
       </div>
@@ -309,12 +364,14 @@ function DayCell({
         {events.map((e) => (
           <div key={e.id} className={cn("pointer-events-none truncate rounded-md px-1.5 py-0.5 text-[11px] font-medium", EVENT_TONE[e.kind])}>
             {e.kind === "torneo" ? <b className="mr-1" aria-label={`Importancia ${e.importance ?? 3} de 5`}>{e.importance ?? 3}★</b> : null}
+            {e.athlete ? `${e.athlete} · ` : ""}
             {e.title}
           </div>
         ))}
-        {sessions.map((s) => (
+        {sessions.slice(0, sessions.length > 4 ? 3 : 4).map((s) => (
           <SessionChip key={s.id} s={s} draggable={draggable} href={sessionHref(s)} />
         ))}
+        {sessions.length > 4 ? <p className="pointer-events-none px-1 text-[11px] font-medium text-muted-fg">+{sessions.length - 3} más</p> : null}
       </div>
     </div>
   );
@@ -340,40 +397,11 @@ function SessionChip({ s, draggable, href }: { s: CalSession; draggable: boolean
         isDragging && "relative z-50 shadow-lg",
       )}
       data-testid="chip-sesion"
-      title={s.name}
+      title={s.athlete ? `${s.athlete} · ${s.name}` : s.name}
     >
+      {s.athlete ? <b className="mr-1">{s.athlete.split(" ")[0]}</b> : null}
       {s.name}
     </Link>
-  );
-}
-
-function AddSessionPicker({ date, templates, onAdd }: { date: string; templates: { id: string; name: string }[]; onAdd: (date: string, id: string) => Promise<{ error?: string }> }) {
-  const [pending, start] = useTransition();
-  const [value, setValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  return (
-    <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
-      <Select value={value} onChange={(e) => setValue(e.target.value)} aria-label="Sesión para agendar" className="h-9 w-full min-w-0 text-sm sm:w-52">
-        <option value="">Agendar sesión…</option>
-        {templates.map((t) => (
-          <option key={t.id} value={t.id}>{t.name}</option>
-        ))}
-      </Select>
-      <Button
-        size="sm"
-        disabled={!value || pending}
-        onClick={() =>
-          start(async () => {
-            const r = await onAdd(date, value);
-            setError(r?.error ?? null);
-            if (!r?.error) setValue("");
-          })
-        }
-      >
-        {pending ? "…" : "Agendar"}
-      </Button>
-      {error ? <span className="text-sm text-danger">{error}</span> : null}
-    </div>
   );
 }
 
