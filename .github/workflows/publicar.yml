@@ -126,6 +126,11 @@ jobs:
         if: steps.cf.outputs.ready == 'true'
         run: |
           sleep 5
+          # Calentar la versión nueva de a una página por vez: el primer pedido de cada sección es el que más
+          # cálculo usa, y así no le toca a un alumno (ni se juntan varios a la vez, que es lo que dio el error 1102).
+          for p in / /ingresar /acceso/alumno /acceso/entrenador /unirme /app /panel /app/calendario /app/progreso /panel/alumnos; do
+            curl -s -o /dev/null "$SITE_URL$p" || true; sleep 1
+          done
           for p in / /ingresar /offline.html /sw.js /manifest.webmanifest; do
             code=$(curl -s -o /dev/null -w "%{http_code}" -L "$SITE_URL$p")
             echo "$p → $code"
