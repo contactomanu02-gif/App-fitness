@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Gauge, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fmtKg, liftLabel } from "@/lib/progress";
+import { shortDate } from "@/lib/dates";
 import { ZONES, leftText, zoneOf, type LoadTip, type MyMaxes } from "@/lib/intensity";
 
 // Color de cada zona (clases literales para Tailwind).
@@ -15,10 +16,10 @@ const ZONE_TONE: Record<string, { solid: string; soft: string; text: string }> =
 const RANGE: Record<string, string> = { suave: "hasta 64 %", moderado: "65 a 77 %", pesado: "78 a 87 %", "muy-pesado": "88 % o más" };
 
 /** Tarjeta arriba de la sesión: qué significa el % de hoy y cómo elegir el peso. */
-export function IntensityCard({ pct, maxes }: { pct: number; maxes: MyMaxes }) {
+export function IntensityCard({ pct, maxes, hasOwn = false }: { pct: number; maxes: MyMaxes; hasOwn?: boolean }) {
   const z = zoneOf(pct);
   const t = ZONE_TONE[z.key];
-  const hasMaxes = Object.keys(maxes).length > 0;
+  const hasMaxes = Object.keys(maxes).length > 0 || hasOwn;
   const squat = maxes.sentadilla;
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-card" aria-label="Cómo entrenar hoy" data-testid="guia-intensidad">
@@ -41,7 +42,7 @@ export function IntensityCard({ pct, maxes }: { pct: number; maxes: MyMaxes }) {
         </p>
         {!hasMaxes ? (
           <Link href="/app/progreso#pesos" className="block rounded-xl border border-dashed border-accent/50 px-3 py-2 text-accent">
-            Cargá tus pesos del mes y te calculamos los kilos de cada ejercicio →
+            Cargá tus pesos del mes (o anotá tus kilos al terminar la sesión) y te calculamos los kilos de cada ejercicio →
           </Link>
         ) : null}
       </div>
@@ -82,7 +83,7 @@ export function IntensityCard({ pct, maxes }: { pct: number; maxes: MyMaxes }) {
             <Lightbulb size={16} className="mt-0.5 shrink-0 text-accent" />
             <span>
               {pct >= 78 ? "Antes de la primera serie hacé 1 o 2 series de aproximación con menos peso y pocas repeticiones. " : ""}
-              Los kilos sugeridos salen de los pesos que cargás cada mes en <Link href="/app/progreso#pesos" className="text-accent underline">Progreso</Link>
+              Los kilos sugeridos salen de los pesos que cargás cada mes en <Link href="/app/progreso#pesos" className="text-accent underline">Progreso</Link> y de los kilos que anotás al terminar cada sesión: se actualizan solos
               {squat ? ` (por ejemplo, tu máximo estimado en sentadilla es ${fmtKg(squat)} kg: al ${pct} % son unos ${fmtKg(Math.round((squat * pct) / 250) * 2.5)} kg)` : ""}. Son un punto de partida: lo que manda es cómo te sale cada serie.
             </span>
           </p>
@@ -108,6 +109,7 @@ export function LoadHint({ tip, fixedLoad }: { tip: LoadTip; fixedLoad: boolean 
         ) : (
           <>Elegí un peso con el que, al terminar la serie, {leftText(tip.left)}</>
         )}
+        {tip.last && tip.kg && !fixedLoad ? <span className="block text-xs text-muted-fg">Calculado con tus {fmtKg(tip.last.kg)} kg del {shortDate(tip.last.date).split(" ")[1]}</span> : null}
         {tip.adjusted ? <span className="text-muted-fg"> (un poco menos que el % de hoy, porque son muchas repeticiones)</span> : null}
         {tip.needsLift && !fixedLoad ? (
           <>
