@@ -11,6 +11,11 @@ export function todayISO(now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
 }
 
+/** Hora actual en Argentina (0-23). */
+export function argentinaHour(now = new Date()) {
+  return Number(new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", hourCycle: "h23" }).format(now));
+}
+
 export function addDays(s: string, n: number) {
   const d = toDate(s);
   d.setUTCDate(d.getUTCDate() + n);
