@@ -10,6 +10,8 @@ import { addDays, mondayOf, shortDate, todayISO } from "@/lib/dates";
 import { adherence, lowAdherence } from "@/lib/adherence";
 import { AlertsList } from "@/components/alerts-list";
 import { PushToggle } from "@/components/push-toggle";
+import { Flame, heatOf } from "@/components/progress/fire";
+import { orgStreaks } from "@/lib/streak-data";
 
 export const metadata = { title: "Inicio" };
 
@@ -35,8 +37,8 @@ export default async function Page() {
   const { supabase, org, profile } = await requireStaff();
   const today = todayISO();
   const from14 = addDays(today, -13);
-  const [{ data: athletes }, { data: injuries }, { data: alerts }, { data: recent }, { data: comps }] = await Promise.all([
-    supabase.from("athletes").select("id, user_id, email, invitations(accepted_at, revoked_at, expires_at)").eq("org_id", org.id).eq("status", "active"),
+  const [{ data: athletes }, { data: injuries }, { data: alerts }, { data: recent }, { data: comps }, streaks] = await Promise.all([
+    supabase.from("athletes").select("id, first_name, last_name, user_id, email, invitations(accepted_at, revoked_at, expires_at)").eq("org_id", org.id).eq("status", "active"),
     supabase
       .from("injuries")
       .select("id, body_area, severity, status, started_on, created_by, created_at, athletes!inner(id, first_name, last_name, user_id, status)")
@@ -64,6 +66,7 @@ export default async function Page() {
       .lte("start_date", addDays(today, 90))
       .order("start_date")
       .limit(12),
+    orgStreaks(supabase, org.id, today),
   ]);
   const rows = recent ?? [];
   const week = adherence(rows, mondayOf(today), addDays(mondayOf(today), 6), today);
@@ -208,6 +211,8 @@ export default async function Page() {
             </Card>
           </div>
 
+          <FireBoard list={list} streaks={streaks} />
+
           {notInvited + invited > 0 ? (
             <Card className="mt-4 flex flex-wrap items-center justify-between gap-3 p-4">
               <p className="text-sm">
@@ -250,5 +255,42 @@ export default async function Page() {
         </>
       )}
     </div>
+  );
+}
+
+/** Rachas de fuego de los alumnos: quién viene encendido y a quién le falta poco esta semana. */
+function FireBoard({ list, streaks }: { list: { id: string; first_name: string; last_name: string | null }[]; streaks: Awaited<ReturnType<typeof orgStreaks>> }) {
+  const ranked = list
+    .map((a) => ({ a, f: streaks.get(a.id) }))
+    .filter((x): x is { a: (typeof list)[number]; f: NonNullable<typeof x.f> } => !!x.f && (x.f.streak > 0 || x.f.week.state === "open"))
+    .sort((x, y) => y.f.streak - x.f.streak || y.f.week.done - x.f.week.done);
+  const lit = ranked.filter((x) => x.f.streak > 0).length;
+  return (
+    <Card className="mt-4">
+      <CardHeader title="Rachas de fuego" subtitle={lit ? `${lit} de ${list.length} con la racha encendida (semanas seguidas con todas las sesiones hechas)` : "Semanas seguidas con todas las sesiones hechas"} />
+      {ranked.length ? (
+        <ul className="divide-y divide-border border-t border-border">
+          {ranked.slice(0, 8).map(({ a, f }) => (
+            <li key={a.id}>
+              <Link href={`/panel/alumnos/${a.id}/progreso#racha`} className="flex items-center gap-3 px-5 py-3 hover:bg-muted/60">
+                <Flame size={24} heat={heatOf(f.streak)} still={!f.streak} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">{fullName(a)}</span>
+                  <span className="block truncate text-sm text-muted-fg">
+                    {f.week.state === "lit" ? "Semana cumplida" : f.week.state === "open" ? `Esta semana ${f.week.done} de ${f.week.total}` : f.week.state === "out" ? "Esta semana con falta" : "Sin sesiones esta semana"}
+                  </span>
+                </span>
+                <span className="shrink-0 text-right">
+                  <span className="block font-display text-2xl leading-none font-bold tabular-nums">{f.streak}</span>
+                  <span className="text-[11px] text-muted-fg">{f.streak === 1 ? "semana" : "semanas"}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="px-5 pb-5 text-sm text-muted-fg">Todavía nadie tiene racha. Cada semana con todas las sesiones hechas prende el fuego.</p>
+      )}
+    </Card>
   );
 }

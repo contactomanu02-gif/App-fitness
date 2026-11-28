@@ -10,6 +10,8 @@ import { siteUrl } from "@/lib/utils";
 import { JoinLinkCard } from "@/components/athletes/join-link-card";
 import { regenerateJoinCode } from "./actions";
 import { photoUrls } from "@/lib/athlete-photo";
+import { orgStreaks } from "@/lib/streak-data";
+import { StreakChip } from "@/components/progress/fire";
 
 export const metadata = { title: "Alumnos" };
 
@@ -26,7 +28,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
     .order("first_name");
   const term = q.trim().replace(/[%,()]/g, "");
   if (term) query = query.or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%`);
-  const [{ data: athletes }, { data: orgRow }] = await Promise.all([query, supabase.from("organizations").select("join_code").eq("id", org.id).single()]);
+  const [{ data: athletes }, { data: orgRow }, streaks] = await Promise.all([
+    query,
+    supabase.from("organizations").select("join_code").eq("id", org.id).single(),
+    status === "active" ? orgStreaks(supabase, org.id) : Promise.resolve(new Map()),
+  ]);
   const photos = await photoUrls(supabase, athletes?.map((a) => a.photo_path) ?? []);
 
   return (
@@ -95,6 +101,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ q
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
+                      <StreakChip streak={streaks.get(a.id)?.streak ?? 0} />
                       {a.self_registered && Date.now() - new Date(a.created_at).getTime() < 7 * 864e5 ? <Badge tone="warn">Nuevo</Badge> : null}
                       {activeInjuries ? <Badge tone="danger">{activeInjuries === 1 ? "1 lesión" : `${activeInjuries} lesiones`}</Badge> : null}
                       {a.user_id ? (

@@ -77,7 +77,7 @@ test("progreso: pesos del mes, desafíos y puntaje; el entrenador edita desafío
   await ap.getByRole("link", { name: "Progreso" }).first().click();
   await ap.waitForURL(/\/app\/progreso/);
   await expect(ap.getByRole("heading", { name: "Progreso" })).toBeVisible();
-  await expect(ap.getByText("Racha", { exact: true })).toBeVisible();
+  await expect(ap.getByText("Racha de fuego", { exact: true })).toBeVisible();
   // Mejoró la sentadilla desde hace dos meses
   await expect(ap.getByText(/\+11,6 kg \(\+14%\)/)).toBeVisible();
   await expect(ap.getByText("Más fuerte")).toBeVisible();

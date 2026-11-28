@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAthlete } from "@/lib/session";
 import { ProgressView, ScoreHero, loadProgress } from "@/components/progress/progress-view";
 import { LiftsForm } from "@/components/progress/lifts-form";
+import { StreakHero } from "@/components/progress/fire";
 import { saveMyLifts } from "../actions";
 
 export const metadata = { title: "Progreso" };
@@ -20,6 +21,7 @@ export default async function Page() {
         <p className="kicker text-muted-fg">Tu evolución</p>
         <h1 className="text-4xl">Progreso</h1>
       </div>
+      <StreakHero f={p.fire} />
       <ScoreHero p={p} />
       <ProgressView
         p={p}

@@ -9,6 +9,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Select } from "@/components/ui/form";
 import { ProgressView, ScoreHero, loadProgress } from "@/components/progress/progress-view";
 import { LiftsForm } from "@/components/progress/lifts-form";
+import { StreakHero } from "@/components/progress/fire";
 import { ChallengeCard } from "@/components/progress/challenge-card";
 import { ConfirmAction } from "@/components/confirm-action";
 import { ensureMonthChallenges, monthChallenges } from "@/lib/progress-data";
@@ -39,6 +40,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <h1 className="text-[40px]">Progreso</h1>
         <p className="text-sm text-muted-fg">Lo mismo que ve {a.first_name} en su app, más el historial de pesos para que lo corrijas o completes.</p>
       </div>
+      <StreakHero f={p.fire} who={a.first_name} />
       <ScoreHero p={p} name={a.first_name} />
       <ProgressView
         p={p}
