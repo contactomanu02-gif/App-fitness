@@ -89,6 +89,6 @@ test("el alumno ve cómo entrenar con el % de hoy y los kilos sugeridos", async 
     await page.screenshot({ path: `${SHOTS}/1-como-entrenar-hoy.png` });
     await guia.screenshot({ path: `${SHOTS}/2-como-funciona.png` });
     await card("Sentadilla con barra").scrollIntoViewIfNeeded();
-    await page.locator("section[aria-label^='Bloque B']").screenshot({ path: `${SHOTS}/3-kilos-sugeridos.png` });
+    await page.locator("section[aria-label^='Bloque 2']").screenshot({ path: `${SHOTS}/3-kilos-sugeridos.png` });
   }
 });

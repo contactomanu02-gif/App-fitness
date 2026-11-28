@@ -5,7 +5,7 @@ import { requireStaff } from "@/lib/session";
 import { blockSchema, programSchema, workoutSchema, type WorkoutInput } from "@/lib/programs";
 import { isValidISO } from "@/lib/dates";
 import { cleanTags } from "@/lib/routine-tags";
-import { resolveAthleteIds } from "@/lib/assign-data";
+import { programFitNote, resolveAthleteIds } from "@/lib/assign-data";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -50,9 +50,16 @@ export async function duplicateProgram(id: string) {
   if (copy) done(programPath(copy));
 }
 
+/** Borra la planificación. Si es la copia de un alumno, se van las sesiones que le faltaban;
+ * las que ya entrenó quedan en su historial (lo protege la base). */
 export async function deleteProgram(id: string) {
   const { supabase } = await requireStaff();
+  const { data: p } = await supabase.from("programs").select("athlete_id").eq("id", id).maybeSingle();
   await supabase.from("programs").delete().eq("id", id);
+  if (p?.athlete_id) {
+    revalidatePath("/panel", "layout");
+    redirect(`/panel/alumnos/${p.athlete_id}`);
+  }
   done("/panel/rutinas");
 }
 
@@ -237,11 +244,15 @@ export async function assignProgram(programId: string, _: FormState, form: FormD
   if (!isValidISO(start)) return { error: "Elegí la fecha de inicio." };
   const athletes = await resolveAthletes(supabase, org.id, form);
   if (!athletes.length) return { error: "Elegí al menos un alumno o un grupo." };
-  const { data, error } = await supabase.rpc("assign_program", { p_program: programId, p_athletes: athletes, p_start: start });
+  const adapt = form.get("adapt") === "1";
+  const { data, error } = await supabase.rpc("assign_program", { p_program: programId, p_athletes: athletes, p_start: start, p_adapt: adapt });
   if (error) return { error: "No pudimos asignar la planificación. Probá de nuevo." };
   revalidatePath("/panel", "layout");
-  if (athletes.length === 1) redirect(`/panel/alumnos/${athletes[0]}/calendario?mes=${start.slice(0, 7)}&asignado=1`);
-  return { ok: data === 1 ? "Asignada a 1 alumno." : `Asignada a ${data} alumnos.` };
+  const note = adapt ? await programFitNote(supabase, programId, athletes) : null;
+  if (athletes.length === 1)
+    redirect(`/panel/alumnos/${athletes[0]}/calendario?mes=${start.slice(0, 7)}&asignado=1${note ? `&nota=${encodeURIComponent(note)}` : ""}`);
+  const ok = data === 1 ? "Asignada a 1 alumno." : `Asignada a ${data} alumnos${adapt ? ", cada uno en sus días de entrenamiento" : ""}.`;
+  return { ok: note ? `${ok} ${note}` : ok };
 }
 
 export async function assignWorkout(workoutId: string, _: FormState, form: FormData): Promise<FormState> {

@@ -65,8 +65,8 @@ test("rutinas: sesión suelta, planificación con bloques, superseries, copiar s
 
   // Superserie entre el 2 y el 3, y reordenar
   await page.getByTestId("item-sesion").nth(2).getByRole("button", { name: "Superserie con el anterior" }).click();
-  await expect(page.getByTestId("item-sesion").nth(1).getByText("B1", { exact: true })).toBeVisible();
-  await expect(page.getByTestId("item-sesion").nth(2).getByText("B2", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("item-sesion").nth(1).getByText("2.1", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("item-sesion").nth(2).getByText("2.2", { exact: true })).toBeVisible();
   await page.getByLabel("Series del ejercicio 1").fill("4");
   await page.getByLabel("Reps / tiempo del ejercicio 1").fill("6");
   await page.getByLabel("Carga del ejercicio 1").fill("40 kg");
@@ -87,8 +87,8 @@ test("rutinas: sesión suelta, planificación con bloques, superseries, copiar s
   await expect(page.getByLabel("Intensidad (%)")).toHaveValue("80");
   await expect(page.getByLabel("Duración (min)")).toHaveValue("50");
   // El que se unió "al anterior" sigue unido al que ahora tiene arriba
-  await expect(page.getByTestId("item-sesion").nth(0).getByText("A", { exact: true })).toBeVisible();
-  await expect(page.getByTestId("item-sesion").nth(2).getByText("B2", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("item-sesion").nth(0).getByText("1", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("item-sesion").nth(2).getByText("2.2", { exact: true })).toBeVisible();
 
   // Volver y sumar la sesión suelta el miércoles
   await page.getByRole("link", { name: "Pretemporada" }).click();

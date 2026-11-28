@@ -1,6 +1,6 @@
 /**
  * Bloques de una sesión para el alumno: ejercicios seguidos con la misma letra
- * (A1, A2…) forman un bloque. Cada bloque tiene su color y un nombre según
+ * guardada forman un bloque, que se muestra numerado (Bloque 1, 2, 3…). Cada bloque tiene su color y un nombre según
  * el tipo de ejercicios que tiene.
  */
 export type BlockTone = { bar: string; soft: string; text: string; ring: string; solid: string };
@@ -56,7 +56,7 @@ export function splitBlocks<T extends { group_label: string | null; sets: number
     const mainLater = tops.slice(n + 1).some((t) => t && MAIN.has(t));
     return {
       ...b,
-      letter: b.letter || String(n + 1),
+      letter: String(n + 1),
       title: warm && mainLater && tops[n] !== "Zona media" ? "Entrada en calor" : tops[n] || "Ejercicios",
       rounds: Math.max(1, ...b.items.map(({ item }) => item.sets ?? 1)),
     };

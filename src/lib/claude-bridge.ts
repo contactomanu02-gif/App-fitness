@@ -19,7 +19,11 @@ const int = (min: number, max: number) =>
 
 const itemSchema = z.object({
   ejercicio: z.string().trim().min(1).max(120),
-  grupo: z.preprocess((v) => (typeof v === "string" ? v.trim().toUpperCase().slice(0, 1) || undefined : undefined), z.string().regex(/^[A-Z]$/).optional()),
+  // Número de bloque (1, 2, 3…). Se aceptan también letras por si Claude las usa.
+  grupo: z.preprocess(
+    (v) => (typeof v === "number" ? String(v) : typeof v === "string" ? v.trim().toUpperCase().replace(/^BLOQUE\s*/, "").slice(0, 3) || undefined : undefined),
+    z.string().regex(/^[A-Z0-9]{1,3}$/).optional(),
+  ),
   series: int(1, 50),
   reps: text(30),
   carga: text(40),
@@ -109,7 +113,7 @@ export type LibraryExercise = { id: string; name: string; org_id: string | null 
 type Item = z.infer<typeof itemSchema>;
 
 function toItems(list: Item[], index: Map<string, string>, missing: Set<string>) {
-  // Ejercicios seguidos con la misma letra van unidos (superserie); las letras se renumeran A, B, C…
+  // Ejercicios seguidos con el mismo número de bloque van unidos; en la app se muestran como bloque 1, 2, 3…
   const linked = list.map((it, i) => i > 0 && !!it.grupo && it.grupo === list[i - 1].grupo);
   const labels = groupLabels(linked);
   return list.map((it, i) => {
@@ -201,10 +205,10 @@ const EXAMPLE = `{
       "sesiones": [
         {
           "dia": 1,
-          "nombre": "Fuerza A",
+          "nombre": "Fuerza · día 1",
           "ejercicios": [
-            { "ejercicio": "Sentadilla goblet", "grupo": "A", "series": 3, "reps": "8-10" },
-            { "ejercicio": "Press Pallof", "grupo": "A", "series": 3, "reps": "10 por lado" }
+            { "ejercicio": "Sentadilla goblet", "grupo": 1, "series": 3, "reps": "8-10" },
+            { "ejercicio": "Press Pallof", "grupo": 1, "series": 3, "reps": "10 por lado" }
           ]
         },
         { "semana": 4, "dia": 3, "nombre": "Test de potencia", "ejercicios": [ { "ejercicio": "Salto al cajón", "series": 4, "reps": "3" } ] }
@@ -286,7 +290,7 @@ export function buildExport(input: ExportInput, request?: string) {
   L.push("2. Después, la rutina en UN bloque ```json con este formato exacto, para que la pueda cargar en mi app:");
   L.push("   - \"tipo\": \"sesion\" (una sola sesión, con \"ejercicios\" directamente) o \"planificacion\" (con \"bloques\").");
   L.push("   - En una planificación, cada sesión lleva \"dia\" (1 = lunes … 7 = domingo). Sin \"semana\" se repite en todas las semanas del bloque; con \"semana\": n va solo esa semana (usalo para progresiones).");
-  L.push("   - Ejercicios seguidos con la misma letra en \"grupo\" son una superserie.");
+  L.push("   - \"grupo\" es el número de bloque (1, 2, 3…): los ejercicios seguidos con el mismo número forman un bloque. Nombrá los bloques con números, nunca con letras.");
   L.push("   - La intensidad de la fuerza va en % por semana (\"intensidad_por_semana\" en cada bloque, una por semana) o por sesión (\"intensidad\"). No pongas kilos, descansos ni RPE: los ejercicios son siempre los mismos y lo que cambia es el %.");
   L.push("   - Las sesiones duran 60 minutos salvo que te pida otra cosa (\"duracion_min\").");
   L.push("   - \"reps\" y \"tempo\" son texto libre.");

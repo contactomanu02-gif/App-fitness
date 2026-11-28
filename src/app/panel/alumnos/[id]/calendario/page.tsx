@@ -13,7 +13,7 @@ import { assignOnDate, deleteEvent, moveScheduled, saveEvent, type AgendaState }
 
 export const metadata = { title: "Calendario del alumno" };
 
-export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ mes?: string; asignado?: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ mes?: string; asignado?: string; nota?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const { supabase, org } = await requireStaff();
@@ -55,7 +55,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       <p className="mb-4 text-sm text-muted-fg">Sesiones, torneos, viajes y descansos de {athlete.first_name}.</p>
       {sp.asignado ? (
         <div className="mb-4">
-          <FormNotice message="Listo, quedó asignado y agendado." />
+          <FormNotice message={`Listo, quedó asignado y agendado.${sp.nota ? ` ${sp.nota.slice(0, 400)}` : ""}`} />
         </div>
       ) : null}
       <MonthCalendar

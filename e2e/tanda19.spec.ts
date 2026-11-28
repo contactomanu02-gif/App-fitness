@@ -82,7 +82,7 @@ test("calendario del entrenador: tocar un día y asignar sesión o planificació
   await expect(sheet.getByRole("button", { name: "Asignar este día" })).toBeDisabled();
   await sheet.getByLabel("Lucía Paz").check();
   await sheet.getByRole("button", { name: "Asignar este día" }).click();
-  await expect(page.getByText("Listo: planificación asignada a 1 alumno, arranca ese día.")).toBeVisible();
+  await expect(page.getByText(/Listo: planificación asignada a 1 alumno, arranca ese día y cae en sus días de entrenamiento\. Lucía no tiene cargados sus días/)).toBeVisible();
   // La sesión del jueves de la planificación cae el jueves siguiente al inicio
   await expect(page.locator(`[data-date="${THU}"] > button`)).toHaveAttribute("aria-label", /1 sesión/);
 });

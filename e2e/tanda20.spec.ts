@@ -62,6 +62,8 @@ test("kilos sugeridos automáticos: anota lo que usó y la próxima sesión se a
   const kilos = cerrar.getByTestId("kilos-usados");
   await expect(kilos.locator("li")).toHaveCount(2); // sin la plancha
   await kilos.getByLabel("Kilos en Prensa").fill("100");
+  await expect(kilos.getByLabel("Repeticiones en Prensa")).toHaveValue("5");
+  await expect(kilos.locator("li").filter({ hasText: "Prensa" }).getByTestId("rm-estimado")).toContainText("127,7 kg");
   await kilos.getByLabel("Kilos en Sentadilla con barra").fill("80");
   await kilos.locator("li").filter({ hasText: "Sentadilla con barra" }).getByText("Liviano").click();
   if (SHOTS && isMobile) await kilos.screenshot({ path: `${SHOTS}/1-anotar-kilos.png` });
@@ -70,25 +72,29 @@ test("kilos sugeridos automáticos: anota lo que usó y la próxima sesión se a
 
   const { data: logs } = await admin.from("set_logs").select("load_kg, feel, est_max_kg, exercises(name)").eq("scheduled_id", sch![0].id);
   const byName = Object.fromEntries((logs ?? []).map((l) => [(l.exercises as unknown as { name: string }).name, l]));
-  // 100 kg × 5 al 80 % «justo» (le sobraron 3) ⇒ máximo 125 kg
-  expect(byName["Prensa"]).toMatchObject({ load_kg: 100, feel: "justo", est_max_kg: 125 });
+  // 100 kg × 5 al 80 % «justo» (le sobraron 3) ⇒ calculadora de RM con 8 repeticiones: 127,7 kg
+  expect(byName["Prensa"]).toMatchObject({ load_kg: 100, feel: "justo", est_max_kg: 127.7 });
   expect(byName["Sentadilla con barra"].feel).toBe("liviano");
   expect(Number(byName["Sentadilla con barra"].est_max_kg)).toBeGreaterThan(100);
 
   // La sesión siguiente ya trae los kilos calculados con eso
   await ap.goto(`/app/sesion/${sch![1].id}`);
-  await expect(card("Prensa").getByTestId("peso-sugerido")).toContainText("95 a 100 kg para arrancar");
+  await expect(card("Prensa").getByTestId("peso-sugerido")).toContainText("95 a 102,5 kg para arrancar");
   await expect(card("Prensa").getByTestId("peso-sugerido")).toContainText("Calculado con tus 100 kg del");
   // Le quedó liviana: la sentadilla sube
   await expect(card("Sentadilla con barra").getByTestId("peso-sugerido")).toContainText("82,5 a 87,5 kg");
   if (SHOTS && isMobile) await card("Prensa").screenshot({ path: `${SHOTS}/2-kilos-ajustados.png` });
+  // Ya los anotó hace poco: no se los vuelve a pedir hasta dentro de un mes
+  await ap.locator("#cerrar").getByText("Sí, lo hice completo").click();
+  await expect(ap.locator("#cerrar").getByText("¿Qué tan difícil fue?")).toBeVisible();
+  await expect(ap.getByTestId("kilos-usados")).toHaveCount(0);
   await ctx.close();
 
   // El entrenador ve el máximo estimado de cada ejercicio
   await login(page, coach.email);
   await page.goto(`/panel/alumnos/${ath!.id}/seguimiento`);
   const maxs = page.getByTestId("maximos-estimados");
-  await expect(maxs.locator("li").filter({ hasText: "Prensa" })).toContainText("125 kg");
+  await expect(maxs.locator("li").filter({ hasText: "Prensa" })).toContainText("127,7 kg");
   await expect(maxs.locator("li").filter({ hasText: "Prensa" })).toContainText("Usó 100 kg");
   await expect(maxs.locator("li").filter({ hasText: "Sentadilla con barra" })).toContainText("le quedó liviano");
   if (SHOTS && !isMobile) await maxs.screenshot({ path: `${SHOTS}/3-panel-maximos.png` });

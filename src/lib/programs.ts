@@ -67,7 +67,7 @@ export type WorkoutItemInput = z.input<typeof workoutItemSchema>;
 
 /**
  * Asigna letras de grupo (A, B, C…) a partir de qué ejercicios van unidos al anterior.
- * Cada ejercicio suelto también recibe su letra: así se lee como A1, A2, B1… igual que en papel.
+ * Es el código que se guarda en la base; en pantalla se muestra como bloque 1, 2, 3 (ver displayLabels).
  */
 export function groupLabels(linked: boolean[]): (string | null)[] {
   let g = -1;
@@ -77,21 +77,31 @@ export function groupLabels(linked: boolean[]): (string | null)[] {
   });
 }
 
-/** Etiqueta visible de cada ejercicio: A1, A2, B1… (solo numera si el grupo tiene más de uno). */
+/**
+ * Número de bloque de cada ejercicio (1, 2, 3…), en orden de aparición. Ejercicios seguidos con la
+ * misma letra guardada forman un bloque; uno suelto (o sin letra) es un bloque propio.
+ * Las letras quedan solo como código interno: el entrenador y el alumno siempre ven números.
+ */
+export function blockNumbers(labels: (string | null)[]): number[] {
+  let n = 0;
+  return labels.map((l, i) => (i === 0 || !l || l !== labels[i - 1] ? ++n : n));
+}
+
+/** Etiqueta visible de cada ejercicio: 1.1, 1.2, 2, 3.1… (solo numera adentro si el bloque tiene más de uno). */
 export function displayLabels(labels: (string | null)[]): string[] {
-  const size = new Map<string, number>();
-  labels.forEach((l) => l && size.set(l, (size.get(l) ?? 0) + 1));
-  const seen = new Map<string, number>();
-  return labels.map((l) => {
-    if (!l) return "";
-    const n = (seen.get(l) ?? 0) + 1;
-    seen.set(l, n);
-    return (size.get(l) ?? 0) > 1 ? `${l}${n}` : l;
+  const nums = blockNumbers(labels);
+  const size = new Map<number, number>();
+  nums.forEach((b) => size.set(b, (size.get(b) ?? 0) + 1));
+  const seen = new Map<number, number>();
+  return nums.map((b) => {
+    const k = (seen.get(b) ?? 0) + 1;
+    seen.set(b, k);
+    return (size.get(b) ?? 0) > 1 ? `${b}.${k}` : String(b);
   });
 }
 
 /**
- * Texto que explica al alumno cómo hacer un grupo de ejercicios (A1, A2, A3…).
+ * Texto que explica al alumno cómo hacer un grupo de ejercicios (1.1, 1.2, 1.3…).
  * Devuelve el texto solo en el primer ejercicio de un grupo de 2 o más; si no, null.
  */
 export function groupIntro(labels: (string | null)[], i: number): string | null {
@@ -99,7 +109,7 @@ export function groupIntro(labels: (string | null)[], i: number): string | null 
   if (!l || (i > 0 && labels[i - 1] === l)) return null;
   const n = labels.filter((x) => x === l).length;
   if (n < 2) return null;
-  return `Bloque ${l} · Hacé una serie de cada uno (${n} ejercicios) y volvé a empezar hasta completar las series.`;
+  return `Bloque ${blockNumbers(labels)[i]} · Hacé una serie de cada uno (${n} ejercicios) y volvé a empezar hasta completar las series.`;
 }
 
 /** Ejercicios en los que tiene sentido anotar el peso. */
@@ -115,4 +125,40 @@ export function prescription(i: { sets?: number | null; reps?: string | null; lo
   else if (i.reps) parts.push(i.reps);
   if (i.load) parts.push(i.load);
   return parts.join(" · ");
+}
+
+// ---------------------------------------------------------------- días del alumno
+
+/** Mayor cantidad de días distintos con sesiones en una misma semana de la planificación. */
+export function maxDaysPerWeek(ws: { block_id: string | null; week_index: number | null; day_index: number | null }[]): number {
+  const weeks = new Map<string, Set<number>>();
+  for (const w of ws) {
+    if (!w.block_id || w.week_index == null || w.day_index == null) continue;
+    const key = `${w.block_id}:${w.week_index}`;
+    if (!weeks.has(key)) weeks.set(key, new Set());
+    weeks.get(key)!.add(w.day_index);
+  }
+  return Math.max(0, ...[...weeks.values()].map((s) => s.size));
+}
+
+const joinNames = (names: string[]) => (names.length <= 1 ? names.join("") : `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}`);
+
+/**
+ * Aviso para el entrenador después de asignar una planificación acomodada a los días de cada alumno:
+ * quién no tiene días cargados (queda con los días de la plantilla) y quién tiene menos días que sesiones por semana.
+ */
+export function fitNotes(athletes: { name: string; days: number }[], perWeek: number): string | null {
+  if (perWeek <= 0) return null;
+  const none = athletes.filter((a) => a.days === 0).map((a) => a.name);
+  const few = athletes.filter((a) => a.days > 0 && a.days < perWeek);
+  const parts: string[] = [];
+  if (none.length)
+    parts.push(
+      `${joinNames(none)} no ${none.length === 1 ? "tiene" : "tienen"} cargados sus días de entrenamiento, así que ${none.length === 1 ? "le quedaron" : "les quedaron"} los días de la plantilla. Podés cargarlos en su ficha y volver a asignar.`,
+    );
+  if (few.length)
+    parts.push(
+      `${joinNames(few.map((a) => `${a.name} (${a.days} ${a.days === 1 ? "día" : "días"})`))} ${few.length === 1 ? "entrena" : "entrenan"} menos días que las ${perWeek} sesiones por semana: las que no entraban quedaron en el día libre más cercano.`,
+    );
+  return parts.length ? parts.join(" ") : null;
 }

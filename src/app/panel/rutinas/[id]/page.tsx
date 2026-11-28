@@ -75,7 +75,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
               <CalendarDays size={15} /> Ver calendario
             </Link>
           )}
-          <ProgramActions programId={program.id} />
+          <ProgramActions programId={program.id} athleteName={program.athlete_id && program.athletes ? program.athletes.first_name : null} />
         </div>
       </div>
 
