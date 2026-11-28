@@ -10,6 +10,9 @@ import { levelOf, monthStart } from "@/lib/progress";
 import { ensureMonthChallenges, monthChallenges } from "@/lib/progress-data";
 import { loadProgress } from "@/components/progress/progress-view";
 import { ScoreRing } from "@/components/progress/score-ring";
+import { Flame as FireFlame, StreakStrip, heatOf } from "@/components/progress/fire";
+import { newlyUnlocked } from "@/lib/streak";
+import type { Progress } from "@/components/progress/progress-view";
 import { LiftsForm } from "@/components/progress/lifts-form";
 import { ChallengeCard } from "@/components/progress/challenge-card";
 import { Stars } from "@/components/stars";
@@ -32,7 +35,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
   const thisMonth = monthStart(today);
   await ensureMonthChallenges(athlete.org_id, thisMonth);
   const [progress, challenges, { data: injuries }, { data: upcoming }, { data: weekEvents }, { data: nextComp }, { data: kits }] = await Promise.all([
-    loadProgress(supabase, athlete),
+    loadProgress(supabase, athlete, { justClosed: listo && closedId ? closedId : undefined }),
     monthChallenges(supabase, athlete.org_id, athlete.id, thisMonth),
     supabase.from("injuries").select("id, body_area, status").eq("athlete_id", athlete.id).neq("status", "resuelta"),
     supabase
@@ -88,7 +91,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
         <p className="kicker text-muted-fg">{greeting}</p>
         <h1 className="text-4xl">{athlete.first_name}</h1>
       </div>
-      {listo && closedId ? <SessionDone status={listo} scheduledId={closedId} name={athlete.first_name} /> : null}
+      {listo && closedId ? <SessionDone status={listo} scheduledId={closedId} name={athlete.first_name} progress={progress} /> : null}
       {bienvenida ? (
         <Card className="border-accent/40 bg-accent-soft p-4 text-sm">
           <p className="font-semibold">¡Listo, ya estás registrado!</p>
@@ -178,6 +181,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
           </div>
         ) : null}
         <Link href="/app/calendario" className="mt-3 inline-block text-sm text-accent">Ver calendario completo</Link>
+        <StreakStrip f={progress.fire} />
       </Card>
 
       <Link href="/app/progreso" className="block">
@@ -187,8 +191,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ b
             <p className="text-xs font-semibold tracking-[0.14em] text-[#ff3b3f] uppercase">Tu progreso</p>
             <p className="font-display text-2xl font-bold uppercase leading-tight">{level.label}</p>
             <p className="text-sm text-white/70">
-              {progress.streak ? `Racha de ${progress.streak} ${progress.streak === 1 ? "semana" : "semanas"} · ` : ""}
-              {progress.badges.filter((b) => b.got).length} logros
+              {progress.badges.filter((b) => b.got).length} de {progress.badges.length} logros
             </p>
           </div>
           <ChevronRight className="text-white/60" aria-hidden />
@@ -324,7 +327,7 @@ const DONE_COPY: Record<string, { kicker: string; title: string; text: string; m
 };
 
 /** Mensaje al volver al inicio después de marcar el entrenamiento. */
-async function SessionDone({ status, scheduledId, name }: { status: string; scheduledId: string; name: string }) {
+async function SessionDone({ status, scheduledId, name, progress }: { status: string; scheduledId: string; name: string; progress: Progress }) {
   const copy = DONE_COPY[status] ?? DONE_COPY.done;
   const { supabase } = await requireAthlete();
   const { data: sw } = await supabase.from("scheduled_workouts").select("session_rpe, duration_min, workouts(name)").eq("id", scheduledId).maybeSingle();
@@ -347,6 +350,7 @@ async function SessionDone({ status, scheduledId, name }: { status: string; sche
           {sw.session_rpe ? <span className="rounded-[3px] bg-[#ff3b3f] px-2 py-1 font-condensed text-[12px] font-bold tracking-wider uppercase">Esfuerzo {sw.session_rpe}/10</span> : null}
         </div>
       ) : null}
+      <FireNews progress={progress} />
       <p className="relative mt-4 text-xs text-white/60">¡Listo! Tu entrenador ya puede ver cómo te fue.</p>
       <Link href={`/app/sesion/${scheduledId}`} className="relative mt-2 inline-block font-condensed text-[13px] font-bold tracking-[0.08em] text-[#ff3b3f] uppercase">
         Ver el resumen →
@@ -422,5 +426,42 @@ function TournamentCard({
         </div>
       ) : null}
     </section>
+  );
+}
+
+/** Dentro del mensaje de cierre: festeja la semana cumplida (la racha sube) y los logros que se desbloquearon recién. */
+function FireNews({ progress }: { progress: Progress }) {
+  const before = progress.before;
+  if (!before) return null;
+  const f = progress.fire;
+  const weekNow = f.week.state === "lit" && before.fire.week.state !== "lit";
+  const fresh = newlyUnlocked(before.badges, progress.badges);
+  if (!weekNow && !fresh.length) return null;
+  return (
+    <div className="relative mt-4 space-y-2">
+      {weekNow ? (
+        <div className="flex items-center gap-3 rounded-md bg-white/10 p-3">
+          <FireFlame size={40} heat={Math.max(1, heatOf(f.streak))} />
+          <div>
+            <p className="font-condensed text-[15px] leading-tight font-bold tracking-wide uppercase">¡Semana cumplida!</p>
+            <p className="text-sm text-white/80">
+              {f.streak > 1 ? `Tu racha sube a ${f.streak} semanas seguidas.` : "Prendiste el fuego: primera semana de tu racha."}
+              {f.level.key !== before.fire.level.key ? ` Nuevo nivel: ${f.level.label}.` : ""}
+            </p>
+          </div>
+        </div>
+      ) : null}
+      {fresh.map((b) => (
+        <div key={b.key} className="flex items-center gap-3 rounded-md border border-[#ff3b3f]/50 p-3">
+          <span className="grid h-9 w-9 shrink-0 -skew-x-[8deg] place-items-center rounded-[4px] bg-[#ff3b3f]">
+            <span className="skew-x-[8deg] font-display text-lg font-extrabold">★</span>
+          </span>
+          <div>
+            <p className="font-condensed text-[13px] font-bold tracking-[0.12em] text-[#ff3b3f] uppercase">Nuevo logro</p>
+            <p className="text-sm leading-tight font-semibold">{b.label}</p>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

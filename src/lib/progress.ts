@@ -1,4 +1,3 @@
-import { addDays, mondayOf } from "@/lib/dates";
 import { challengeProgress, type ChallengeStep } from "@/lib/challenges";
 import { z } from "@/lib/zod";
 
@@ -98,30 +97,7 @@ export function sessionStats(rows: SessionRow[], today: string) {
   };
 }
 
-/**
- * Racha: semanas seguidas (de la actual hacia atrás) con todas las sesiones hechas.
- * La semana en curso suma si ya está completa y corta si ya tiene una falta; las semanas sin sesiones no cortan la racha.
- */
-export function weekStreak(rows: SessionRow[], today: string, lookback = 26) {
-  let streak = 0;
-  const thisMonday = mondayOf(today);
-  for (let i = 0; i < lookback; i++) {
-    const start = addDays(thisMonday, -7 * i);
-    const end = addDays(start, 6);
-    const week = rows.filter((r) => r.date >= start && r.date <= end);
-    if (!week.length) continue;
-    const allDone = week.every((r) => r.status === "done" || r.status === "partial");
-    if (i === 0) {
-      if (allDone) streak++;
-      // La semana en curso corta la racha solo si ya tiene una falta (no pudo o un día pasado sin registrar).
-      else if (week.some((r) => r.status === "skipped" || (r.status === "planned" && r.date < today))) break;
-      continue;
-    }
-    if (!allDone) break;
-    streak++;
-  }
-  return streak;
-}
+export { weekStreak, streakHistory } from "@/lib/streak";
 
 // ---------------------------------------------------------------- puntaje
 
@@ -181,47 +157,4 @@ export function improvedThisMonth(rows: LiftRow[], month: string) {
     if (estimated1RM(Number(cur.weight_kg), cur.reps) > estimated1RM(Number(prev.weight_kg), prev.reps)) return true;
   }
   return compared ? false : null;
-}
-
-// ---------------------------------------------------------------- logros
-
-export function achievements(input: { doneTotal: number; streak: number; bestStreak: number; perfectWeeks: number; challengesFinished: number; anyLiftImproved: boolean; liftsThisMonth: boolean }) {
-  const list = [
-    { key: "primera", label: "Primera sesión", hint: "Completá tu primer entrenamiento", got: input.doneTotal >= 1 },
-    { key: "diez", label: "10 sesiones", hint: "Llegá a 10 entrenamientos", got: input.doneTotal >= 10 },
-    { key: "veinticinco", label: "25 sesiones", hint: "Llegá a 25 entrenamientos", got: input.doneTotal >= 25 },
-    { key: "cincuenta", label: "50 sesiones", hint: "Llegá a 50 entrenamientos", got: input.doneTotal >= 50 },
-    { key: "semana", label: "Semana perfecta", hint: "Hacé todas las sesiones de una semana", got: input.perfectWeeks >= 1 },
-    { key: "racha4", label: "Racha de 4 semanas", hint: "4 semanas seguidas sin fallar", got: input.bestStreak >= 4 },
-    { key: "desafio", label: "Desafío cumplido", hint: "Terminá un desafío del mes", got: input.challengesFinished >= 1 },
-    { key: "tres", label: "3 desafíos", hint: "Terminá 3 desafíos", got: input.challengesFinished >= 3 },
-    { key: "fuerte", label: "Más fuerte", hint: "Mejorá un básico respecto del mes anterior", got: input.anyLiftImproved },
-    { key: "control", label: "Control al día", hint: "Cargá tus pesos de este mes", got: input.liftsThisMonth },
-  ];
-  return list;
-}
-
-/** Mejor racha y semanas perfectas en todo el historial. */
-export function streakHistory(rows: SessionRow[], today: string) {
-  const byWeek = new Map<string, SessionRow[]>();
-  for (const r of rows) {
-    if (r.date > today || (r.status === "planned" && r.date === today)) continue;
-    const m = mondayOf(r.date);
-    byWeek.set(m, [...(byWeek.get(m) ?? []), r]);
-  }
-  const weeks = [...byWeek.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  let best = 0;
-  let cur = 0;
-  let perfect = 0;
-  for (const [, list] of weeks) {
-    const ok = list.every((r) => r.status === "done" || r.status === "partial");
-    if (ok) {
-      perfect++;
-      cur++;
-      best = Math.max(best, cur);
-    } else {
-      cur = 0;
-    }
-  }
-  return { best, perfect };
 }
