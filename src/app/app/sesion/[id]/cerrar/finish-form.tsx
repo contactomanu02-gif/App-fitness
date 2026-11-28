@@ -6,7 +6,8 @@ import { SubmitButton } from "@/components/submit-button";
 import { useFormAction } from "@/components/use-form-action";
 import { FINISH_STATUS, RPE_HINT } from "@/lib/tracking";
 import { cn } from "@/lib/utils";
-import { FEELS, type Feel } from "@/lib/intensity";
+import { FEELS, maxFromSession, type Feel } from "@/lib/intensity";
+import { fmtKg } from "@/lib/progress";
 import { finishSession, type FinishState } from "../../../actions";
 
 // Escala de esfuerzo: verde (fácil) → amarillo → rojo (máximo). Clases literales para Tailwind.
@@ -26,7 +27,64 @@ const RPE_WORD = ["", "Muy fácil", "Muy fácil", "Fácil", "Fácil", "Moderado"
 
 const pill = "cursor-pointer rounded-xl border border-border bg-card text-center has-[:checked]:border-accent has-[:checked]:bg-accent has-[:checked]:text-accent-fg has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent/40";
 
-export type LoadField = { id: string; name: string; suggested: string | null; perHand: boolean; kg: number | null; feel: Feel | null };
+export type LoadField = { id: string; name: string; suggested: string | null; perHand: boolean; kg: number | null; reps: number; pct: number | null; feel: Feel | null };
+
+/** Un ejercicio en «¿Con cuántos kilos lo hiciste?»: kilos, repeticiones y cómo le quedó, con su máximo estimado. */
+function LoadRow({ l }: { l: LoadField }) {
+  const [kg, setKg] = useState(l.kg === null ? "" : String(l.kg).replace(".", ","));
+  const [reps, setReps] = useState(String(l.reps));
+  const [feel, setFeel] = useState<Feel>(l.feel ?? "justo");
+  const n = Number(kg.replace(",", "."));
+  const r = Number(reps);
+  const max = n > 0 && n <= 500 && Number.isInteger(r) && r >= 1 && r <= 30 ? maxFromSession({ kg: n, reps: r, pct: l.pct, feel }) : null;
+  return (
+    <li className="space-y-2 py-3 first:pt-0 last:pb-0">
+      <p className="text-sm leading-snug font-medium">
+        {l.name}
+        {l.suggested ? <span className="block text-xs font-normal text-muted-fg">Sugerido: {l.suggested} kg{l.perHand ? " en cada mano" : ""}</span> : null}
+      </p>
+      <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-fg">
+        <Input
+          name={`kg_${l.id}`}
+          inputMode="decimal"
+          autoComplete="off"
+          value={kg}
+          onChange={(e) => setKg(e.target.value)}
+          placeholder="—"
+          className="w-20 text-center"
+          aria-label={`Kilos en ${l.name}`}
+        />
+        <span>{l.perHand ? "kg c/mano" : "kg"} ×</span>
+        <Input
+          name={`reps_${l.id}`}
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={30}
+          value={reps}
+          onChange={(e) => setReps(e.target.value)}
+          className="w-16 text-center"
+          aria-label={`Repeticiones en ${l.name}`}
+        />
+        <span>repeticiones</span>
+      </div>
+      <fieldset className="grid grid-cols-3 gap-1.5">
+        <legend className="sr-only">¿Cómo te quedó {l.name}?</legend>
+        {FEELS.map((f) => (
+          <label key={f.v} title={f.hint} className={cn(pill, "py-1.5 text-xs font-medium")}>
+            <input type="radio" name={`feel_${l.id}`} value={f.v} checked={feel === f.v} onChange={() => setFeel(f.v)} className="sr-only" aria-label={`${f.label}: ${f.hint}`} />
+            {f.label}
+          </label>
+        ))}
+      </fieldset>
+      {max ? (
+        <p className="text-xs text-muted-fg" data-testid="rm-estimado">
+          Tu máximo estimado (1 repetición): <b className="text-fg">{fmtKg(max)} kg</b>
+        </p>
+      ) : null}
+    </li>
+  );
+}
 
 export function FinishForm({ scheduledId, duration, initialStatus, loads = [] }: { scheduledId: string; duration: number | null; initialStatus: string | null; loads?: LoadField[] }) {
   const { state, onSubmit, pending } = useFormAction((s: FinishState, f: FormData) => finishSession(scheduledId, s, f));
@@ -85,40 +143,11 @@ export function FinishForm({ scheduledId, duration, initialStatus, loads = [] }:
         <Card className="space-y-3 p-4" data-testid="kilos-usados">
           <div>
             <p className="text-sm font-semibold">¿Con cuántos kilos lo hiciste? (opcional)</p>
-            <p className="text-xs text-muted-fg">Anotá el peso de tus series y cómo te quedó. Con eso ajustamos solos tus kilos sugeridos para las próximas sesiones.</p>
+            <p className="text-xs text-muted-fg">Anotá el peso, las repeticiones de tus series y cómo te quedó. Con eso calculamos tu máximo y tus kilos sugeridos. Te lo volvemos a preguntar en un mes.</p>
           </div>
           <ul className="divide-y divide-border">
             {loads.map((l) => (
-              <li key={l.id} className="space-y-2 py-3 first:pt-0 last:pb-0">
-                <div className="flex items-end justify-between gap-3">
-                  <label htmlFor={`kg_${l.id}`} className="min-w-0 text-sm leading-snug font-medium">
-                    {l.name}
-                    {l.suggested ? <span className="block text-xs font-normal text-muted-fg">Sugerido: {l.suggested} kg{l.perHand ? " en cada mano" : ""}</span> : null}
-                  </label>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <Input
-                      id={`kg_${l.id}`}
-                      name={`kg_${l.id}`}
-                      inputMode="decimal"
-                      autoComplete="off"
-                      defaultValue={l.kg ?? ""}
-                      placeholder="—"
-                      className="w-20 text-center"
-                      aria-label={`Kilos en ${l.name}`}
-                    />
-                    <span className="text-xs text-muted-fg">{l.perHand ? "kg c/mano" : "kg"}</span>
-                  </div>
-                </div>
-                <fieldset className="grid grid-cols-3 gap-1.5">
-                  <legend className="sr-only">¿Cómo te quedó {l.name}?</legend>
-                  {FEELS.map((f) => (
-                    <label key={f.v} title={f.hint} className={cn(pill, "py-1.5 text-xs font-medium")}>
-                      <input type="radio" name={`feel_${l.id}`} value={f.v} defaultChecked={(l.feel ?? "justo") === f.v} className="sr-only" aria-label={`${f.label}: ${f.hint}`} />
-                      {f.label}
-                    </label>
-                  ))}
-                </fieldset>
-              </li>
+              <LoadRow key={l.id} l={l} />
             ))}
           </ul>
           <p className="text-xs text-muted-fg"><b>Liviano:</b> te sobraron muchas. <b>Justo:</b> te sobraron las que decía. <b>Pesado:</b> no te sobró ninguna.</p>

@@ -52,7 +52,7 @@ describe("informe mensual", () => {
     ];
     const [sq, pb] = liftSummary(rows, "2026-11");
     expect(sq.cur?.weight_kg).toBe(80);
-    expect(sq.diff).toBe(5.8); // 93,3 - 87,5
+    expect(sq.diff).toBe(5.9); // calculadora de RM (Wathan)
     expect(sq.sinceStart).toBe(14);
     expect(sq.series).toHaveLength(3); // diciembre no entra
     expect(pb.cur).toBeNull();

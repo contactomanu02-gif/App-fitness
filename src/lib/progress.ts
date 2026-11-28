@@ -13,10 +13,14 @@ export type Lift = (typeof LIFTS)[number]["v"];
 export const fmtKg = (n: number) => n.toLocaleString("es-AR", { maximumFractionDigits: 1 });
 export const liftLabel = (v: string) => LIFTS.find((l) => l.v === v)?.label ?? v;
 
-/** Máximo estimado para 1 repetición (fórmula de Epley). Permite comparar meses con distintas repeticiones. */
+/**
+ * Máximo estimado para 1 repetición (calculadora de RM, fórmula de Wathan 1994).
+ * Es de las más estudiadas y, en la comparación clásica de LeSuer (1997) entre siete
+ * fórmulas, junto con la de Mayhew la que más se acercó al máximo real en press de banca y sentadilla.
+ */
 export function estimated1RM(kg: number, reps: number) {
   if (reps <= 1) return Math.round(kg * 10) / 10;
-  return Math.round(kg * (1 + reps / 30) * 10) / 10;
+  return Math.round(((100 * kg) / (48.8 + 53.8 * Math.exp(-0.075 * reps))) * 10) / 10;
 }
 
 /** Primer día del mes de una fecha "AAAA-MM-DD". */

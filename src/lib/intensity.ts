@@ -153,17 +153,21 @@ export const FEELS: { v: Feel; label: string; hint: string }[] = [
 export const isFeel = (v: unknown): v is Feel => v === "liviano" || v === "justo" || v === "pesado";
 
 /**
- * Máximo estimado con los kilos que usó en la sesión. Se supone que le sobraron las
- * repeticiones que pedía el % de ese día; «liviano» suma 3 de sobra y «pesado» ninguna.
- * Si usó justo los kilos sugeridos y le quedó «justo», el máximo no cambia.
+ * Máximo estimado con los kilos y repeticiones de la sesión (calculadora de RM, misma
+ * fórmula que los pesos del mes). Como en el entrenamiento no se llega al fallo, a las
+ * repeticiones hechas se suman las que le sobraron: las que pedía el % de ese día si le
+ * quedó «justo», 3 más si le quedó «liviano» y ninguna si le quedó «pesado».
  */
 export function maxFromSession(input: { kg: number; reps: number | null; pct: number | null; feel: Feel | null }) {
   const { kg, reps, pct } = input;
   if (!reps || !(kg > 0)) return null;
   const base = pct ? repsInReserve(pct, reps).left : 2;
   const left = input.feel === "liviano" ? base + 3 : input.feel === "pesado" ? 0 : base;
-  return Math.round(((kg * 100) / pctForReps(reps + left)) * 10) / 10;
+  return estimated1RM(kg, reps + left);
 }
+
+/** Cada cuántos días se le vuelve a pedir los kilos de un ejercicio (como los pesos del mes). */
+export const RM_REFRESH_DAYS = 28;
 
 export type OwnMax = { max: number; kg: number; date: string; name?: string | null };
 export type OwnMaxes = Record<string, OwnMax>;
@@ -253,7 +257,9 @@ export function parseSessionLoads(form: Record<string, unknown>, items: { id: st
     const key = `kg_${it.id}`;
     if (!(key in form)) continue;
     const raw = String(form[key] ?? "").trim().replace(",", ".");
-    const reps = repsNumber(it.reps);
+    // Repeticiones que hizo (si no las anotó, las que pedía la sesión).
+    const done = Number(String(form[`reps_${it.id}`] ?? "").trim());
+    const reps = Number.isInteger(done) && done >= 1 && done <= 30 ? done : repsNumber(it.reps);
     if (!raw) {
       out.push({ item: it.id, kg: null, reps, feel: null, max: null });
       continue;
