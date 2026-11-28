@@ -6,6 +6,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { useFormAction } from "@/components/use-form-action";
 import { FINISH_STATUS, RPE_HINT } from "@/lib/tracking";
 import { cn } from "@/lib/utils";
+import { FEELS, type Feel } from "@/lib/intensity";
 import { finishSession, type FinishState } from "../../../actions";
 
 // Escala de esfuerzo: verde (fácil) → amarillo → rojo (máximo). Clases literales para Tailwind.
@@ -25,7 +26,9 @@ const RPE_WORD = ["", "Muy fácil", "Muy fácil", "Fácil", "Fácil", "Moderado"
 
 const pill = "cursor-pointer rounded-xl border border-border bg-card text-center has-[:checked]:border-accent has-[:checked]:bg-accent has-[:checked]:text-accent-fg has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent/40";
 
-export function FinishForm({ scheduledId, duration, initialStatus }: { scheduledId: string; duration: number | null; initialStatus: string | null }) {
+export type LoadField = { id: string; name: string; suggested: string | null; perHand: boolean; kg: number | null; feel: Feel | null };
+
+export function FinishForm({ scheduledId, duration, initialStatus, loads = [] }: { scheduledId: string; duration: number | null; initialStatus: string | null; loads?: LoadField[] }) {
   const { state, onSubmit, pending } = useFormAction((s: FinishState, f: FormData) => finishSession(scheduledId, s, f));
   const [status, setStatus] = useState<string | null>(initialStatus);
   const [pain, setPain] = useState(false);
@@ -75,6 +78,50 @@ export function FinishForm({ scheduledId, duration, initialStatus }: { scheduled
           <Field label="Duración (minutos)" htmlFor="duration">
             <Input id="duration" name="duration" type="number" inputMode="numeric" min={1} max={600} defaultValue={duration ?? ""} className="w-32" />
           </Field>
+        </Card>
+      ) : null}
+
+      {status && !skipped && loads.length ? (
+        <Card className="space-y-3 p-4" data-testid="kilos-usados">
+          <div>
+            <p className="text-sm font-semibold">¿Con cuántos kilos lo hiciste? (opcional)</p>
+            <p className="text-xs text-muted-fg">Anotá el peso de tus series y cómo te quedó. Con eso ajustamos solos tus kilos sugeridos para las próximas sesiones.</p>
+          </div>
+          <ul className="divide-y divide-border">
+            {loads.map((l) => (
+              <li key={l.id} className="space-y-2 py-3 first:pt-0 last:pb-0">
+                <div className="flex items-end justify-between gap-3">
+                  <label htmlFor={`kg_${l.id}`} className="min-w-0 text-sm leading-snug font-medium">
+                    {l.name}
+                    {l.suggested ? <span className="block text-xs font-normal text-muted-fg">Sugerido: {l.suggested} kg{l.perHand ? " en cada mano" : ""}</span> : null}
+                  </label>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <Input
+                      id={`kg_${l.id}`}
+                      name={`kg_${l.id}`}
+                      inputMode="decimal"
+                      autoComplete="off"
+                      defaultValue={l.kg ?? ""}
+                      placeholder="—"
+                      className="w-20 text-center"
+                      aria-label={`Kilos en ${l.name}`}
+                    />
+                    <span className="text-xs text-muted-fg">{l.perHand ? "kg c/mano" : "kg"}</span>
+                  </div>
+                </div>
+                <fieldset className="grid grid-cols-3 gap-1.5">
+                  <legend className="sr-only">¿Cómo te quedó {l.name}?</legend>
+                  {FEELS.map((f) => (
+                    <label key={f.v} title={f.hint} className={cn(pill, "py-1.5 text-xs font-medium")}>
+                      <input type="radio" name={`feel_${l.id}`} value={f.v} defaultChecked={(l.feel ?? "justo") === f.v} className="sr-only" aria-label={`${f.label}: ${f.hint}`} />
+                      {f.label}
+                    </label>
+                  ))}
+                </fieldset>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-muted-fg"><b>Liviano:</b> te sobraron muchas. <b>Justo:</b> te sobraron las que decía. <b>Pesado:</b> no te sobró ninguna.</p>
         </Card>
       ) : null}
 

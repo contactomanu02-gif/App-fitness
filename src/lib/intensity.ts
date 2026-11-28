@@ -95,7 +95,7 @@ export function leftText(left: number) {
   return `te tienen que sobrar ${left - 1} o ${left}`;
 }
 
-type Ref = { lift: Lift; ratio: number; perHand?: boolean; step: number };
+type Ref = { lift: Lift; ratio: number; perHand?: boolean; step: number; main?: boolean };
 
 /**
  * Ejercicios que se pueden calcular con los tres pesos del mes. El número es
@@ -103,7 +103,7 @@ type Ref = { lift: Lift; ratio: number; perHand?: boolean; step: number };
  * del lado conservador: el alumno ajusta con las repeticiones que le sobran.
  */
 const REFS: [RegExp, Ref][] = [
-  [/^sentadilla con barra/, { lift: "sentadilla", ratio: 1, step: 2.5 }],
+  [/^sentadilla con barra/, { lift: "sentadilla", ratio: 1, step: 2.5, main: true }],
   [/^sentadilla frontal/, { lift: "sentadilla", ratio: 0.8, step: 2.5 }],
   [/^sentadilla goblet/, { lift: "sentadilla", ratio: 0.3, step: 2 }],
   [/^sentadilla sumo/, { lift: "sentadilla", ratio: 0.35, step: 2 }],
@@ -113,11 +113,11 @@ const REFS: [RegExp, Ref][] = [
   [/^peso muerto rumano/, { lift: "sentadilla", ratio: 0.7, step: 2.5 }],
   [/^hip thrust/, { lift: "sentadilla", ratio: 1, step: 2.5 }],
   [/^estocada|^estocadas|^subida al caj[oó]n/, { lift: "sentadilla", ratio: 0.15, perHand: true, step: 1 }],
-  [/^press plano con barra/, { lift: "press_banca", ratio: 1, step: 2.5 }],
+  [/^press plano con barra/, { lift: "press_banca", ratio: 1, step: 2.5, main: true }],
   [/^press inclinado con barra/, { lift: "press_banca", ratio: 0.8, step: 2.5 }],
   [/^press plano con mancuernas/, { lift: "press_banca", ratio: 0.36, perHand: true, step: 1 }],
   [/^press militar con mancuernas/, { lift: "press_banca", ratio: 0.22, perHand: true, step: 1 }],
-  [/^polea al pecho|^jal[oó]n al pecho/, { lift: "jalon_pecho", ratio: 1, step: 2.5 }],
+  [/^polea al pecho|^jal[oó]n al pecho/, { lift: "jalon_pecho", ratio: 1, step: 2.5, main: true }],
   [/^jal[oó]n tras nuca/, { lift: "jalon_pecho", ratio: 0.85, step: 2.5 }],
   [/^remo sentado en polea/, { lift: "jalon_pecho", ratio: 0.9, step: 2.5 }],
   [/^remo con barra/, { lift: "jalon_pecho", ratio: 0.85, step: 2.5 }],
@@ -132,15 +132,79 @@ export function refOf(name: string | null | undefined) {
 
 export type MyMaxes = Partial<Record<Lift, number>>;
 
+type LiftRow = { month: string; lift: string; weight_kg: number | string; reps: number; updated_at?: string | null };
+
 /** Máximo estimado de cada ejercicio con el último registro del alumno. */
-export function latestMaxes(rows: { month: string; lift: string; weight_kg: number | string; reps: number }[]): MyMaxes {
+export function latestMaxes(rows: LiftRow[]): MyMaxes {
   const out: MyMaxes = {};
   const sorted = [...rows].sort((a, b) => a.month.localeCompare(b.month));
   for (const r of sorted) out[r.lift as Lift] = estimated1RM(Number(r.weight_kg), r.reps);
   return out;
 }
 
+// ---------------------------------------------------------------- kilos que anota el alumno
+
+export type Feel = "liviano" | "justo" | "pesado";
+export const FEELS: { v: Feel; label: string; hint: string }[] = [
+  { v: "liviano", label: "Liviano", hint: "Me sobraron muchas repeticiones" },
+  { v: "justo", label: "Justo", hint: "Me sobraron las que decía" },
+  { v: "pesado", label: "Pesado", hint: "No me sobró ninguna" },
+];
+export const isFeel = (v: unknown): v is Feel => v === "liviano" || v === "justo" || v === "pesado";
+
+/**
+ * Máximo estimado con los kilos que usó en la sesión. Se supone que le sobraron las
+ * repeticiones que pedía el % de ese día; «liviano» suma 3 de sobra y «pesado» ninguna.
+ * Si usó justo los kilos sugeridos y le quedó «justo», el máximo no cambia.
+ */
+export function maxFromSession(input: { kg: number; reps: number | null; pct: number | null; feel: Feel | null }) {
+  const { kg, reps, pct } = input;
+  if (!reps || !(kg > 0)) return null;
+  const base = pct ? repsInReserve(pct, reps).left : 2;
+  const left = input.feel === "liviano" ? base + 3 : input.feel === "pesado" ? 0 : base;
+  return Math.round(((kg * 100) / pctForReps(reps + left)) * 10) / 10;
+}
+
+export type OwnMax = { max: number; kg: number; date: string; name?: string | null };
+export type OwnMaxes = Record<string, OwnMax>;
+
+type LogRow = { exercise_id: string; est_max_kg: number | string | null; load_kg: number | string | null; logged_at: string; exercises?: { name: string } | null };
+
+/** Último máximo estimado de cada ejercicio (por id) con lo que el alumno anotó al cerrar sesiones. */
+export function ownMaxes(rows: LogRow[]): OwnMaxes {
+  const out: OwnMaxes = {};
+  const sorted = [...rows].sort((a, b) => a.logged_at.localeCompare(b.logged_at));
+  for (const r of sorted) {
+    if (r.est_max_kg === null || r.load_kg === null) continue;
+    out[r.exercise_id] = { max: Number(r.est_max_kg), kg: Number(r.load_kg), date: r.logged_at.slice(0, 10), name: r.exercises?.name ?? null };
+  }
+  return out;
+}
+
+/**
+ * Máximos de los tres básicos: el peso del mes o, si es más nuevo, lo que anotó en la
+ * sesión en el ejercicio principal (sentadilla con barra, press plano con barra, polea al pecho).
+ * Así los kilos de los ejercicios parecidos también se actualizan solos.
+ */
+export function combinedMaxes(rows: LiftRow[], own: OwnMaxes): MyMaxes {
+  const best: Partial<Record<Lift, { v: number; date: string }>> = {};
+  const sorted = [...rows].sort((a, b) => a.month.localeCompare(b.month));
+  for (const r of sorted) best[r.lift as Lift] = { v: estimated1RM(Number(r.weight_kg), r.reps), date: (r.updated_at ?? r.month).slice(0, 10) };
+  for (const o of Object.values(own)) {
+    const ref = refOf(o.name);
+    if (!ref?.main) continue;
+    const cur = best[ref.lift];
+    if (!cur || o.date >= cur.date) best[ref.lift] = { v: o.max, date: o.date };
+  }
+  const out: MyMaxes = {};
+  for (const [k, b] of Object.entries(best)) out[k as Lift] = b!.v;
+  return out;
+}
+
 const roundTo = (n: number, step: number) => Math.round(n / step) * step;
+
+/** Se usa con mancuernas o pesas rusas: los kilos son de cada mano. */
+export const perHandName = (name: string | null | undefined) => /mancuerna|kettlebell|pesa rusa/i.test(name ?? "");
 
 export type LoadTip = {
   /** Lo que le tiene que sobrar al terminar la serie. */
@@ -152,25 +216,54 @@ export type LoadTip = {
   kg: { from: number; to: number; perHand: boolean } | null;
   /** El ejercicio se calcula pero al alumno le falta cargar ese peso del mes. */
   needsLift: Lift | null;
+  /** Kilos que anotó la última vez en este ejercicio (de ahí salen los sugeridos). */
+  last: { kg: number; date: string } | null;
 };
 
 /** Ayuda para un ejercicio de fuerza: kilos sugeridos y cuántas repeticiones tienen que sobrar. */
-export function loadTip(input: { pct: number | null; reps: string | null | undefined; name: string | null | undefined; maxes: MyMaxes }): LoadTip | null {
-  const { pct, maxes } = input;
+export function loadTip(input: { pct: number | null; reps: string | null | undefined; name: string | null | undefined; maxes: MyMaxes; own?: OwnMax | null }): LoadTip | null {
+  const { pct, maxes, own } = input;
   if (!pct) return null;
   const reps = repsNumber(input.reps);
   const r = reps ? repsInReserve(pct, reps) : { left: Math.max(1, maxRepsAt(pct) - 8), pct, adjusted: false };
   const ref = refOf(input.name);
   let kg: LoadTip["kg"] = null;
   let needsLift: Lift | null = null;
-  if (ref) {
-    const max = maxes[ref.lift];
-    if (max) {
-      const base = max * ref.ratio;
-      const to = roundTo((base * r.pct) / 100, ref.step);
-      const from = roundTo((base * (r.pct - 5)) / 100, ref.step);
-      if (to >= ref.step) kg = { from: Math.max(ref.step, Math.min(from, to)), to, perHand: Boolean(ref.perHand) };
-    } else needsLift = ref.lift;
+  const perHand = ref ? Boolean(ref.perHand) : perHandName(input.name);
+  const step = ref?.step ?? (perHand ? 1 : 2.5);
+  // Lo que anotó en este mismo ejercicio manda; si no, se calcula con los básicos.
+  const base = own ? own.max : ref && maxes[ref.lift] ? maxes[ref.lift]! * ref.ratio : null;
+  if (base) {
+    const to = roundTo((base * r.pct) / 100, step);
+    const from = roundTo((base * (r.pct - 5)) / 100, step);
+    if (to >= step) kg = { from: Math.max(step, Math.min(from, to)), to, perHand };
+  } else if (ref) needsLift = ref.lift;
+  return { left: r.left, pct: r.pct, adjusted: r.adjusted, kg, needsLift, last: own ? { kg: own.kg, date: own.date } : null };
+}
+
+export type LoadEntry = { item: string; kg: number | null; reps: number | null; feel: Feel | null; max: number | null };
+
+/**
+ * Kilos del formulario de cierre: kg_<ejercicio> y feel_<ejercicio>. Solo cuentan los
+ * ejercicios que estaban en el formulario; vacío borra lo anotado antes.
+ */
+export function parseSessionLoads(form: Record<string, unknown>, items: { id: string; reps: string | null }[], pct: number | null): { items: LoadEntry[] } | { error: string } {
+  const out: LoadEntry[] = [];
+  for (const it of items) {
+    const key = `kg_${it.id}`;
+    if (!(key in form)) continue;
+    const raw = String(form[key] ?? "").trim().replace(",", ".");
+    const reps = repsNumber(it.reps);
+    if (!raw) {
+      out.push({ item: it.id, kg: null, reps, feel: null, max: null });
+      continue;
+    }
+    const kg = Number(raw);
+    if (!Number.isFinite(kg) || kg <= 0 || kg > 500) return { error: "Los kilos van de 0,5 a 500" };
+    const rounded = Math.round(kg * 10) / 10;
+    const f = form[`feel_${it.id}`];
+    const feel = isFeel(f) ? f : "justo";
+    out.push({ item: it.id, kg: rounded, reps, feel, max: maxFromSession({ kg: rounded, reps, pct, feel }) });
   }
-  return { left: r.left, pct: r.pct, adjusted: r.adjusted, kg, needsLift };
+  return { items: out };
 }
