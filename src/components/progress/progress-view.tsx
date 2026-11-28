@@ -16,7 +16,7 @@ import {
   monthStart,
   sessionStats,
 } from "@/lib/progress";
-import { achievements, fireSummary, type Badge } from "@/lib/streak";
+import { achievements, fireSummary, tournamentWeeks, type Badge } from "@/lib/streak";
 import { Flame as FireFlame } from "./fire";
 import { cn } from "@/lib/utils";
 import { ScoreRing } from "./score-ring";
@@ -31,7 +31,7 @@ export async function loadProgress(supabase: DB, athlete: { id: string; org_id: 
   const today = todayISO();
   const thisMonth = monthStart(today);
   const firstMonth = `${shiftMonth(thisMonth.slice(0, 7), -5)}-01`;
-  const [{ data: sessions }, { data: lifts }, { data: challenges }] = await Promise.all([
+  const [{ data: sessions }, { data: lifts }, { data: challenges }, { data: comps }] = await Promise.all([
     supabase
       .from("scheduled_workouts")
       .select("id, date, status, duration_min, session_rpe")
@@ -41,7 +41,16 @@ export async function loadProgress(supabase: DB, athlete: { id: string; org_id: 
       .order("date"),
     supabase.from("lift_records").select("month, lift, weight_kg, reps").eq("athlete_id", athlete.id).order("month"),
     supabase.from("challenges").select("id, month, points, steps").eq("org_id", athlete.org_id).gte("month", firstMonth).lte("month", thisMonth),
+    // Torneos: esas semanas no cortan la racha.
+    supabase
+      .from("calendar_events")
+      .select("start_date, end_date")
+      .eq("athlete_id", athlete.id)
+      .eq("kind", "torneo")
+      .gte("end_date", addDays(mondayOf(today), -7 * 53))
+      .lte("start_date", addDays(mondayOf(today), 6)),
   ]);
+  const torneos = tournamentWeeks(comps ?? []);
   const { data: logs } = challenges?.length
     ? await supabase.from("challenge_logs").select("challenge_id").eq("athlete_id", athlete.id).in("challenge_id", challenges.map((c) => c.id))
     : { data: [] as { challenge_id: string }[] };
@@ -76,13 +85,13 @@ export async function loadProgress(supabase: DB, athlete: { id: string; org_id: 
       liftsThisMonth: current.loaded,
     });
   };
-  const fire = fireSummary(rows, today);
+  const fire = fireSummary(rows, today, torneos);
   const badges = badgesFor(rows, fire);
   // Cómo estaba todo antes de registrar la última sesión: para festejar la semana cumplida y los logros nuevos.
   let before: { fire: typeof fire; badges: Badge[] } | null = null;
   if (opts.justClosed && rows.some((r) => r.id === opts.justClosed)) {
     const prev = rows.map((r) => (r.id === opts.justClosed ? { ...r, status: "planned" } : r));
-    const f = fireSummary(prev, today);
+    const f = fireSummary(prev, today, torneos);
     before = { fire: f, badges: badgesFor(prev, f) };
   }
   return { today, thisMonth, current, history, all, streak: fire.streak, bestStreak: fire.best, fire, before, weeks: weeklyCompliance(rows, today, 8), trends, badges, liftRows };

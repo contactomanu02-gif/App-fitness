@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { addDays, mondayOf, todayISO } from "@/lib/dates";
-import { fireSummary, type FireSummary } from "@/lib/streak";
+import { fireSummary, tournamentWeeks, type FireSummary } from "@/lib/streak";
 
 type DB = SupabaseClient<Database>;
 
@@ -26,9 +26,20 @@ export async function orgStreaks(supabase: DB, orgId: string, today = todayISO()
     rows.push(...data);
     if (data.length < 1000) break;
   }
+  // Torneos del espacio: esas semanas no cortan la racha.
+  const { data: comps } = await supabase
+    .from("calendar_events")
+    .select("athlete_id, start_date, end_date")
+    .eq("org_id", orgId)
+    .eq("kind", "torneo")
+    .gte("end_date", from)
+    .lte("start_date", to)
+    .limit(1000);
+  const compsBy = new Map<string, { start_date: string; end_date: string }[]>();
+  for (const c of comps ?? []) compsBy.set(c.athlete_id, [...(compsBy.get(c.athlete_id) ?? []), c]);
   const by = new Map<string, typeof rows>();
   for (const r of rows) by.set(r.athlete_id, [...(by.get(r.athlete_id) ?? []), r]);
   const out = new Map<string, FireSummary>();
-  for (const [id, list] of by) out.set(id, fireSummary(list, today));
+  for (const [id, list] of by) out.set(id, fireSummary(list, today, tournamentWeeks(compsBy.get(id) ?? [])));
   return out;
 }

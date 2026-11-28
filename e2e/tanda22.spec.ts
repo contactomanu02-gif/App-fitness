@@ -29,11 +29,15 @@ test("racha de fuego: el alumno completa la semana, sube la racha y desbloquea l
   const { data: ex } = await admin.from("exercises").select("id").is("org_id", null).eq("name", "Sentadilla goblet").single();
   const { data: w } = await coach.client.from("workouts").insert({ org_id: coach.orgId, name: "Fuerza A" }).select("id").single();
   await coach.client.rpc("save_workout", { p_workout: w!.id, p_data: { name: "Fuerza A", items: [{ exercise_id: ex!.id, sets: "3", reps: "8" }] } });
-  // 3 semanas anteriores y la actual: el lunes (si hoy no es lunes) y hoy.
+  // 4 semanas anteriores y la actual: el lunes (si hoy no es lunes) y hoy.
   const days = [...new Set([1, isoDow(today)])];
-  const { error } = await coach.client.rpc("assign_workout", { p_workout: w!.id, p_athletes: [ath!.id], p_start: addDays(monday, -21), p_weekdays: days, p_weeks: 4 });
+  const { error } = await coach.client.rpc("assign_workout", { p_workout: w!.id, p_athletes: [ath!.id], p_start: addDays(monday, -28), p_weekdays: days, p_weeks: 5 });
   expect(error).toBeNull();
   await admin.from("scheduled_workouts").update({ status: "done", duration_min: 55, session_rpe: 7 }).eq("athlete_id", ath!.id).lt("date", today);
+  // Hace dos semanas jugó un torneo y no pudo entrenar: esa semana no corta la racha.
+  const torneoWeek = addDays(monday, -14);
+  await admin.from("scheduled_workouts").update({ status: "skipped", duration_min: null, session_rpe: null }).eq("athlete_id", ath!.id).gte("date", torneoWeek).lte("date", addDays(torneoWeek, 6));
+  await admin.from("calendar_events").insert({ org_id: coach.orgId, athlete_id: ath!.id, kind: "torneo", title: "Abierto del Club", start_date: addDays(torneoWeek, 4), end_date: addDays(torneoWeek, 6) });
   const { data: todays } = await admin.from("scheduled_workouts").select("id").eq("athlete_id", ath!.id).eq("date", today).single();
 
   // --- Alumno ---
@@ -72,6 +76,7 @@ test("racha de fuego: el alumno completa la semana, sube la racha y desbloquea l
   await expect(hero).toContainText("Próxima meta: 8 semanas");
   await expect(hero.getByRole("img", { name: "Nivel En llamas" })).toBeVisible();
   await expect(hero.getByRole("list", { name: "Últimas 8 semanas" }).getByRole("listitem")).toHaveCount(8);
+  await expect(hero.getByLabel(/de torneo, la racha no se cortó/)).toHaveCount(1);
   await expect(ap.getByText("Semanas perfectas")).toBeVisible();
   if (SHOTS && isMobile) {
     await hero.screenshot({ path: `${SHOTS}/3-progreso-racha.png` });

@@ -4,17 +4,45 @@ import { addDays, mondayOf } from "@/lib/dates";
  * Racha de fuego: semanas seguidas con todas las sesiones hechas.
  * Una sesión hecha a medias cuenta. «No pude» o un día pasado sin registrar apagan la semana.
  * Las semanas sin sesiones asignadas no suman ni cortan.
+ * Semanas de torneo (pedido de Manu): son especiales. Si las cumple suman; si no, la racha queda en pausa (no corta).
  */
 
 type Row = { date: string; status: string };
 const isDone = (s: string) => s === "done" || s === "partial";
 
-export type WeekState = "lit" | "open" | "out" | "empty";
+export type WeekState = "lit" | "open" | "out" | "empty" | "torneo";
+
+/** Lunes de las semanas que tocan algún torneo del alumno (de start_date a end_date). */
+export function tournamentWeeks(events: { start_date: string; end_date: string }[]) {
+  const set = new Set<string>();
+  for (const e of events) {
+    for (let m = mondayOf(e.start_date); m <= e.end_date; m = addDays(m, 7)) set.add(m);
+  }
+  return set;
+}
+
+// Sesiones agrupadas por lunes, calculado una sola vez por lista (el servidor tiene poco tiempo de CPU).
+const buckets = new WeakMap<Row[], Map<string, Row[]>>();
+function byWeek(rows: Row[]) {
+  let m = buckets.get(rows);
+  if (!m) {
+    m = new Map();
+    const mondays = new Map<string, string>();
+    for (const r of rows) {
+      let mon = mondays.get(r.date);
+      if (!mon) mondays.set(r.date, (mon = mondayOf(r.date)));
+      const list = m.get(mon);
+      if (list) list.push(r);
+      else m.set(mon, [r]);
+    }
+    buckets.set(rows, m);
+  }
+  return m;
+}
 
 /** Estado de una semana (lunes a domingo). «open» = todavía se puede completar. */
-export function weekState(rows: Row[], start: string, today: string) {
-  const end = addDays(start, 6);
-  const week = rows.filter((r) => r.date >= start && r.date <= end);
+export function weekState(rows: Row[], start: string, today: string, torneos?: Set<string>) {
+  const week = byWeek(rows).get(start) ?? [];
   const done = week.filter((r) => isDone(r.status)).length;
   const left = week.filter((r) => r.status === "planned" && r.date >= today).length;
   let state: WeekState;
@@ -22,15 +50,18 @@ export function weekState(rows: Row[], start: string, today: string) {
   else if (week.some((r) => r.status === "skipped" || (r.status === "planned" && r.date < today))) state = "out";
   else if (done === week.length) state = "lit";
   else state = "open";
-  return { start, total: week.length, done, left, state };
+  const torneo = !!torneos?.has(start);
+  // Semana de torneo con faltas: no corta (queda en pausa).
+  if (torneo && state === "out") state = "torneo";
+  return { start, total: week.length, done, left, state, torneo };
 }
 
-export function weekStreak(rows: Row[], today: string, lookback = 53) {
+export function weekStreak(rows: Row[], today: string, lookback = 53, torneos?: Set<string>) {
   let streak = 0;
   const thisMonday = mondayOf(today);
   for (let i = 0; i < lookback; i++) {
-    const w = weekState(rows, addDays(thisMonday, -7 * i), today);
-    if (w.state === "empty") continue;
+    const w = weekState(rows, addDays(thisMonday, -7 * i), today, torneos);
+    if (w.state === "empty" || w.state === "torneo") continue;
     if (i === 0) {
       if (w.state === "lit") streak++;
       else if (w.state === "out") break;
@@ -43,13 +74,14 @@ export function weekStreak(rows: Row[], today: string, lookback = 53) {
 }
 
 /** Mejor racha y semanas perfectas en todo el historial (la semana en curso cuenta solo si ya está completa). */
-export function streakHistory(rows: Row[], today: string) {
-  const mondays = [...new Set(rows.filter((r) => r.date <= addDays(mondayOf(today), 6)).map((r) => mondayOf(r.date)))].sort();
+export function streakHistory(rows: Row[], today: string, torneos?: Set<string>) {
+  const thisMonday = mondayOf(today);
+  const mondays = [...byWeek(rows).keys()].filter((m) => m <= thisMonday).sort();
   let best = 0;
   let cur = 0;
   let perfect = 0;
   for (const m of mondays) {
-    const w = weekState(rows, m, today);
+    const w = weekState(rows, m, today, torneos);
     if (w.state === "lit") {
       perfect++;
       cur++;
@@ -76,12 +108,12 @@ export const MILESTONES = [2, 4, 8, 12, 26, 52] as const;
 export const nextMilestone = (streak: number) => MILESTONES.find((m) => m > streak) ?? null;
 
 /** Todo lo que muestra la tarjeta de la racha. */
-export function fireSummary(rows: Row[], today: string, trailWeeks = 8) {
+export function fireSummary(rows: Row[], today: string, torneos?: Set<string>, trailWeeks = 8) {
   const thisMonday = mondayOf(today);
-  const streak = weekStreak(rows, today);
-  const hist = streakHistory(rows, today);
-  const week = weekState(rows, thisMonday, today);
-  const trail = Array.from({ length: trailWeeks }, (_, i) => weekState(rows, addDays(thisMonday, -7 * (trailWeeks - 1 - i)), today));
+  const streak = weekStreak(rows, today, 53, torneos);
+  const hist = streakHistory(rows, today, torneos);
+  const week = weekState(rows, thisMonday, today, torneos);
+  const trail = Array.from({ length: trailWeeks }, (_, i) => weekState(rows, addDays(thisMonday, -7 * (trailWeeks - 1 - i)), today, torneos));
   const next = nextMilestone(streak);
   // Si la semana está abierta, completarla suma una semana más.
   const ifCompleted = week.state === "open" ? streak + 1 : streak;
@@ -104,11 +136,15 @@ export function weekMessage(f: FireSummary, who?: string) {
   const w = f.week;
   const plural = (n: number, a: string, b: string) => (n === 1 ? a : b);
   if (who) {
+    if (w.state === "torneo") return `Semana de torneo: aunque falte alguna sesión, la racha de ${who} no se corta.`;
+    if (w.torneo && w.state === "open") return `Semana de torneo: si completa las ${w.total} sesiones suma; si no, la racha queda en pausa.`;
     if (w.state === "empty") return f.streak ? `Esta semana no tiene sesiones: la racha de ${who} sigue intacta.` : `${who} no tiene sesiones esta semana.`;
     if (w.state === "lit") return `Semana cumplida: ${w.done} de ${w.total}. El fuego sigue.`;
     if (w.state === "out") return `Esta semana tuvo una falta: la racha se apagó.`;
     return `Lleva ${w.done} de ${w.total} esta semana. ${plural(w.left, "Le falta 1 sesión", `Le faltan ${w.left} sesiones`)} para llegar a ${f.ifCompleted} ${plural(f.ifCompleted, "semana", "semanas")}.`;
   }
+  if (w.state === "torneo") return "Semana de torneo: tu racha no se corta. ¡A jugar!";
+  if (w.torneo && w.state === "open") return `Semana de torneo: si hacés las ${w.total} sesiones suma; si no, tu racha queda en pausa. ¡A jugar!`;
   if (w.state === "empty") return f.streak ? "Esta semana no tenés sesiones: tu racha queda intacta." : "Cuando tengas sesiones, cada semana completa prende el fuego.";
   if (w.state === "lit") return `¡Semana cumplida! ${w.done} de ${w.total}. El fuego sigue prendido.`;
   if (w.state === "out") return "Esta semana tuvo una falta y el fuego se apagó. El lunes lo volvés a prender.";
