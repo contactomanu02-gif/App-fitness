@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { achievements, fireLevel, fireSummary, newlyUnlocked, nextMilestone, weekMessage, weekState, weekStreak } from "@/lib/streak";
+import { achievements, fireLevel, fireSummary, newlyUnlocked, nextMilestone, tournamentWeeks, weekMessage, weekState, weekStreak } from "@/lib/streak";
 
 const today = "2026-11-26"; // jueves
 const done = (date: string) => ({ date, status: "done" });
@@ -48,5 +48,35 @@ describe("racha de fuego", () => {
     const after = achievements({ ...base, doneTotal: 10, bestStreak: 4 });
     expect(newlyUnlocked(before, after).map((b) => b.key)).toEqual(["diez", "racha4"]);
     expect(new Set(after.map((b) => b.key)).size).toBe(after.length);
+  });
+});
+
+describe("semanas de torneo", () => {
+  const today = "2026-11-26"; // jueves
+  const rows = [
+    { date: "2026-11-03", status: "done" }, { date: "2026-11-05", status: "done" }, // 2/11 cumplida
+    { date: "2026-11-10", status: "skipped" }, { date: "2026-11-12", status: "done" }, // 9/11 con falta, pero jugó un torneo
+    { date: "2026-11-17", status: "done" }, { date: "2026-11-19", status: "done" }, // 16/11 cumplida
+    { date: "2026-11-24", status: "planned" }, { date: "2026-11-26", status: "planned" }, // semana actual
+  ];
+  const torneo = tournamentWeeks([{ start_date: "2026-11-14", end_date: "2026-11-16" }]); // sábado a lunes: toca dos semanas
+
+  it("una semana de torneo con faltas no corta la racha (queda en pausa)", () => {
+    const r = rows.map((x) => (x.date === "2026-11-24" ? { ...x, status: "done" } : x));
+    expect(weekStreak(r, today)).toBe(1); // sin torneo, la falta del 10/11 la corta
+    const f = fireSummary(r, today, torneo);
+    expect(f.streak).toBe(2);
+    expect(f.trail.slice(-4).map((w) => w.state)).toEqual(["lit", "torneo", "lit", "open"]);
+    expect(torneo.has("2026-11-09") && torneo.has("2026-11-16")).toBe(true);
+  });
+
+  it("la semana actual de torneo con un día sin registrar no corta, y se avisa", () => {
+    const t = tournamentWeeks([{ start_date: "2026-11-27", end_date: "2026-11-29" }]);
+    const f = fireSummary(rows, today, t);
+    expect(f.week.state).toBe("torneo"); // el 24/11 quedó sin registrar
+    expect(weekMessage(f)).toBe("Semana de torneo: tu racha no se corta. ¡A jugar!");
+    const ok = fireSummary(rows.map((r) => (r.date === "2026-11-24" ? { ...r, status: "done" } : r)), today, t);
+    expect(ok.week).toMatchObject({ state: "open", torneo: true });
+    expect(weekMessage(ok)).toContain("si hacés las 2 sesiones suma");
   });
 });

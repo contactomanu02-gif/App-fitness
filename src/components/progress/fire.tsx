@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Trophy } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { type FireSummary, type WeekState, weekMessage } from "@/lib/streak";
 import { cn } from "@/lib/utils";
@@ -45,7 +45,7 @@ export function Flame({ size = 48, heat = 3, still = false, className, label }: 
 export const heatOf = (streak: number) => (streak >= 12 ? 5 : streak >= 8 ? 4 : streak >= 4 ? 3 : streak >= 2 ? 2 : streak >= 1 ? 1 : 0);
 
 const weekLabel = (start: string) => `${Number(start.slice(8))}/${Number(start.slice(5, 7))}`;
-const TRAIL_TEXT: Record<WeekState, string> = { lit: "cumplida", open: "en curso", out: "con faltas", empty: "sin sesiones" };
+const TRAIL_TEXT: Record<WeekState, string> = { lit: "cumplida", open: "en curso", out: "con faltas", empty: "sin sesiones", torneo: "de torneo, la racha no se cortó" };
 
 /** Últimas semanas como fila de llamas: prendida, apagada o sin sesiones. */
 function Trail({ f }: { f: FireSummary }) {
@@ -61,6 +61,8 @@ function Trail({ f }: { f: FireSummary }) {
                   <Flame size={18} heat={3} still />
                 ) : w.state === "open" ? (
                   <Flame size={18} heat={0} still className="flame-open" />
+                ) : w.state === "torneo" ? (
+                  <Trophy size={16} className="text-[#ffd34d]" aria-hidden />
                 ) : w.state === "out" ? (
                   <Flame size={18} heat={0} still />
                 ) : (

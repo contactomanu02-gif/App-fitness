@@ -277,7 +277,7 @@ function FireBoard({ list, streaks }: { list: { id: string; first_name: string; 
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{fullName(a)}</span>
                   <span className="block truncate text-sm text-muted-fg">
-                    {f.week.state === "lit" ? "Semana cumplida" : f.week.state === "open" ? `Esta semana ${f.week.done} de ${f.week.total}` : f.week.state === "out" ? "Esta semana con falta" : "Sin sesiones esta semana"}
+                    {f.week.state === "lit" ? "Semana cumplida" : f.week.state === "open" ? `${f.week.torneo ? "Semana de torneo · " : "Esta semana "}${f.week.done} de ${f.week.total}` : f.week.state === "torneo" ? "Semana de torneo: la racha no se corta" : f.week.state === "out" ? "Esta semana con falta" : "Sin sesiones esta semana"}
                   </span>
                 </span>
                 <span className="shrink-0 text-right">
