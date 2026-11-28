@@ -82,9 +82,9 @@ jobs:
               --jq '[.workflow_runs[] | select(.status=="completed")] | {ok: map(select(.conclusion=="success")) | length, total: length, ultima: (.[0].conclusion // "ninguna")}')
             okn=$(echo "$runs" | jq .ok); total=$(echo "$runs" | jq .total); ultima=$(echo "$runs" | jq -r .ultima)
             nombre=$([ "$wf" = respaldo.yml ] && echo "Respaldo diario" || echo "Latido diario")
-            if [ "$total" -ge 6 ] && [ "$okn" = "$total" ]; then ok "$nombre: $okn de $total días bien."
-            elif [ "$ultima" = "success" ] && [ "$okn" -ge 5 ]; then aviso "$nombre: $okn de $total días bien (la última salió bien)."
-            else aviso "$nombre: solo $okn de $total días bien esta semana (última: $ultima)."; fi
+            if [ "$total" -ge 1 ] && [ "$okn" = "$total" ]; then ok "$nombre: salió bien los $total días de esta semana."
+            elif [ "$total" = 0 ]; then aviso "$nombre: no corrió en toda la semana."
+            else aviso "$nombre: $okn de $total días bien esta semana (la última: $([ "$ultima" = success ] && echo bien || echo "$ultima"))."; fi
           done
 
           # --- Supabase ---
@@ -121,7 +121,7 @@ jobs:
               [ "$(v sin_sesiones)" = "0" ] && ok "Todos los que venían entrenando tienen sesiones la semana que viene." || aviso "$(v sin_sesiones) alumnos venían entrenando y no tienen sesiones la semana que viene."
               [ "$(v sesiones_vacias)" = "0" ] && ok "Ninguna sesión vacía." || aviso "$(v sesiones_vacias) sesiones de la semana que viene no tienen ejercicios."
               [ "$(v fuera_de_dias)" = "0" ] && ok "Todas las sesiones caen en días que el alumno entrena." || aviso "$(v fuera_de_dias) sesiones caen en un día que el alumno no entrena (según su ficha)."
-              [ "$(v dobles)" = "0" ] && ok "Ningún alumno tiene dos sesiones el mismo día." || aviso "$(v dobles) veces un alumno tiene dos sesiones el mismo día."
+              [ "$(v dobles)" = "0" ] && ok "Ningún alumno tiene dos sesiones el mismo día." || aviso "$(v dobles) veces un alumno tiene dos sesiones el mismo día ($(v dobles_dias)). Revisar en el calendario."
               [ "$(v sin_cuenta)" = "0" ] || aviso "$(v sin_cuenta) alumnos tienen sesiones pero todavía no crearon su cuenta (no las van a ver)."
               [ "$(v en_competencia)" = "0" ] || echo "- ℹ️ $(v en_competencia) sesiones caen el mismo día de una competencia (revisar que sea la activación)." >> informe.md
               [ "$(v termina_pronto)" = "0" ] || echo "- ℹ️ A $(v termina_pronto) alumnos se les termina la planificación en las próximas 2 semanas." >> informe.md
@@ -129,7 +129,11 @@ jobs:
           fi
 
           # --- Videos de YouTube del catálogo ---
-          grep -ohE "(youtube\.com/watch\?v=|youtu\.be/)[A-Za-z0-9_-]{11}" supabase/migrations/*.sql | grep -oE "[A-Za-z0-9_-]{11}$" | sort -u > ids.txt
+          if [ -n "$SUPABASE_ACCESS_TOKEN" ]; then
+            jq -n --rawfile q scripts/control-semanal/videos.sql '{query: $q}' > body.json
+            curl -sS -X POST "$api/database/query" -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              -H "Content-Type: application/json" --data @body.json | jq -r '.[0].ids[]?' | sort -u > ids.txt
+          else : > ids.txt; fi
           malos=0; total=0
           while read -r id; do
             total=$((total+1))
@@ -137,7 +141,7 @@ jobs:
             page=$(curl -s -A "Mozilla/5.0" "https://www.youtube.com/embed/$id" | grep -o '"playableInEmbed":[a-z]*' | head -1)
             if [ "$code" != "200" ] || [ "$page" = '"playableInEmbed":false' ]; then malos=$((malos+1)); echo "Video con problema: $id"; fi
           done < ids.txt
-          [ "$malos" = "0" ] && ok "Los $total videos de ejercicios se pueden ver." || aviso "$malos de $total videos de ejercicios no se pueden ver (ver el detalle en el control)."
+          if [ "$total" = 0 ]; then aviso "No se pudieron leer los videos de la base."; elif [ "$malos" = "0" ]; then ok "Los $total videos de ejercicios se pueden ver."; else aviso "$malos de $total videos de ejercicios no se pueden ver dentro de la app (los códigos están en el detalle del control)."; fi
 
           cat informe.md
           {

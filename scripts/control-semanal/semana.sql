@@ -36,6 +36,8 @@ select json_build_object(
                       and not (p.dow::smallint = any(public.athlete_weekdays(p.athlete_id)))),
   -- Dos sesiones el mismo día para el mismo alumno.
   'dobles', (select count(*) from (select athlete_id, date from prox group by 1, 2 having count(*) > 1) x),
+  'dobles_dias', (select coalesce(string_agg(to_char(date, 'DD/MM'), ', ' order by date), '') from
+      (select distinct date from (select athlete_id, date from prox group by 1, 2 having count(*) > 1) x) y),
   -- Sesiones el mismo día de una competencia (solo para saberlo).
   'en_competencia', (select count(*) from prox p where exists (
       select 1 from public.calendar_events ce where ce.athlete_id = p.athlete_id and ce.kind = 'torneo'
